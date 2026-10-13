@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
@@ -10,6 +10,7 @@ import { Typography } from '../../constants/typography';
 import { getCurrentUserId } from '../../services/authService';
 import { addExercise, addSet, getWorkoutById, updateWorkout } from '../../services/workoutService';
 import { LogStackParamList } from '../../types/navigation';
+import { finishLog, useReturnToToday } from '../../utils/finishLog';
 
 type Route = RouteProp<LogStackParamList, 'WorkoutDetailScreen'>;
 
@@ -21,6 +22,8 @@ interface ExerciseView {
 
 export const WorkoutDetailScreen = () => {
   const route = useRoute<Route>();
+  const navigation = useNavigation();
+  useReturnToToday(route.params.fromToday);
   const [workoutName, setWorkoutName] = useState('');
   const [exerciseName, setExerciseName] = useState('');
   const [reps, setReps] = useState('10');
@@ -85,8 +88,8 @@ export const WorkoutDetailScreen = () => {
     try {
       const userId = await getCurrentUserId();
       const minutes = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
-      await updateWorkout(userId, route.params.workoutId, { completed: true, duration_minutes: minutes, name: workoutName });
-      Alert.alert('Done', 'Workout finished.');
+      await updateWorkout(userId, route.params.workoutId, { completed: true, duration_minutes: minutes, name: workoutName.trim() || 'Sesión' });
+      finishLog(navigation, route.params.fromToday);
     } catch (error) {
       console.error(error);
       Alert.alert('No se ha cerrado el entreno');

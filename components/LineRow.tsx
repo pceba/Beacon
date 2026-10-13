@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     color: Colors.textPrimary,
   },
-  trail: { width: 72, alignItems: 'flex-end', justifyContent: 'center' },
+  trail: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
   track: { height: 4, borderRadius: 99, backgroundColor: Colors.surfaceAlt, marginTop: 6, overflow: 'hidden' },
   fill: { height: 4, borderRadius: 99 },
   pressed: { opacity: 0.72 },

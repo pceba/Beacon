@@ -19,10 +19,10 @@ export type MainTabParamList = {
 
 export type LogStackParamList = {
   LogHomeScreen: undefined;
-  LogMealScreen: { logId?: string } | undefined;
-  LogWorkoutScreen: undefined;
-  WorkoutDetailScreen: { workoutId: string };
-  LogSleepScreen: { sleepId?: string } | undefined;
+  LogMealScreen: { logId?: string; fromToday?: boolean } | undefined;
+  LogWorkoutScreen: { fromToday?: boolean } | undefined;
+  WorkoutDetailScreen: { workoutId: string; fromToday?: boolean };
+  LogSleepScreen: { sleepId?: string; fromToday?: boolean } | undefined;
   LogBodyScreen: { metricId?: string } | undefined;
 };
 

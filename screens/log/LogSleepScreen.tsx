@@ -11,6 +11,7 @@ import { Typography } from '../../constants/typography';
 import { getCurrentUserId } from '../../services/authService';
 import { createSleepLog, getSleepLogs, updateSleepLog } from '../../services/sleepService';
 import { LogStackParamList } from '../../types/navigation';
+import { finishLog, useReturnToToday } from '../../utils/finishLog';
 
 type Route = RouteProp<LogStackParamList, 'LogSleepScreen'>;
 
@@ -42,6 +43,7 @@ const toIso = (stamp: string) => {
 export const LogSleepScreen = () => {
   const route = useRoute<Route>();
   const navigation = useNavigation();
+  useReturnToToday(route.params?.fromToday);
   const [bedTime, setBedTime] = useState(defaultBed);
   const [wakeTime, setWakeTime] = useState(defaultWake);
   const [quality, setQuality] = useState(3);
@@ -83,7 +85,7 @@ export const LogSleepScreen = () => {
       const payload = { bed_time: bedIso, wake_time: wakeIso, quality_rating: quality, notes: notes || null };
       if (route.params?.sleepId) await updateSleepLog(userId, route.params.sleepId, payload);
       else await createSleepLog(userId, payload);
-      navigation.goBack();
+      finishLog(navigation, route.params?.fromToday);
     } catch (error) {
       console.error(error);
       Alert.alert('No se ha guardado');
