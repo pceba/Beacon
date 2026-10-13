@@ -27,6 +27,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "02e6fac7-1a12-4db1-ab54-a47d504bb4fe"
+      }
+    },
+    "owner": "pcebas-team"
   }
 }
