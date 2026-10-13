@@ -1,0 +1,15 @@
+export const Typography = {
+  fontRegular: 'Outfit_400Regular',
+  fontMedium: 'Outfit_500Medium',
+  fontBold: 'Outfit_600SemiBold',
+  fontDisplay: 'Outfit_600SemiBold',
+  fontDisplayRegular: 'Outfit_400Regular',
+  xxl: 28,
+  xl: 26,
+  lg: 18,
+  md: 16,
+  sm: 14,
+  xs: 12,
+  lineHeightBody: 22,
+  lineHeightTitle: 40,
+} as const;

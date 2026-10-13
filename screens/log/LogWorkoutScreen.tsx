@@ -1,0 +1,74 @@
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { Colors } from '../../constants/colors';
+import { Spacing } from '../../constants/spacing';
+import { Typography } from '../../constants/typography';
+import { getCurrentUserId } from '../../services/authService';
+import { createWorkout, createWorkoutFromTemplate, getWorkoutTemplates } from '../../services/workoutService';
+import { WorkoutTemplate } from '../../types/database';
+
+export const LogWorkoutScreen = () => {
+  const navigation = useNavigation<NavigationProp<any>>();
+  const [name, setName] = useState('');
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const userId = await getCurrentUserId();
+        setTemplates(await getWorkoutTemplates(userId));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    load();
+  }, []);
+
+  const startBlank = async () => {
+    try {
+      const userId = await getCurrentUserId();
+      const workout = await createWorkout(userId, { name: name || 'Workout', notes: null, duration_minutes: null, completed: false });
+      (navigation as any).navigate('WorkoutDetailScreen', { workoutId: workout.id });
+    } catch (error) {
+      console.error(error);
+      Alert.alert('No se ha creado el entreno');
+    }
+  };
+
+  const useTemplate = async (templateId: string) => {
+    try {
+      const userId = await getCurrentUserId();
+      const workout = await createWorkoutFromTemplate(userId, templateId);
+      (navigation as any).navigate('WorkoutDetailScreen', { workoutId: workout.id });
+    } catch (error) {
+      console.error(error);
+      Alert.alert('No se ha creado el entreno');
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Input label="Nombre" value={name} onChangeText={setName} placeholder="Piernas, torso…" />
+      <Button title="Empezar" onPress={startBlank} />
+      <Text style={styles.header}>Plantillas</Text>
+      {templates.map((template) => (
+        <Card key={template.id} onPress={() => useTemplate(template.id)}>
+          <Text style={styles.title}>{template.name}</Text>
+          {template.description ? <Text style={styles.subtitle}>{template.description}</Text> : null}
+        </Card>
+      ))}
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  header: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.md },
+  title: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.lg },
+  subtitle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.md },
+});

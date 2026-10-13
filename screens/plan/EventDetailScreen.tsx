@@ -1,0 +1,86 @@
+import React, { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { Colors } from '../../constants/colors';
+import { Spacing } from '../../constants/spacing';
+import { createEvent, deleteEvent, getEvents, updateEvent } from '../../services/eventService';
+import { getCurrentUserId } from '../../services/authService';
+import { PlanStackParamList } from '../../types/navigation';
+
+type Route = RouteProp<PlanStackParamList, 'EventDetailScreen'>;
+
+export const EventDetailScreen = () => {
+  const route = useRoute<Route>();
+  const navigation = useNavigation();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
+  const [eventTime, setEventTime] = useState('');
+  const [location, setLocation] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      if (!route.params?.eventId) return;
+      try {
+        const userId = await getCurrentUserId();
+        const rows = await getEvents(userId);
+        const selected = rows.find((row) => row.id === route.params?.eventId);
+        if (!selected) return;
+        setTitle(selected.title);
+        setDescription(selected.description ?? '');
+        setEventDate(selected.event_date);
+        setEventTime(selected.event_time ?? '');
+        setLocation(selected.location ?? '');
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    load();
+  }, [route.params?.eventId]);
+
+  const onSave = async () => {
+    try {
+      const userId = await getCurrentUserId();
+      const payload = { title, description: description || null, event_date: eventDate, event_time: eventTime || null, location: location || null };
+      if (route.params?.eventId) await updateEvent(userId, route.params.eventId, payload);
+      else await createEvent(userId, payload);
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+      Alert.alert('No se ha guardado');
+    }
+  };
+
+  const onDelete = async () => {
+    if (!route.params?.eventId) return;
+    try {
+      const userId = await getCurrentUserId();
+      await deleteEvent(userId, route.params.eventId);
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+      Alert.alert('No se ha podido eliminar');
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Input label="Título" value={title} onChangeText={setTitle} />
+        <Input label="Descripción" value={description} onChangeText={setDescription} multiline numberOfLines={4} />
+        <Input label="Fecha" value={eventDate} onChangeText={setEventDate} />
+        <Input label="Hora" value={eventTime} onChangeText={setEventTime} />
+        <Input label="Lugar" value={location} onChangeText={setLocation} />
+        <Button title={route.params?.eventId ? 'Actualizar' : 'Guardar'} onPress={onSave} />
+        {route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={onDelete} /> : null}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
+});

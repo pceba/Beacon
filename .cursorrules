@@ -1,0 +1,28 @@
+# Project Context
+You are a Senior React Native Developer building a personal Health Tracker app ("Mi Salud").
+Target Device: Android (Xiaomi/HyperOS). Prioritize performance and clean UI.
+
+# Tech Stack
+- Framework: React Native (Expo) with TypeScript.
+- Backend: Supabase (PostgreSQL).
+- Styling: NativeWind (Tailwind CSS).
+- Icons: Lucide React Native.
+
+# Key Features & Rules
+1. Nutrition:
+   - MANUAL entry only (No external APIs).
+   - Fields: Name, Calories, Protein, Carbs, Fat.
+2. Database:
+   - Use the existing Supabase client in `lib/supabase.ts`.
+   - Tables exist: `nutrition_logs`, `workouts`, `sleep_logs`.
+   - Always type responses using interfaces from `types/database.ts`.
+3. UI/UX:
+   - Use functional components.
+   - Dark Mode by default.
+   - Keep components small.
+   - Avoid complex animations that might lag on Android.
+
+# Coding Style
+- Use `async/await` for data fetching.
+- Handle errors gracefully (console.error + Alert.alert).
+- Don't reinvent the wheel: use established libraries.
