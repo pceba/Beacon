@@ -1,5 +1,5 @@
 -- ============================================================
--- CAPALOT — Auth real y filas por usuario
+-- LIFEPP — Auth real y filas por usuario
 -- Ejecutar una vez en el SQL Editor de Supabase (o con `supabase db push`).
 -- Es idempotente: se puede volver a ejecutar sin romper nada.
 --
@@ -53,7 +53,7 @@ BEGIN
 
     IF tbl <> 'habit_logs' THEN
       EXECUTE format(
-        'CREATE POLICY capalot_owner ON public.%I FOR ALL TO authenticated
+        'CREATE POLICY lifepp_owner ON public.%I FOR ALL TO authenticated
            USING (user_id = (SELECT auth.uid()))
            WITH CHECK (user_id = (SELECT auth.uid()))',
         tbl
@@ -66,7 +66,7 @@ END $$;
 DO $$
 BEGIN
   IF to_regclass('public.habit_logs') IS NOT NULL THEN
-    CREATE POLICY capalot_owner ON public.habit_logs FOR ALL TO authenticated
+    CREATE POLICY lifepp_owner ON public.habit_logs FOR ALL TO authenticated
       USING (user_id = (SELECT auth.uid()))
       WITH CHECK (
         user_id = (SELECT auth.uid())
@@ -95,14 +95,14 @@ BEGIN
 
   IF to_regclass('public.workout_exercises') IS NOT NULL THEN
     CREATE INDEX IF NOT EXISTS workout_exercises_workout_id_idx ON public.workout_exercises (workout_id);
-    CREATE POLICY capalot_owner ON public.workout_exercises FOR ALL TO authenticated
+    CREATE POLICY lifepp_owner ON public.workout_exercises FOR ALL TO authenticated
       USING (EXISTS (SELECT 1 FROM public.workouts w WHERE w.id = workout_id AND w.user_id = (SELECT auth.uid())))
       WITH CHECK (EXISTS (SELECT 1 FROM public.workouts w WHERE w.id = workout_id AND w.user_id = (SELECT auth.uid())));
   END IF;
 
   IF to_regclass('public.workout_sets') IS NOT NULL THEN
     CREATE INDEX IF NOT EXISTS workout_sets_exercise_id_idx ON public.workout_sets (exercise_id);
-    CREATE POLICY capalot_owner ON public.workout_sets FOR ALL TO authenticated
+    CREATE POLICY lifepp_owner ON public.workout_sets FOR ALL TO authenticated
       USING (EXISTS (
         SELECT 1 FROM public.workout_exercises e JOIN public.workouts w ON w.id = e.workout_id
         WHERE e.id = exercise_id AND w.user_id = (SELECT auth.uid())
@@ -115,7 +115,7 @@ BEGIN
 
   IF to_regclass('public.workout_template_exercises') IS NOT NULL THEN
     CREATE INDEX IF NOT EXISTS workout_template_exercises_template_id_idx ON public.workout_template_exercises (template_id);
-    CREATE POLICY capalot_owner ON public.workout_template_exercises FOR ALL TO authenticated
+    CREATE POLICY lifepp_owner ON public.workout_template_exercises FOR ALL TO authenticated
       USING (EXISTS (SELECT 1 FROM public.workout_templates t WHERE t.id = template_id AND t.user_id = (SELECT auth.uid())))
       WITH CHECK (EXISTS (SELECT 1 FROM public.workout_templates t WHERE t.id = template_id AND t.user_id = (SELECT auth.uid())));
   END IF;

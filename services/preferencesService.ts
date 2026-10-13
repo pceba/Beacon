@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStored, setStored } from '../lib/storage';
 
-const KEY = 'capalot_preferences';
+const KEY = 'lifepp_preferences';
 
 export type Preferences = {
   displayName: string;
@@ -17,7 +17,7 @@ export const defaultPreferences: Preferences = {
 };
 
 export const getPreferences = async (): Promise<Preferences> => {
-  const raw = await AsyncStorage.getItem(KEY);
+  const raw = await getStored(KEY);
   if (!raw) return defaultPreferences;
   try {
     return { ...defaultPreferences, ...JSON.parse(raw) };
@@ -27,5 +27,5 @@ export const getPreferences = async (): Promise<Preferences> => {
 };
 
 export const savePreferences = async (preferences: Preferences): Promise<void> => {
-  await AsyncStorage.setItem(KEY, JSON.stringify(preferences));
+  await setStored(KEY, JSON.stringify(preferences));
 };

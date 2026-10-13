@@ -1,5 +1,5 @@
 -- ============================================================
--- CAPALOT APP — CLEAN SLATE SETUP
+-- LIFEPP APP — CLEAN SLATE SETUP
 -- Run this in your Supabase SQL Editor, then run
 -- supabase/migrations/20261013120000_auth_rls.sql.
 -- This script will DROP old tables and RECREATE them correctly.

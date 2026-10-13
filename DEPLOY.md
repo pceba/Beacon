@@ -1,25 +1,25 @@
-# Despliegue de Capalot
+# Despliegue de Lifepp
 
 Sin API key de Anthropic. Claude trabaja desde claude.ai (web o app del móvil) con tu
 plan, a través de un conector MCP. La app calcula sola el resumen de Hoy.
 
 ```
-Capalot (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + RLS)
+Lifepp (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + RLS)
                                                    ▲
-claude.ai ──MCP──▶ Edge Function capalot-mcp ──token──┘  (funciones mcp_* en Postgres)
+claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (funciones mcp_* en Postgres)
 ```
 
 ## 1. Supabase (proyecto luoqjomxnmygaaaffber)
 
 1. **Authentication → Sign In / Providers → Allow anonymous sign-ins**: activado.
 2. **SQL Editor**, en orden:
-   - `capalot-setup.sql` (solo en un proyecto vacío: borra y recrea las tablas).
+   - `lifepp-setup.sql` (solo en un proyecto vacío: borra y recrea las tablas).
    - `supabase/migrations/20261013120000_auth_rls.sql`: RLS por usuario.
    - `supabase/migrations/20261013140000_mcp_connector.sql`: tokens del conector y funciones `mcp_*`.
-3. **Edge Functions → Deploy a new function → Via editor**: nombre `capalot-mcp`, pegar
-   `supabase/functions/capalot-mcp/index.ts`, desplegar y, en su pestaña Settings,
+3. **Edge Functions → Deploy a new function → Via editor**: nombre `lifepp-mcp`, pegar
+   `supabase/functions/lifepp-mcp/index.ts`, desplegar y, en su pestaña Settings,
    **desactivar "Verify JWT"** (Claude no manda un JWT de Supabase; la autorización es el
-   token de Capalot). Con la CLI: `npx supabase functions deploy capalot-mcp --no-verify-jwt`.
+   token de Lifepp). Con la CLI: `npx supabase functions deploy lifepp-mcp --no-verify-jwt`.
 
 No hace falta ningún secret.
 
@@ -28,13 +28,13 @@ No hace falta ningún secret.
 1. En la app: **Ajustes → Conectar con Claude → Crear enlace** y copiarlo.
 2. En claude.ai: **Personalizar → Conectores → Añadir conector personalizado**.
    URL = el enlace; autenticación **Sin inicio de sesión**.
-3. En un chat: "+" → Conectores → activar Capalot. Por ejemplo: "Mira mi día en Capalot y
+3. En un chat: "+" → Conectores → activar Lifepp. Por ejemplo: "Mira mi día en Lifepp y
    apúntame las tareas de esta semana".
 
 El enlace lleva el token dentro y funciona como una contraseña. "Crear enlace nuevo" invalida el
 anterior; "Desconectar Claude" lo revoca. Si tu cuenta tiene cabeceras de petición en el
 diálogo del conector, también vale la URL sin token
-(`.../functions/v1/capalot-mcp`) con la cabecera `Authorization: Bearer <token>`.
+(`.../functions/v1/lifepp-mcp`) con la cabecera `Authorization: Bearer <token>`.
 
 Herramientas del conector: `get_today`, `list_tasks`, `add_tasks` (sin duplicar abiertas),
 `update_task` (título, descripción, prioridad, fecha, completada). No borra nada.

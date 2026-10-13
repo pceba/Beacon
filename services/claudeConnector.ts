@@ -3,9 +3,9 @@ import { rawSupabase } from '../lib/supabase';
 import { getIdentity } from './authService';
 
 // Conector MCP para claude.ai: la app genera un token personal y muestra la URL
-// del servidor capalot-mcp con el token dentro. Claude usa tu plan; no hay API key.
+// del servidor lifepp-mcp con el token dentro. Claude usa tu plan; no hay API key.
 
-const FUNCTION_PATH = '/functions/v1/capalot-mcp';
+const FUNCTION_PATH = '/functions/v1/lifepp-mcp';
 
 export type ConnectorStatus = {
   account: boolean;

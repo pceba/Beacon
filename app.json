@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Capalot",
-    "slug": "capalot",
+    "name": "Lifepp",
+    "slug": "lifepp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pceba.capalot"
+      "bundleIdentifier": "com.pceba.lifepp"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.pceba.capalot"
+      "package": "com.pceba.lifepp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

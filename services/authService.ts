@@ -1,13 +1,13 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStored, setStored } from '../lib/storage';
 import { rawSupabase } from '../lib/supabase';
 
 // UUID que la app generaba antes de tener cuentas. Se mantiene para el modo
 // local (sin conexión la primera vez) y para reclamar las filas antiguas.
-const LEGACY_ID_KEY = 'capalot_user_id';
+const LEGACY_ID_KEY = 'lifepp_user_id';
 // Último usuario con sesión: sin red, lo local se guarda con este id.
-const LAST_ACCOUNT_KEY = 'capalot_account_id';
+const LAST_ACCOUNT_KEY = 'lifepp_account_id';
 // Marca de que las filas del UUID antiguo ya se reclamaron para esta cuenta.
-const CLAIMED_KEY = 'capalot_legacy_claimed';
+const CLAIMED_KEY = 'lifepp_legacy_claimed';
 
 const SIGN_IN_RETRY_MS = 60_000;
 
@@ -22,10 +22,10 @@ const createUuid = () =>
   });
 
 const getLegacyId = async () => {
-  const existing = await AsyncStorage.getItem(LEGACY_ID_KEY);
+  const existing = await getStored(LEGACY_ID_KEY);
   if (existing) return existing;
   const newId = createUuid();
-  await AsyncStorage.setItem(LEGACY_ID_KEY, newId);
+  await setStored(LEGACY_ID_KEY, newId);
   return newId;
 };
 
@@ -39,14 +39,14 @@ const sessionUserId = async (): Promise<string | null> => {
 };
 
 const claimLegacyRows = async (userId: string) => {
-  if ((await AsyncStorage.getItem(CLAIMED_KEY)) === userId) return;
-  const legacyId = await AsyncStorage.getItem(LEGACY_ID_KEY);
+  if ((await getStored(CLAIMED_KEY)) === userId) return;
+  const legacyId = await getStored(LEGACY_ID_KEY);
   if (!legacyId || legacyId === userId) {
-    await AsyncStorage.setItem(CLAIMED_KEY, userId);
+    await setStored(CLAIMED_KEY, userId);
     return;
   }
   const { error } = await rawSupabase.rpc('claim_legacy_user', { legacy_id: legacyId });
-  if (!error) await AsyncStorage.setItem(CLAIMED_KEY, userId);
+  if (!error) await setStored(CLAIMED_KEY, userId);
 };
 
 let signingIn: Promise<string | null> | null = null;
@@ -83,7 +83,7 @@ export const onAccountReady = (listener: (userId: string) => void) => {
 const markAccount = async (userId: string) => {
   if (announcedFor === userId) return;
   announcedFor = userId;
-  await AsyncStorage.setItem(LAST_ACCOUNT_KEY, userId);
+  await setStored(LAST_ACCOUNT_KEY, userId);
   claimLegacyRows(userId).catch(() => undefined);
   accountReadyListeners.forEach((listener) => listener(userId));
 };
@@ -104,7 +104,7 @@ export const getIdentity = async (): Promise<Identity> => {
     return { userId: created, mode: 'account' };
   }
 
-  const lastAccount = await AsyncStorage.getItem(LAST_ACCOUNT_KEY);
+  const lastAccount = await getStored(LAST_ACCOUNT_KEY);
   return { userId: lastAccount ?? (await getLegacyId()), mode: 'local' };
 };
 

@@ -2,13 +2,13 @@ import { readLocalDb, removeLocalRows } from '../lib/localStore';
 import { rawSupabase } from '../lib/supabase';
 import { onAccountReady } from './authService';
 
-// Lo que se guardó en capalot_local_db (sin conexión, o antes de tener cuenta)
+// Lo que se guardó en lifepp_local_db (sin conexión, o antes de tener cuenta)
 // se sube a Supabase con el usuario de la sesión y se borra de local.
 // Lo que falla (por ejemplo, un hijo cuyo padre no existe) se queda en local.
 
 type Row = Record<string, unknown>;
 
-// Columnas reales de cada tabla (capalot-setup.sql). El almacén local añade
+// Columnas reales de cada tabla (lifepp-setup.sql). El almacén local añade
 // created_at en tablas que no lo tienen, así que se filtra.
 const COLUMNS: Record<string, string[]> = {
   profiles: ['id', 'user_id', 'display_name', 'created_at'],

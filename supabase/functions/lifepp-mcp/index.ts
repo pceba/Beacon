@@ -1,21 +1,21 @@
-// Edge Function: capalot-mcp
+// Edge Function: lifepp-mcp
 // Servidor MCP remoto (transporte Streamable HTTP, respuestas JSON, sin sesión) para
-// conectar Capalot a claude.ai como conector personalizado. Claude razona con tu plan;
+// conectar Lifepp a claude.ai como conector personalizado. Claude razona con tu plan;
 // aquí no hay API key de Anthropic.
 //
 // Autenticación: token personal que genera la app (Ajustes → Conectar con Claude).
-//   - En la URL:      https://<ref>.supabase.co/functions/v1/capalot-mcp/<token>
+//   - En la URL:      https://<ref>.supabase.co/functions/v1/lifepp-mcp/<token>
 //   - o en cabecera:  Authorization: Bearer <token>
 // El token se valida en Postgres (funciones mcp_*), que solo tocan las filas de su dueño.
 // Usa la clave pública del proyecto (SUPABASE_ANON_KEY, la inyecta Supabase).
 
-const SERVER_INFO = { name: 'capalot', title: 'Capalot', version: '1.0.0' };
+const SERVER_INFO = { name: 'lifepp', title: 'Lifepp', version: '1.0.0' };
 const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
-const TOKEN = /(cap_[0-9a-f]{64})/;
+const TOKEN = /(lpp_[0-9a-f]{64})/;
 const MAX_BODY_BYTES = 64_000;
 
 const INSTRUCTIONS = [
-  'Capalot es la app de salud, hábitos y tareas de esta persona.',
+  'Lifepp es la app de salud, hábitos y tareas de esta persona.',
   'Usa get_today para ver el día (agua, ánimo, comidas, sueño, entrenos, hábitos, tareas abiertas y eventos).',
   'Usa add_tasks para apuntar tareas nuevas; no dupliques las que ya están abiertas.',
   'Las fechas van en formato yyyy-mm-dd y en la zona horaria del usuario.',
@@ -42,7 +42,7 @@ const TOOLS = [
     name: 'get_today',
     title: 'Ver el día',
     description:
-      'Resumen de un día en Capalot: agua (ml), ánimo y energía (1-5), comidas y calorías, horas de sueño, entrenos, hábitos hechos o pendientes, tareas abiertas y eventos. Por defecto, hoy.',
+      'Resumen de un día en Lifepp: agua (ml), ánimo y energía (1-5), comidas y calorías, horas de sueño, entrenos, hábitos hechos o pendientes, tareas abiertas y eventos. Por defecto, hoy.',
     inputSchema: {
       type: 'object',
       properties: { date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' } },
@@ -53,7 +53,7 @@ const TOOLS = [
   {
     name: 'list_tasks',
     title: 'Listar tareas',
-    description: 'Tareas de Capalot con id, título, prioridad, fecha límite y estado. Por defecto solo las abiertas.',
+    description: 'Tareas de Lifepp con id, título, prioridad, fecha límite y estado. Por defecto solo las abiertas.',
     inputSchema: {
       type: 'object',
       properties: { include_completed: { type: 'boolean', description: 'Incluir también las completadas' } },
@@ -65,7 +65,7 @@ const TOOLS = [
     name: 'add_tasks',
     title: 'Añadir tareas',
     description:
-      'Crea hasta 20 tareas en Capalot. Las que ya existen abiertas con el mismo título se saltan. Devuelve las creadas y las saltadas.',
+      'Crea hasta 20 tareas en Lifepp. Las que ya existen abiertas con el mismo título se saltan. Devuelve las creadas y las saltadas.',
     inputSchema: {
       type: 'object',
       properties: { tasks: { type: 'array', items: TASK_SCHEMA, minItems: 1, maxItems: 20 } },
@@ -234,7 +234,7 @@ const handleMessage = async (token: string, message: Json): Promise<unknown | nu
 
 const extractToken = (request: Request) => {
   const header = request.headers.get('authorization') ?? '';
-  const fromHeader = header.match(/^Bearer\s+(cap_[0-9a-f]{64})\s*$/i)?.[1];
+  const fromHeader = header.match(/^Bearer\s+(lpp_[0-9a-f]{64})\s*$/i)?.[1];
   if (fromHeader) return fromHeader;
   return new URL(request.url).pathname.match(TOKEN)?.[1] ?? null;
 };
@@ -246,7 +246,7 @@ Deno.serve(async (request) => {
   }
 
   const token = extractToken(request);
-  if (!token) return httpJson(401, rpcError(null, -32001, 'Falta el token de Capalot'));
+  if (!token) return httpJson(401, rpcError(null, -32001, 'Falta el token de Lifepp'));
 
   const raw = await request.text();
   if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) {

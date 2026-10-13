@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStored, setStored } from './storage';
 
-const KEY = 'capalot_local_db';
+const KEY = 'lifepp_local_db';
 
 type Row = Record<string, unknown>;
 type DB = Record<string, Row[]>;
@@ -37,7 +37,7 @@ const enqueue = <T>(work: () => Promise<T>): Promise<T> => {
 };
 
 const readDb = async (): Promise<DB> => {
-  const raw = await AsyncStorage.getItem(KEY);
+  const raw = await getStored(KEY);
   if (!raw) return {};
   try {
     return JSON.parse(raw) as DB;
@@ -47,7 +47,7 @@ const readDb = async (): Promise<DB> => {
 };
 
 const writeDb = async (db: DB) => {
-  await AsyncStorage.setItem(KEY, JSON.stringify(db));
+  await setStored(KEY, JSON.stringify(db));
 };
 
 const newId = () =>

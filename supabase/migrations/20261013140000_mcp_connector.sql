@@ -1,9 +1,9 @@
 -- ============================================================
--- CAPALOT — Conector MCP para Claude (claude.ai con tu plan, sin API key)
+-- LIFEPP — Conector MCP para Claude (claude.ai con tu plan, sin API key)
 -- Ejecutar después de 20261013120000_auth_rls.sql. Idempotente.
 --
 -- La app genera un token personal (Ajustes → Conectar con Claude). Solo se guarda
--- su hash. La Edge Function capalot-mcp recibe el token y llama a las funciones
+-- su hash. La Edge Function lifepp-mcp recibe el token y llama a las funciones
 -- mcp_* de aquí abajo, que resuelven el usuario a partir del token y solo tocan
 -- sus filas. No hace falta service role.
 -- ============================================================
@@ -63,7 +63,7 @@ BEGIN
   IF me IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE = '42501';
   END IF;
-  token := 'cap_' || encode(gen_random_bytes(32), 'hex');
+  token := 'lpp_' || encode(gen_random_bytes(32), 'hex');
   INSERT INTO public.mcp_tokens (user_id, token_hash, tz)
   VALUES (me, public._mcp_hash(token), public._mcp_valid_tz(p_tz))
   ON CONFLICT (user_id) DO UPDATE
@@ -110,7 +110,7 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 BEGIN
-  IF p_token IS NULL OR p_token !~ '^cap_[0-9a-f]{64}$' THEN
+  IF p_token IS NULL OR p_token !~ '^lpp_[0-9a-f]{64}$' THEN
     RAISE EXCEPTION 'invalid token' USING ERRCODE = '28000';
   END IF;
   UPDATE public.mcp_tokens t

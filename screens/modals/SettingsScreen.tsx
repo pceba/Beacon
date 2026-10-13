@@ -95,7 +95,7 @@ export const SettingsScreen = () => {
         <Input label="Sueño (horas)" value={sleep} onChangeText={setSleep} keyboardType="decimal-pad" />
         <Text style={styles.section}>Conectar con Claude</Text>
         <Text style={styles.help}>
-          Añade Capalot como conector en claude.ai (sirve también en la app de Claude del móvil). Claude podrá ver tu día y apuntar o cambiar tareas cuando se lo pidas. Usa tu plan de Claude; no hace falta API key.
+          Añade Lifepp como conector en claude.ai (sirve también en la app de Claude del móvil). Claude podrá ver tu día y apuntar o cambiar tareas cuando se lo pidas. Usa tu plan de Claude; no hace falta API key.
         </Text>
         <Text style={styles.status}>{connectorStatus}</Text>
         {connectorLink ? (
