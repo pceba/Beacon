@@ -11,8 +11,7 @@
 --      para no fallar con las filas antiguas que aún tienen el UUID local).
 --   4. claim_legacy_user(uuid): el cliente reclama sus filas antiguas
 --      (UUID local de antes) la primera vez que entra con sesión.
---   5. claude_usage + claude_usage_bump(): cuota diaria de la Edge Function.
---   6. Tablas del esquema antiguo (todos, saved_meals, users): RLS sin políticas.
+--   5. Tablas del esquema antiguo (todos, saved_meals, users): RLS sin políticas.
 -- ============================================================
 
 -- ------------------------------------------------------------
@@ -122,7 +121,7 @@ BEGIN
 END $$;
 
 -- ------------------------------------------------------------
--- 6. Esquema antiguo: cerrar del todo (RLS sin políticas = nadie entra con la anon key)
+-- 5. Esquema antiguo: cerrar del todo (RLS sin políticas = nadie entra con la anon key)
 -- ------------------------------------------------------------
 DO $$
 DECLARE
@@ -207,43 +206,3 @@ $$;
 
 REVOKE ALL ON FUNCTION public.claim_legacy_user(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.claim_legacy_user(uuid) TO authenticated;
-
--- ------------------------------------------------------------
--- 5. Cuota diaria de Claude (la usa la Edge Function claude-sync)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.claude_usage (
-  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  day     date NOT NULL,
-  calls   integer NOT NULL DEFAULT 0,
-  PRIMARY KEY (user_id, day)
-);
-ALTER TABLE public.claude_usage ENABLE ROW LEVEL SECURITY;
--- Sin políticas: solo se toca a través de la función de abajo.
-
--- Suma una llamada para el usuario de la sesión. Devuelve el total de hoy (UTC),
--- o -1 si ya estaba en el límite (y entonces no suma).
-CREATE OR REPLACE FUNCTION public.claude_usage_bump(p_limit integer)
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  me uuid := auth.uid();
-  today date := (now() AT TIME ZONE 'utc')::date;
-  total integer;
-BEGIN
-  IF me IS NULL THEN
-    RAISE EXCEPTION 'not authenticated' USING ERRCODE = '42501';
-  END IF;
-  INSERT INTO public.claude_usage AS u (user_id, day, calls)
-  VALUES (me, today, 1)
-  ON CONFLICT (user_id, day) DO UPDATE SET calls = u.calls + 1
-    WHERE u.calls < GREATEST(p_limit, 0)
-  RETURNING u.calls INTO total;
-  RETURN COALESCE(total, -1);
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.claude_usage_bump(integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.claude_usage_bump(integer) TO authenticated;
