@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
@@ -10,9 +10,13 @@ import { Typography } from '../../constants/typography';
 import { getCurrentUserId } from '../../services/authService';
 import { createWorkout, createWorkoutFromTemplate, getWorkoutTemplates } from '../../services/workoutService';
 import { WorkoutTemplate } from '../../types/database';
+import { LogStackParamList } from '../../types/navigation';
+import { useReturnToToday } from '../../utils/finishLog';
 
 export const LogWorkoutScreen = () => {
-  const navigation = useNavigation<NavigationProp<any>>();
+  const navigation = useNavigation<NavigationProp<LogStackParamList>>();
+  const route = useRoute<RouteProp<LogStackParamList, 'LogWorkoutScreen'>>();
+  useReturnToToday(route.params?.fromToday);
   const [name, setName] = useState('');
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
 
@@ -31,8 +35,8 @@ export const LogWorkoutScreen = () => {
   const startBlank = async () => {
     try {
       const userId = await getCurrentUserId();
-      const workout = await createWorkout(userId, { name: name || 'Workout', notes: null, duration_minutes: null, completed: false });
-      (navigation as any).navigate('WorkoutDetailScreen', { workoutId: workout.id });
+      const workout = await createWorkout(userId, { name: name.trim() || 'Sesión', notes: null, duration_minutes: null, completed: false });
+      navigation.navigate('WorkoutDetailScreen', { workoutId: workout.id, fromToday: route.params?.fromToday });
     } catch (error) {
       console.error(error);
       Alert.alert('No se ha creado el entreno');
@@ -43,7 +47,7 @@ export const LogWorkoutScreen = () => {
     try {
       const userId = await getCurrentUserId();
       const workout = await createWorkoutFromTemplate(userId, templateId);
-      (navigation as any).navigate('WorkoutDetailScreen', { workoutId: workout.id });
+      navigation.navigate('WorkoutDetailScreen', { workoutId: workout.id, fromToday: route.params?.fromToday });
     } catch (error) {
       console.error(error);
       Alert.alert('No se ha creado el entreno');

@@ -115,6 +115,12 @@ export const LogHomeScreen = () => {
               label={entry.title}
               hint={entry.subtitle}
               value={entry.timestamp}
+              onPress={() => {
+                if (entry.type === 'sleep') navigation.navigate('LogSleepScreen', { sleepId: entry.id });
+                else if (entry.type === 'workout') navigation.navigate('WorkoutDetailScreen', { workoutId: entry.id });
+                else navigation.navigate('LogMealScreen', { logId: entry.id });
+              }}
+              trailing={<ChevronRight color={Colors.textMuted} size={18} />}
               last={index === timeline.length - 1}
             />
           );

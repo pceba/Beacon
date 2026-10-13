@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -6,7 +6,7 @@ import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-n
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, isToday, subDays } from 'date-fns';
-import { ChevronRight, Droplets, Dumbbell, Minus, Moon, Plus, Sparkles, Utensils } from 'lucide-react-native';
+import { Check, ChevronRight, Droplets, Dumbbell, Minus, Moon, Plus, Sparkles, Utensils } from 'lucide-react-native';
 import { Card } from '../components/Card';
 import { CheckRow } from '../components/CheckRow';
 import { EmptyState } from '../components/EmptyState';
@@ -22,10 +22,10 @@ import { deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/h
 import { getMoodLog, upsertMoodLog } from '../services/moodService';
 import { getNutritionLogs } from '../services/nutritionService';
 import { getPreferences, Preferences } from '../services/preferencesService';
-import { getSleepLogs } from '../services/sleepService';
+import { createSleepLog, deleteSleepLog, getSleepLogs, updateSleepLog } from '../services/sleepService';
 import { createTask, getTasks, toggleTaskCompleted } from '../services/taskService';
 import { addWater, getWaterLog, upsertWaterLog } from '../services/waterService';
-import { getWorkouts } from '../services/workoutService';
+import { createWorkout, deleteWorkout, getWorkouts } from '../services/workoutService';
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { dayBrief } from '../utils/dayBrief';
@@ -56,6 +56,11 @@ export const TodayScreen = () => {
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [summary, setSummary] = useState<Summary>({ calories: 0, sleep: 0, workout: false, waterMl: 0 });
+  const [sleepId, setSleepId] = useState<string | null>(null);
+  const [quickWorkoutId, setQuickWorkoutId] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
+  const sleepLock = useRef(false);
+  const moveLock = useRef(false);
   const [taskDraft, setTaskDraft] = useState('');
   const [brief, setBrief] = useState('');
 
@@ -77,7 +82,8 @@ export const TodayScreen = () => {
       const todayKey = format(new Date(), 'yyyy-MM-dd');
       const todayMeals = meals.filter((meal) => isToday(new Date(meal.logged_at)));
       const todaySleep = sleeps.find((sleep) => isToday(new Date(sleep.created_at)));
-      const todayWorkout = workouts.find((workout) => isToday(new Date(workout.started_at)));
+      const todayWorkouts = workouts.filter((workout) => isToday(new Date(workout.started_at)));
+      const quick = todayWorkouts.find((workout) => workout.notes === 'rapido');
 
       setPrefs(preferences);
       setMood(moodLog?.mood_score ?? null);
@@ -88,10 +94,13 @@ export const TodayScreen = () => {
           .filter((task) => !task.completed && (!task.deadline || task.deadline.slice(0, 10) <= todayKey))
           .slice(0, 5),
       );
+      setSleepId(todaySleep?.id ?? null);
+      setQuickWorkoutId(quick?.id ?? null);
+      setHasSession(todayWorkouts.some((workout) => workout.id !== quick?.id));
       setSummary({
         calories: todayMeals.reduce((acc, meal) => acc + (meal.calories ?? 0), 0),
         sleep: todaySleep ? sleepHours(todaySleep.bed_time, todaySleep.wake_time) : 0,
-        workout: Boolean(todayWorkout),
+        workout: todayWorkouts.length > 0,
         waterMl: waterLog?.amount_ml ?? 0,
       });
       const doneHabitIds = new Set(
@@ -104,7 +113,7 @@ export const TodayScreen = () => {
           waterGoalMl: preferences.waterMl,
           sleepHours: todaySleep ? sleepHours(todaySleep.bed_time, todaySleep.wake_time) : 0,
           sleepGoalHours: preferences.sleepHours,
-          moved: Boolean(todayWorkout),
+          moved: todayWorkouts.length > 0,
           calories: todayMeals.reduce((acc, meal) => acc + (meal.calories ?? 0), 0),
           pendingHabits: habitRows.filter((habit) => !doneHabitIds.has(habit.id)).map((habit) => habit.name),
           habitsTotal: habitRows.length,
@@ -170,6 +179,72 @@ export const TodayScreen = () => {
       console.error(error);
       setSummary((current) => ({ ...current, waterMl: Math.max(0, current.waterMl - delta) }));
       Alert.alert('No se ha guardado el agua');
+    }
+  };
+
+  const openSleep = () => navigation.navigate('Log', { screen: 'LogSleepScreen', params: { sleepId: sleepId ?? undefined, fromToday: true } });
+  const openWorkout = () => navigation.navigate('Log', { screen: 'LogWorkoutScreen', params: { fromToday: true } });
+  const openMeal = () => navigation.navigate('Log', { screen: 'LogMealScreen', params: { fromToday: true } });
+
+  const changeSleep = async (direction: 1 | -1) => {
+    if (sleepLock.current) return;
+    sleepLock.current = true;
+    const current = summary.sleep;
+    const next = current <= 0 && direction > 0 ? goals.sleepHours : Math.max(0, Math.round((current + direction * 0.5) * 2) / 2);
+    const previousId = sleepId;
+    setSummary((state) => ({ ...state, sleep: next }));
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const userId = await getCurrentUserId();
+      if (next <= 0) {
+        if (previousId) await deleteSleepLog(userId, previousId);
+        setSleepId(null);
+        return;
+      }
+      const wake = new Date();
+      wake.setHours(7, 0, 0, 0);
+      const bed = new Date(wake.getTime() - next * 3_600_000);
+      const times = { bed_time: bed.toISOString(), wake_time: wake.toISOString() };
+      if (previousId) await updateSleepLog(userId, previousId, times);
+      else setSleepId((await createSleepLog(userId, { ...times, quality_rating: null, notes: null })).id);
+    } catch (error) {
+      console.error(error);
+      setSummary((state) => ({ ...state, sleep: current }));
+      setSleepId(previousId);
+      Alert.alert('No se ha guardado el sueño');
+    } finally {
+      sleepLock.current = false;
+    }
+  };
+
+  const toggleMove = async () => {
+    if (moveLock.current || quickWorkoutId === 'pending') return;
+    if (summary.workout && !quickWorkoutId) {
+      openWorkout();
+      return;
+    }
+    moveLock.current = true;
+    const previous = quickWorkoutId;
+    const wasDone = summary.workout;
+    setSummary((state) => ({ ...state, workout: previous ? hasSession : true }));
+    setQuickWorkoutId(previous ? null : 'pending');
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const userId = await getCurrentUserId();
+      if (previous) {
+        await deleteWorkout(userId, previous);
+        setQuickWorkoutId(null);
+        return;
+      }
+      const created = await createWorkout(userId, { name: 'Movimiento', notes: 'rapido', completed: true, duration_minutes: null });
+      setQuickWorkoutId(created.id);
+    } catch (error) {
+      console.error(error);
+      setSummary((state) => ({ ...state, workout: wasDone }));
+      setQuickWorkoutId(previous);
+      Alert.alert('No se ha guardado el movimiento');
+    } finally {
+      moveLock.current = false;
     }
   };
 
@@ -301,8 +376,24 @@ export const TodayScreen = () => {
           hint={`objetivo ${goals.sleepHours} h`}
           progress={goals.sleepHours ? summary.sleep / goals.sleepHours : 0}
           tint={Colors.sleep}
-          onPress={() => navigation.navigate('Log', { screen: 'LogSleepScreen' })}
-          trailing={<ChevronRight color={Colors.textMuted} size={18} />}
+          trailing={
+            <View style={styles.stepper}>
+              <Pressable accessibilityLabel="Quitar 30 min" hitSlop={8} onPress={() => changeSleep(-1)} style={({ pressed }) => [styles.step, pressed && styles.pressed]}>
+                <Minus color={Colors.sleep} size={14} />
+              </Pressable>
+              <Pressable
+                accessibilityLabel={summary.sleep > 0 ? 'Añadir 30 min' : `Anotar ${goals.sleepHours} h`}
+                hitSlop={8}
+                onPress={() => changeSleep(1)}
+                style={({ pressed }) => [styles.step, pressed && styles.pressed]}
+              >
+                <Plus color={Colors.sleep} size={14} />
+              </Pressable>
+              <Pressable accessibilityLabel="Detalle del sueño" hitSlop={8} onPress={openSleep} style={({ pressed }) => pressed && styles.pressed}>
+                <ChevronRight color={Colors.textMuted} size={18} />
+              </Pressable>
+            </View>
+          }
         />
         <LineRow
           icon={Dumbbell}
@@ -311,8 +402,21 @@ export const TodayScreen = () => {
           hint={summary.workout ? 'Registrado hoy' : 'Sin sesión'}
           progress={summary.workout ? 1 : 0}
           tint={Colors.workout}
-          onPress={() => navigation.navigate('Log', { screen: 'LogWorkoutScreen' })}
-          trailing={<ChevronRight color={Colors.textMuted} size={18} />}
+          trailing={
+            <View style={styles.stepper}>
+              <Pressable
+                accessibilityLabel={summary.workout && !quickWorkoutId ? 'Ver sesión' : summary.workout ? 'Quitar movimiento' : 'Marcar movimiento'}
+                hitSlop={8}
+                onPress={toggleMove}
+                style={({ pressed }) => [styles.step, summary.workout ? styles.stepOn : null, pressed && styles.pressed]}
+              >
+                <Check color={summary.workout ? Colors.white : Colors.workout} size={14} strokeWidth={2.6} />
+              </Pressable>
+              <Pressable accessibilityLabel="Detalle del entreno" hitSlop={8} onPress={openWorkout} style={({ pressed }) => pressed && styles.pressed}>
+                <ChevronRight color={Colors.textMuted} size={18} />
+              </Pressable>
+            </View>
+          }
         />
         <LineRow
           icon={Utensils}
@@ -321,7 +425,7 @@ export const TodayScreen = () => {
           hint={summary.calories > 0 ? `de ${goals.calories}` : 'Sin registro'}
           progress={goals.calories ? summary.calories / goals.calories : 0}
           tint={Colors.nutrition}
-          onPress={() => navigation.navigate('Log', { screen: 'LogMealScreen' })}
+          onPress={openMeal}
           trailing={<ChevronRight color={Colors.textMuted} size={18} />}
           last
         />
@@ -428,6 +532,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
   stepper: { flexDirection: 'row', gap: 6 },
   step: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
+  stepOn: { backgroundColor: Colors.workout },
   taskInput: {
     minHeight: 44,
     borderRadius: Radius.md,
