@@ -21,7 +21,6 @@ import { getCurrentUserId } from '../services/authService';
 import { deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
 import { getMoodLog, upsertMoodLog } from '../services/moodService';
 import { getNutritionLogs } from '../services/nutritionService';
-import { syncWithClaude } from '../services/claudeSync';
 import { getPreferences, Preferences } from '../services/preferencesService';
 import { getSleepLogs } from '../services/sleepService';
 import { createTask, getTasks, toggleTaskCompleted } from '../services/taskService';
@@ -29,6 +28,7 @@ import { addWater, getWaterLog, upsertWaterLog } from '../services/waterService'
 import { getWorkouts } from '../services/workoutService';
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
+import { dayBrief } from '../utils/dayBrief';
 import { dayRhythm } from '../utils/dayRhythm';
 import { shortDay, weekdayHeading } from '../utils/labels';
 import { habitStreak } from '../utils/streak';
@@ -57,8 +57,9 @@ export const TodayScreen = () => {
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [summary, setSummary] = useState<Summary>({ calories: 0, sleep: 0, workout: false, waterMl: 0 });
   const [taskDraft, setTaskDraft] = useState('');
+  const [brief, setBrief] = useState('');
 
-  const load = useCallback(async (manual = false, sync = true) => {
+  const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
     try {
       const userId = await getCurrentUserId();
@@ -93,10 +94,23 @@ export const TodayScreen = () => {
         workout: Boolean(todayWorkout),
         waterMl: waterLog?.amount_ml ?? 0,
       });
-      if (sync) {
-        const result = await syncWithClaude();
-        if (result.changed) await load(false, false);
-      }
+      const doneHabitIds = new Set(
+        logs.filter((log) => log.completed && log.log_date.slice(0, 10) === todayKey).map((log) => log.habit_id),
+      );
+      setBrief(
+        dayBrief({
+          todayKey,
+          waterMl: waterLog?.amount_ml ?? 0,
+          waterGoalMl: preferences.waterMl,
+          sleepHours: todaySleep ? sleepHours(todaySleep.bed_time, todaySleep.wake_time) : 0,
+          sleepGoalHours: preferences.sleepHours,
+          moved: Boolean(todayWorkout),
+          calories: todayMeals.reduce((acc, meal) => acc + (meal.calories ?? 0), 0),
+          pendingHabits: habitRows.filter((habit) => !doneHabitIds.has(habit.id)).map((habit) => habit.name),
+          habitsTotal: habitRows.length,
+          tasks: allTasks,
+        }),
+      );
     } catch (error) {
       console.error(error);
       Alert.alert('No se ha podido cargar', 'Tira hacia abajo para reintentar.');
@@ -259,6 +273,7 @@ export const TodayScreen = () => {
         subtitle={`${rhythm.done} de ${rhythm.total} hechos`}
         onSettings={() => navigation.navigate('SettingsScreen')}
       />
+      {brief ? <Text style={styles.brief}>{brief}</Text> : null}
 
       <Card>
         <LineRow
@@ -438,4 +453,11 @@ const styles = StyleSheet.create({
   moodNumOn: { color: Colors.white },
   empty: { fontFamily: Typography.fontRegular, fontSize: Typography.md, color: Colors.textMuted, lineHeight: 22 },
   pressed: { opacity: 0.78 },
+  brief: {
+    fontFamily: Typography.fontRegular,
+    fontSize: Typography.md,
+    lineHeight: 22,
+    color: Colors.textSecondary,
+    marginTop: -Spacing.sm,
+  },
 });

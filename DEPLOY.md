@@ -1,94 +1,66 @@
 # Despliegue de Capalot
 
-La app (web, iOS, Android) nunca ve la clave de Anthropic. Hoy llama a la Edge Function
-`claude-sync` con la sesión de Supabase; la función verifica la sesión, aplica una cuota
-diaria y llama a la API con la clave guardada en los secrets de Supabase.
+Sin API key de Anthropic. Claude trabaja desde claude.ai (web o app del móvil) con tu
+plan, a través de un conector MCP. La app calcula sola el resumen de Hoy.
 
 ```
-App (Expo) ──JWT──▶ Supabase Edge Function claude-sync ──x-api-key──▶ api.anthropic.com
-     │                        │
-     └──── PostgREST + RLS ───┴── claude_usage (cuota)
+Capalot (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + RLS)
+                                                   ▲
+claude.ai ──MCP──▶ Edge Function capalot-mcp ──token──┘  (funciones mcp_* en Postgres)
 ```
 
-## 1. Supabase: auth y RLS
+## 1. Supabase (proyecto luoqjomxnmygaaaffber)
 
-1. **Authentication → Sign In / Providers → Allow anonymous sign-ins**: activar.
-   Cada dispositivo obtiene un usuario anónimo real (sesión persistente).
-2. **SQL Editor**: ejecutar `supabase/migrations/20261013120000_auth_rls.sql`.
-   - Quita las políticas abiertas y deja `user_id = auth.uid()` en todas las tablas.
-   - Crea `claim_legacy_user()`: la primera vez que la app entra con sesión, mueve las
-     filas del UUID local antiguo (`capalot_user_id`) a la cuenta nueva.
-   - Crea `claude_usage` y `claude_usage_bump()` para la cuota.
-   - Es idempotente.
-3. Cuando todos tus dispositivos hayan abierto la versión nueva:
-   `DROP FUNCTION public.claim_legacy_user(uuid);`
+1. **Authentication → Sign In / Providers → Allow anonymous sign-ins**: activado.
+2. **SQL Editor**, en orden:
+   - `capalot-setup.sql` (solo en un proyecto vacío: borra y recrea las tablas).
+   - `supabase/migrations/20261013120000_auth_rls.sql`: RLS por usuario.
+   - `supabase/migrations/20261013140000_mcp_connector.sql`: tokens del conector y funciones `mcp_*`.
+3. **Edge Functions → Deploy a new function → Via editor**: nombre `capalot-mcp`, pegar
+   `supabase/functions/capalot-mcp/index.ts`, desplegar y, en su pestaña Settings,
+   **desactivar "Verify JWT"** (Claude no manda un JWT de Supabase; la autorización es el
+   token de Capalot). Con la CLI: `npx supabase functions deploy capalot-mcp --no-verify-jwt`.
 
-Proyecto nuevo desde cero: `capalot-setup.sql` y después la migración.
+No hace falta ningún secret.
 
-## 2. Anthropic
+## 2. Conectar Claude
 
-1. console.anthropic.com → workspace propio (`capalot-prod`) con límite de gasto mensual.
-2. Crear una API key en ese workspace. No se pega en la app ni en el repo.
+1. En la app: **Ajustes → Conectar con Claude → Crear enlace** y copiarlo.
+2. En claude.ai: **Personalizar → Conectores → Añadir conector personalizado**.
+   URL = el enlace; autenticación **Sin inicio de sesión**.
+3. En un chat: "+" → Conectores → activar Capalot. Por ejemplo: "Mira mi día en Capalot y
+   apúntame las tareas de esta semana".
 
-## 3. Edge Function
+El enlace lleva el token dentro y funciona como una contraseña. "Crear enlace nuevo" invalida el
+anterior; "Desconectar Claude" lo revoca. Si tu cuenta tiene cabeceras de petición en el
+diálogo del conector, también vale la URL sin token
+(`.../functions/v1/capalot-mcp`) con la cabecera `Authorization: Bearer <token>`.
 
-Con la CLI (`npx supabase login`, `npx supabase link --project-ref <ref>`):
+Herramientas del conector: `get_today`, `list_tasks`, `add_tasks` (sin duplicar abiertas),
+`update_task` (título, descripción, prioridad, fecha, completada). No borra nada.
 
-```
-npx supabase secrets set ANTHROPIC_API_KEY=<clave>
-npx supabase functions deploy claude-sync
-```
-
-O desde el dashboard: **Edge Functions → Deploy a new function → Via editor**, nombre
-`claude-sync`, pegar `supabase/functions/claude-sync/index.ts`, y **desactivar
-"Verify JWT"** (la función verifica la sesión ella misma; ver `supabase/config.toml`).
-La clave se añade en **Edge Functions → Secrets**.
-
-Secrets:
-
-| Nombre | Obligatorio | Por defecto |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | sí | — |
-| `CLAUDE_MODEL` | no | `claude-sonnet-5-5` |
-| `CLAUDE_DAILY_LIMIT` | no | `10` llamadas por usuario y día (UTC) |
-| `ALLOWED_ORIGINS` | no | `*` (poner el dominio web, separado por comas) |
-
-`SUPABASE_URL` y `SUPABASE_ANON_KEY` los inyecta Supabase.
-
-## 4. Web
+## 3. App en el móvil (Android)
 
 ```
 npm ci
-npm run build:web        # genera dist/
+npx eas login
+npx eas build -p android --profile preview   # genera un .apk instalable
 ```
 
-Hosting estático (Vercel, Netlify, EAS Hosting…): comando `npm run build:web`, carpeta
-`dist`, variables `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-Después, poner ese dominio en `ALLOWED_ORIGINS`.
+`eas.json` lleva las dos variables públicas (`EXPO_PUBLIC_SUPABASE_URL` y
+`EXPO_PUBLIC_SUPABASE_ANON_KEY`); van dentro del bundle por diseño. El plan gratuito de
+Expo incluye builds. iOS necesita cuenta de Apple Developer.
 
-## 5. iOS / Android
+## 4. Web (opcional)
 
-EAS Build (`npx eas build`) con las mismas dos variables `EXPO_PUBLIC_*` en el entorno de
-EAS. Antes de las tiendas:
-- `ios.bundleIdentifier` y `android.package` en `app.json`.
-- Privacy labels / Data safety: datos de salud, compartidos con Anthropic para el resumen.
-- El envío a Claude va detrás de un interruptor en Ajustes (desactivado por defecto).
-- Si se añaden cuentas con email, borrar la cuenta desde la app.
+`npm run build:web` genera `dist/` para cualquier hosting estático (Vercel, Netlify…), con
+las mismas dos variables.
 
-## Contrato de sincronización
+## Importante
 
-- Entrada: `{ "snapshot": { date, goals, today, habits, tasks } }` (igual que antes).
-- Salida: `{ "brief", "addTasks": [{ title, priority, deadline }], "used", "limit" }`.
-- Errores: `{ "error", "retryAfter"? }` con 401 (sin sesión), 429 (cuota), 503 (Claude
-  saturado), 502.
-- Cliente: no llama si el snapshot no cambió, como mucho una vez cada 2 h dentro del día
-  (salvo "Sincronizar ahora") y respeta `retryAfter` tras un error.
-
-## Coste aproximado
-
-Unos 800 tokens de entrada y 250 de salida por llamada (techo 700 de salida).
-
-| Modelo | Por llamada | Por usuario y día (cuota 10) |
-|---|---|---|
-| Sonnet 5.5 ($2 / $10 por MTok) | ~0,004 $ | ≤ 0,10 $ (real: 0,01–0,02 $) |
-| Haiku 5.5 ($0,10 / $0,50 por MTok) | ~0,0002 $ | ≤ 0,005 $ |
+- Cada instalación entra con un usuario anónimo propio. Si desinstalas la app o borras sus
+  datos, ese usuario se pierde (y sus datos dejan de ser accesibles). Siguiente paso
+  recomendado: vincular un email a la cuenta.
+- La web y el móvil son usuarios distintos hasta que haya login con email.
+- `claim_legacy_user` mueve a la cuenta las filas del UUID local antiguo; cuando todos los
+  dispositivos estén actualizados: `DROP FUNCTION public.claim_legacy_user(uuid);`

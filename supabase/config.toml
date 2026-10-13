@@ -1,7 +1,6 @@
 project_id = "capalot"
 
-# La función verifica la sesión ella misma (llamando a /auth/v1/user), así que
-# no depende de que el gateway sepa validar el tipo de JWT del proyecto
-# y el preflight CORS (OPTIONS, sin Authorization) llega a la función.
-[functions.claude-sync]
+# Claude no envía un JWT de Supabase: la autorización es el token personal de
+# Capalot (en la URL o en Authorization), que la función valida en Postgres.
+[functions.capalot-mcp]
 verify_jwt = false

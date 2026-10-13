@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
-import { getClaudeState, setClaudeConsent, syncWithClaude } from '../../services/claudeSync';
+import { createConnectorUrl, getConnectorStatus, revokeConnector } from '../../services/claudeConnector';
 import { getPreferences, Preferences, savePreferences } from '../../services/preferencesService';
 
 const asNumber = (value: string, fallback: number) => {
@@ -20,28 +21,39 @@ export const SettingsScreen = () => {
   const [water, setWater] = useState('2000');
   const [calories, setCalories] = useState('2000');
   const [sleep, setSleep] = useState('7');
-  const [claudeConsent, setConsent] = useState(false);
-  const [claudeStatus, setClaudeStatus] = useState('Desactivado.');
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [connectorStatus, setConnectorStatus] = useState('Comprobando…');
+  const [connectorAccount, setConnectorAccount] = useState(false);
+  const [connectorActive, setConnectorActive] = useState(false);
+  const [connectorLink, setConnectorLink] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const refreshClaude = async () => {
-    const state = await getClaudeState();
-    setConsent(state.consent);
-    if (!state.consent) {
-      setClaudeStatus('Desactivado. No se envía nada.');
-      return;
+  const refreshConnector = async () => {
+    const status = await getConnectorStatus();
+    setConnectorAccount(status.account);
+    setConnectorActive(status.active);
+    if (!status.account) {
+      setConnectorStatus('Sin conexión con tu cuenta. Vuelve a intentarlo con internet.');
+    } else if (!status.active) {
+      setConnectorStatus('Sin conectar.');
+    } else {
+      const used = status.lastUsedAt ? new Date(status.lastUsedAt).toLocaleString('es') : 'todavía no';
+      setConnectorStatus(`Enlace activo · último uso de Claude: ${used}`);
     }
-    if (!state.account) {
-      setClaudeStatus('Sin conexión con tu cuenta. Se sincroniza cuando vuelva.');
-      return;
+  };
+
+  const onCreateLink = async () => {
+    setConnecting(true);
+    setCopied(false);
+    try {
+      setConnectorLink(await createConnectorUrl());
+      await refreshConnector();
+    } catch (error) {
+      Alert.alert(error instanceof Error ? error.message : 'No se ha podido crear el enlace.');
+    } finally {
+      setConnecting(false);
     }
-    if (state.error) {
-      setClaudeStatus(state.error);
-      return;
-    }
-    const when = state.lastSyncAt ? new Date(state.lastSyncAt).toLocaleString('es') : 'aún no';
-    setClaudeStatus(state.brief ? `${state.brief} · ${when}` : `Sincronizado · ${when}`);
   };
 
   useEffect(() => {
@@ -51,7 +63,7 @@ export const SettingsScreen = () => {
       setCalories(String(preferences.calories));
       setSleep(String(preferences.sleepHours));
     });
-    refreshClaude();
+    refreshConnector().catch(() => setConnectorStatus('No se ha podido comprobar.'));
   }, []);
 
   const onSave = async () => {
@@ -81,36 +93,69 @@ export const SettingsScreen = () => {
         <Input label="Agua (ml)" value={water} onChangeText={setWater} keyboardType="number-pad" />
         <Input label="Calorías" value={calories} onChangeText={setCalories} keyboardType="number-pad" />
         <Input label="Sueño (horas)" value={sleep} onChangeText={setSleep} keyboardType="decimal-pad" />
-        <View style={styles.row}>
-          <Text style={styles.label}>Resumen y tareas con Claude</Text>
-          <Switch
-            value={claudeConsent}
-            onValueChange={async (value) => {
-              setConsent(value);
-              await setClaudeConsent(value);
-              await refreshClaude();
-            }}
-          />
-        </View>
+        <Text style={styles.section}>Conectar con Claude</Text>
         <Text style={styles.help}>
-          Si lo activas, al abrir Hoy se envían a Claude (Anthropic) tus objetivos, el agua, el ánimo, las calorías, el sueño, si entrenaste, los hábitos de hoy y las tareas abiertas. Claude devuelve una frase y, si falta algo claro, añade tareas. No borra ni completa nada.
+          Añade Capalot como conector en claude.ai (sirve también en la app de Claude del móvil). Claude podrá ver tu día y apuntar o cambiar tareas cuando se lo pidas. Usa tu plan de Claude; no hace falta API key.
         </Text>
-        <Text style={styles.status}>{claudeStatus}</Text>
+        <Text style={styles.status}>{connectorStatus}</Text>
+        {connectorLink ? (
+          <View style={styles.linkBox}>
+            <Text selectable style={styles.link}>
+              {connectorLink}
+            </Text>
+            <Button
+              title={copied ? 'Copiado' : 'Copiar enlace'}
+              variant="secondary"
+              onPress={async () => {
+                await Clipboard.setStringAsync(connectorLink);
+                setCopied(true);
+              }}
+            />
+            <Text style={styles.help}>
+              En claude.ai: Personalizar → Conectores → Añadir conector personalizado. Pega el enlace como URL y elige «Sin inicio de sesión». El enlace funciona como una contraseña: no lo compartas. Solo se muestra ahora.
+            </Text>
+          </View>
+        ) : null}
         <Button
-          title="Sincronizar ahora"
+          title={connectorActive ? 'Crear enlace nuevo' : 'Crear enlace'}
           variant="secondary"
-          loading={syncing}
-          disabled={!claudeConsent}
-          onPress={async () => {
-            setSyncing(true);
-            try {
-              await syncWithClaude({ manual: true });
-              await refreshClaude();
-            } finally {
-              setSyncing(false);
+          loading={connecting}
+          disabled={!connectorAccount}
+          onPress={() => {
+            if (!connectorActive) {
+              void onCreateLink();
+              return;
             }
+            Alert.alert('Crear enlace nuevo', 'El enlace anterior dejará de funcionar en Claude.', [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Crear', onPress: () => void onCreateLink() },
+            ]);
           }}
         />
+        {connectorActive ? (
+          <Button
+            title="Desconectar Claude"
+            variant="secondary"
+            onPress={() =>
+              Alert.alert('Desconectar Claude', 'Claude dejará de ver tus datos. Puedes volver a conectarlo cuando quieras.', [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Desconectar',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await revokeConnector();
+                      setConnectorLink('');
+                      await refreshConnector();
+                    } catch (error) {
+                      Alert.alert(error instanceof Error ? error.message : 'No se ha podido desconectar.');
+                    }
+                  },
+                },
+              ])
+            }
+          />
+        ) : null}
         <Button title="Guardar" onPress={onSave} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -121,7 +166,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   help: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textSecondary },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
-  label: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
+  section: { fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary, marginTop: Spacing.md },
+  linkBox: { gap: Spacing.sm, padding: Spacing.md, borderRadius: 12, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  link: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textPrimary },
   status: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textMuted },
 });
