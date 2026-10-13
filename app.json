@@ -13,7 +13,8 @@
       "backgroundColor": "#EEF1F4"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pceba.capalot"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +22,8 @@
         "backgroundColor": "#EEF1F4"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.pceba.capalot"
     },
     "web": {
       "favicon": "./assets/favicon.png"
