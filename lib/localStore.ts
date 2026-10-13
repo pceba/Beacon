@@ -78,6 +78,20 @@ const shape = (rows: Row[], query: LocalQuery) => {
   return { data: rows, error: null };
 };
 
+// Para subir a Supabase lo que se guardó en local (services/localSync.ts).
+export const readLocalDb = () => enqueue(readDb);
+
+export const removeLocalRows = (table: string, ids: unknown[]) =>
+  enqueue(async () => {
+    if (ids.length === 0) return;
+    const drop = new Set(ids);
+    const db = await readDb();
+    const rest = (db[table] ?? []).filter((row) => !drop.has(row.id));
+    if (rest.length === 0) delete db[table];
+    else db[table] = rest;
+    await writeDb(db);
+  });
+
 export const runLocalQuery = (table: string, query: LocalQuery) =>
   enqueue(async () => {
     const db = await readDb();

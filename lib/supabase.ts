@@ -80,6 +80,10 @@ const wrap = (table: string, builder: object, query: LocalQuery): object =>
     },
   });
 
+// Cliente sin el fallback local: para auth, Edge Functions y la subida de datos
+// locales, donde un error tiene que ser un error y no acabar escrito en local.
+export const rawSupabase = client;
+
 const originalFrom = client.from.bind(client);
 
 export const supabase: SupabaseClient = new Proxy(client, {

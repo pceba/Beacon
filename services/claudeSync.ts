@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format, isToday } from 'date-fns';
-import { Platform } from 'react-native';
-import { getCurrentUserId } from './authService';
+import { rawSupabase } from '../lib/supabase';
+import { getCurrentUserId, hasAccountSession } from './authService';
 import { getHabitLogs, getHabits } from './habitService';
 import { getMoodLog } from './moodService';
 import { getNutritionLogs } from './nutritionService';
@@ -12,16 +12,27 @@ import { getWaterLog } from './waterService';
 import { getWorkouts } from './workoutService';
 import { Task } from '../types/database';
 
-const KEY_STORAGE = 'capalot_claude_key';
+// La llamada a la API de Anthropic vive en la Edge Function claude-sync
+// (supabase/functions/claude-sync). Aquí no hay clave: solo la sesión de Supabase.
+const FUNCTION_NAME = 'claude-sync';
 const STATE_STORAGE = 'capalot_claude_state';
-const MODEL = 'claude-sonnet-4-5';
-const PROXY_URL = 'http://127.0.0.1:8787/messages';
+const CONSENT_STORAGE = 'capalot_claude_consent';
+// Clave de la versión anterior (se pegaba en Ajustes). Se borra del dispositivo.
+const LEGACY_KEY_STORAGE = 'capalot_claude_key';
+
+// Sin "Sincronizar ahora", como mucho una llamada cada 2 h dentro del mismo día.
+const COOLDOWN_MS = 2 * 60 * 60 * 1000;
+// Tras un error sin retryAfter del servidor.
+const ERROR_BACKOFF_MS = 15 * 60 * 1000;
 
 export type ClaudeState = {
   lastSyncAt: string | null;
   lastHash: string;
   brief: string;
   error: string | null;
+  retryAt: string | null;
+  consent: boolean;
+  account: boolean;
   configured: boolean;
 };
 
@@ -30,12 +41,14 @@ type ClaudeReply = {
   addTasks: Array<{ title: string; priority?: Task['priority']; deadline?: string | null }>;
 };
 
-const emptyState = (configured: boolean): ClaudeState => ({
+type StoredState = Pick<ClaudeState, 'lastSyncAt' | 'lastHash' | 'brief' | 'error' | 'retryAt'>;
+
+const emptyStored = (): StoredState => ({
   lastSyncAt: null,
   lastHash: '',
   brief: '',
   error: null,
-  configured,
+  retryAt: null,
 });
 
 const hashString = (value: string) => {
@@ -44,30 +57,45 @@ const hashString = (value: string) => {
   return (hash >>> 0).toString(16);
 };
 
-export const getClaudeKey = async () => (await AsyncStorage.getItem(KEY_STORAGE))?.trim() ?? '';
+let legacyKeyRemoved = false;
+const removeLegacyKey = async () => {
+  if (legacyKeyRemoved) return;
+  legacyKeyRemoved = true;
+  await AsyncStorage.removeItem(LEGACY_KEY_STORAGE).catch(() => undefined);
+};
 
-export const saveClaudeKey = async (key: string) => {
-  const trimmed = key.trim();
-  if (!trimmed) {
-    await AsyncStorage.removeItem(KEY_STORAGE);
-    return;
+export const getClaudeConsent = async () => (await AsyncStorage.getItem(CONSENT_STORAGE)) === 'yes';
+
+export const setClaudeConsent = async (value: boolean) => {
+  if (value) await AsyncStorage.setItem(CONSENT_STORAGE, 'yes');
+  else await AsyncStorage.removeItem(CONSENT_STORAGE);
+};
+
+const readStored = async (): Promise<StoredState> => {
+  const raw = await AsyncStorage.getItem(STATE_STORAGE);
+  if (!raw) return emptyStored();
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredState>;
+    return {
+      lastSyncAt: parsed.lastSyncAt ?? null,
+      lastHash: parsed.lastHash ?? '',
+      brief: parsed.brief ?? '',
+      error: parsed.error ?? null,
+      retryAt: parsed.retryAt ?? null,
+    };
+  } catch {
+    return emptyStored();
   }
-  await AsyncStorage.setItem(KEY_STORAGE, trimmed);
+};
+
+const saveStored = async (state: StoredState) => {
+  await AsyncStorage.setItem(STATE_STORAGE, JSON.stringify(state));
 };
 
 export const getClaudeState = async (): Promise<ClaudeState> => {
-  const configured = Boolean(await getClaudeKey());
-  const raw = await AsyncStorage.getItem(STATE_STORAGE);
-  if (!raw) return emptyState(configured);
-  try {
-    return { ...emptyState(configured), ...JSON.parse(raw), configured };
-  } catch {
-    return emptyState(configured);
-  }
-};
-
-const saveState = async (state: ClaudeState) => {
-  await AsyncStorage.setItem(STATE_STORAGE, JSON.stringify(state));
+  await removeLegacyKey();
+  const [stored, consent, account] = await Promise.all([readStored(), getClaudeConsent(), hasAccountSession()]);
+  return { ...stored, consent, account, configured: consent && account };
 };
 
 const buildSnapshot = async () => {
@@ -120,11 +148,8 @@ const buildSnapshot = async () => {
   };
 };
 
-const extractJson = (text: string): ClaudeReply => {
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if (start < 0 || end <= start) return { brief: '', addTasks: [] };
-  const parsed = JSON.parse(text.slice(start, end + 1)) as Partial<ClaudeReply>;
+const sanitizeReply = (raw: unknown): ClaudeReply => {
+  const parsed = (raw && typeof raw === 'object' ? raw : {}) as Partial<ClaudeReply>;
   const addTasks = Array.isArray(parsed.addTasks) ? parsed.addTasks : [];
   return {
     brief: typeof parsed.brief === 'string' ? parsed.brief.trim().slice(0, 180) : '',
@@ -139,39 +164,29 @@ const extractJson = (text: string): ClaudeReply => {
   };
 };
 
-const postMessages = async (apiKey: string, snapshot: unknown) => {
-  const body = JSON.stringify({
-    model: MODEL,
-    max_tokens: 700,
-    system: [
-      'Mantienes al día las tareas de esta persona a partir del JSON que recibes.',
-      'Responde solo con JSON: {"brief":"una frase en español, factual","addTasks":[{"title":"","priority":"low|medium|high","deadline":"yyyy-mm-dd"|null}]}.',
-      'addTasks solo si falta un compromiso claro que no esté ya en tasks. Si no falta nada, addTasks va vacío.',
-      'No inventes hábitos, citas médicas ni objetivos. No pidas borrar ni completar nada.',
-    ].join(' '),
-    messages: [{ role: 'user', content: JSON.stringify(snapshot) }],
-  });
+class SyncError extends Error {
+  retryAfterMs: number;
+  constructor(message: string, retryAfterMs = ERROR_BACKOFF_MS) {
+    super(message);
+    this.retryAfterMs = retryAfterMs;
+  }
+}
 
-  const headers = {
-    'content-type': 'application/json',
-    'x-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true',
-  };
+const callClaude = async (snapshot: unknown): Promise<ClaudeReply> => {
+  const { data, error } = await rawSupabase.functions.invoke(FUNCTION_NAME, { body: { snapshot } });
+  if (!error) return sanitizeReply(data);
 
-  const direct = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body }).catch(() => null);
-  const response =
-    direct && direct.ok
-      ? direct
-      : Platform.OS === 'web'
-        ? await fetch(PROXY_URL, { method: 'POST', headers, body })
-        : direct;
-
-  if (!response) throw new Error('Sin conexión con Claude');
-  const payload = (await response.json()) as { content?: Array<{ text?: string }>; error?: { message?: string } };
-  if (!response.ok) throw new Error(payload.error?.message || 'Claude no ha respondido');
-  const text = payload.content?.map((block) => block.text || '').join('\n') ?? '';
-  return extractJson(text);
+  // FunctionsHttpError trae la Response del servidor en context.
+  const context = (error as { context?: unknown }).context;
+  if (context && typeof (context as Response).json === 'function') {
+    const body = (await (context as Response).json().catch(() => ({}))) as { error?: string; retryAfter?: number };
+    const seconds = Number(body.retryAfter);
+    throw new SyncError(
+      body.error || 'Claude no ha respondido',
+      Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : ERROR_BACKOFF_MS,
+    );
+  }
+  throw new SyncError('Sin conexión con Claude');
 };
 
 const applyTasks = async (reply: ClaudeReply) => {
@@ -198,11 +213,18 @@ const applyTasks = async (reply: ClaudeReply) => {
 
 let syncing = false;
 
-export const syncWithClaude = async (): Promise<ClaudeState & { changed: boolean }> => {
-  const apiKey = await getClaudeKey();
-  if (!apiKey) return { ...emptyState(false), changed: false };
-  if (syncing) {
-    const current = await getClaudeState();
+export const syncWithClaude = async (
+  options: { manual?: boolean } = {},
+): Promise<ClaudeState & { changed: boolean }> => {
+  const current = await getClaudeState();
+  if (!current.consent) return { ...current, changed: false };
+  if (!current.account) {
+    return { ...current, error: 'Sin cuenta en este momento: se sincroniza cuando haya conexión.', changed: false };
+  }
+  if (syncing) return { ...current, changed: false };
+
+  const now = Date.now();
+  if (!options.manual && current.retryAt && new Date(current.retryAt).getTime() > now) {
     return { ...current, changed: false };
   }
 
@@ -210,29 +232,34 @@ export const syncWithClaude = async (): Promise<ClaudeState & { changed: boolean
   try {
     const snapshot = await buildSnapshot();
     const digest = hashString(JSON.stringify(snapshot));
-    const previous = await getClaudeState();
-    if (previous.lastHash === digest && !previous.error) return { ...previous, configured: true, changed: false };
+    if (current.lastHash === digest && !current.error) return { ...current, changed: false };
 
-    const reply = await postMessages(apiKey, snapshot);
+    const lastSync = current.lastSyncAt ? new Date(current.lastSyncAt) : null;
+    const coolingDown =
+      lastSync !== null && isToday(lastSync) && now - lastSync.getTime() < COOLDOWN_MS && !current.error;
+    if (!options.manual && coolingDown) return { ...current, changed: false };
+
+    const reply = await callClaude(snapshot);
     const changed = await applyTasks(reply);
     const nextSnapshot = changed ? await buildSnapshot() : snapshot;
-    const next: ClaudeState = {
+    const next: StoredState = {
       lastSyncAt: new Date().toISOString(),
       lastHash: hashString(JSON.stringify(nextSnapshot)),
       brief: reply.brief,
       error: null,
-      configured: true,
+      retryAt: null,
     };
-    await saveState(next);
-    return { ...next, changed };
+    await saveStored(next);
+    return { ...current, ...next, changed };
   } catch (error) {
-    const next: ClaudeState = {
-      ...(await getClaudeState()),
-      configured: true,
+    const retryAfterMs = error instanceof SyncError ? error.retryAfterMs : ERROR_BACKOFF_MS;
+    const next: StoredState = {
+      ...(await readStored()),
       error: error instanceof Error ? error.message : 'No se ha podido sincronizar',
+      retryAt: new Date(Date.now() + retryAfterMs).toISOString(),
     };
-    await saveState(next);
-    return { ...next, changed: false };
+    await saveStored(next);
+    return { ...current, ...next, changed: false };
   } finally {
     syncing = false;
   }

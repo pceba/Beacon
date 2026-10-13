@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
-import { getClaudeKey, getClaudeState, saveClaudeKey, syncWithClaude } from '../../services/claudeSync';
+import { getClaudeState, setClaudeConsent, syncWithClaude } from '../../services/claudeSync';
 import { getPreferences, Preferences, savePreferences } from '../../services/preferencesService';
 
 const asNumber = (value: string, fallback: number) => {
@@ -20,15 +20,20 @@ export const SettingsScreen = () => {
   const [water, setWater] = useState('2000');
   const [calories, setCalories] = useState('2000');
   const [sleep, setSleep] = useState('7');
-  const [claudeKey, setClaudeKey] = useState('');
-  const [claudeStatus, setClaudeStatus] = useState('Sin clave, no se sincroniza.');
+  const [claudeConsent, setConsent] = useState(false);
+  const [claudeStatus, setClaudeStatus] = useState('Desactivado.');
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const refreshClaude = async () => {
     const state = await getClaudeState();
-    if (!state.configured) {
-      setClaudeStatus('Sin clave, no se sincroniza.');
+    setConsent(state.consent);
+    if (!state.consent) {
+      setClaudeStatus('Desactivado. No se envía nada.');
+      return;
+    }
+    if (!state.account) {
+      setClaudeStatus('Sin conexión con tu cuenta. Se sincroniza cuando vuelva.');
       return;
     }
     if (state.error) {
@@ -46,7 +51,6 @@ export const SettingsScreen = () => {
       setCalories(String(preferences.calories));
       setSleep(String(preferences.sleepHours));
     });
-    getClaudeKey().then(setClaudeKey);
     refreshClaude();
   }, []);
 
@@ -60,7 +64,6 @@ export const SettingsScreen = () => {
     setSaving(true);
     try {
       await savePreferences(preferences);
-      await saveClaudeKey(claudeKey);
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -78,27 +81,30 @@ export const SettingsScreen = () => {
         <Input label="Agua (ml)" value={water} onChangeText={setWater} keyboardType="number-pad" />
         <Input label="Calorías" value={calories} onChangeText={setCalories} keyboardType="number-pad" />
         <Input label="Sueño (horas)" value={sleep} onChangeText={setSleep} keyboardType="decimal-pad" />
+        <View style={styles.row}>
+          <Text style={styles.label}>Resumen y tareas con Claude</Text>
+          <Switch
+            value={claudeConsent}
+            onValueChange={async (value) => {
+              setConsent(value);
+              await setClaudeConsent(value);
+              await refreshClaude();
+            }}
+          />
+        </View>
         <Text style={styles.help}>
-          La suscripción Pro no incluye la API. La clave se crea en console.anthropic.com y se queda en este dispositivo. Con ella, Hoy envía tareas, hábitos y el día; Claude solo añade lo que falte.
+          Si lo activas, al abrir Hoy se envían a Claude (Anthropic) tus objetivos, el agua, el ánimo, las calorías, el sueño, si entrenaste, los hábitos de hoy y las tareas abiertas. Claude devuelve una frase y, si falta algo claro, añade tareas. No borra ni completa nada.
         </Text>
-        <Input
-          label="Clave de Claude"
-          value={claudeKey}
-          onChangeText={setClaudeKey}
-          placeholder="sk-ant-..."
-          secureTextEntry
-          autoCapitalize="none"
-        />
         <Text style={styles.status}>{claudeStatus}</Text>
         <Button
           title="Sincronizar ahora"
           variant="secondary"
           loading={syncing}
+          disabled={!claudeConsent}
           onPress={async () => {
             setSyncing(true);
             try {
-              await saveClaudeKey(claudeKey);
-              await syncWithClaude();
+              await syncWithClaude({ manual: true });
               await refreshClaude();
             } finally {
               setSyncing(false);
@@ -115,5 +121,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   help: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textSecondary },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
+  label: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
   status: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textMuted },
 });

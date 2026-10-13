@@ -1,6 +1,7 @@
 -- ============================================================
 -- CAPALOT APP — CLEAN SLATE SETUP
--- Run this in your Supabase SQL Editor.
+-- Run this in your Supabase SQL Editor, then run
+-- supabase/migrations/20261013120000_auth_rls.sql.
 -- This script will DROP old tables and RECREATE them correctly.
 -- WARNING: This will delete any existing data in these tables.
 -- ============================================================
@@ -216,6 +217,9 @@ CREATE TABLE goals (
 );
 
 -- 3. Row Level Security
+-- Aquí solo se activa RLS (sin políticas = nadie accede).
+-- Las políticas por usuario están en supabase/migrations/20261013120000_auth_rls.sql:
+-- ejecútala justo después de este script.
 
 DO $$
 DECLARE
@@ -232,6 +236,5 @@ BEGIN
   FOREACH tbl IN ARRAY tables LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
     EXECUTE format('DROP POLICY IF EXISTS "capalot_all" ON %I', tbl);
-    EXECUTE format('CREATE POLICY "capalot_all" ON %I FOR ALL USING (true) WITH CHECK (true)', tbl);
   END LOOP;
 END $$;

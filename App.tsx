@@ -8,6 +8,8 @@ import { useFonts, Lora_400Regular, Lora_700Bold } from '@expo-google-fonts/lora
 import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { Colors } from './constants/colors';
 import { RootNavigator } from './navigation/RootNavigator';
+// Sube a Supabase lo guardado en local en cuanto hay sesión.
+import './services/localSync';
 
 const styles = StyleSheet.create({
   stage: { flex: 1, backgroundColor: '#E4E8EE', alignItems: 'center' },
