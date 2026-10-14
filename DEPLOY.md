@@ -16,6 +16,8 @@ claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (fun
    - `lifepp-setup.sql` (solo en un proyecto vacío: borra y recrea las tablas).
    - `supabase/migrations/20261013120000_auth_rls.sql`: RLS por usuario.
    - `supabase/migrations/20261013140000_mcp_connector.sql`: tokens del conector y funciones `mcp_*`.
+   - `supabase/migrations/20261014120000_mcp_logs.sql`: agua, hábitos, comidas, entrenos, ánimo y la semana.
+     Si las dos anteriores ya están aplicadas, ejecuta solo esta.
 3. **Edge Functions → Deploy a new function → Via editor**: nombre `lifepp-mcp`, pegar
    `supabase/functions/lifepp-mcp/index.ts`, desplegar y, en su pestaña Settings,
    **desactivar "Verify JWT"** (Claude no manda un JWT de Supabase; la autorización es el
@@ -36,8 +38,20 @@ anterior; "Desconectar Claude" lo revoca. Si tu cuenta tiene cabeceras de petici
 diálogo del conector, también vale la URL sin token
 (`.../functions/v1/lifepp-mcp`) con la cabecera `Authorization: Bearer <token>`.
 
-Herramientas del conector: `get_today`, `list_tasks`, `add_tasks` (sin duplicar abiertas),
-`update_task` (título, descripción, prioridad, fecha, completada). No borra nada.
+Herramientas del conector. No borra nada.
+
+| Herramienta | Qué hace |
+| --- | --- |
+| `get_today` | Resumen de un día. Por defecto, hoy. |
+| `get_week` | Últimos 7 días: agua, calorías, sueño, entrenos, hábitos y ánimo. Tareas con fecha en esa semana. |
+| `list_tasks` | Tareas, por defecto solo las abiertas. |
+| `add_tasks` | Crea tareas. Salta las abiertas con el mismo título. |
+| `update_task` | Cambia título, descripción, prioridad, fecha o completada. |
+| `log_water` | Suma ml a un día (1–5000 por llamada). |
+| `log_habit` | Marca o desmarca un hábito que ya existe. No lo crea. |
+| `log_meal` | Añade una comida. |
+| `log_workout` | Añade un entreno ya hecho. |
+| `log_mood` | Guarda ánimo (1–5) y, si vienen, energía y notas. |
 
 ## 3. App en el móvil (Android)
 

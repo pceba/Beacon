@@ -22,7 +22,7 @@ Dispositivos: Android (Xiaomi/HyperOS) y web. Prioriza rendimiento y una interfa
 - Hoy (`screens/TodayScreen.tsx`) muestra un resumen calculado en el dispositivo (`utils/dayBrief.ts`). La app no llama a ninguna API de IA y no debe llamarla.
 - Claude se conecta desde claude.ai por MCP: Edge Function `supabase/functions/lifepp-mcp/index.ts` (Streamable HTTP, JSON-RPC, `verify_jwt` desactivado).
 - Autenticación con token personal `lpp_` + 64 hex, en la URL o en `Authorization: Bearer`. La función llama por RPC (clave pública) a funciones SQL `mcp_*`. Esas funciones resuelven el usuario con `public._mcp_auth(p_token)` (devuelve `user_id` y `tz`) y solo tocan filas de ese usuario.
-- Herramientas: `get_today`, `list_tasks`, `add_tasks`, `update_task`. Ajustes → "Conectar con Claude" crea o revoca el token (`services/claudeConnector.ts`).
+- Herramientas: `get_today`, `get_week`, `list_tasks`, `add_tasks`, `update_task`, `log_water`, `log_habit`, `log_meal`, `log_workout`, `log_mood`. Ajustes → "Conectar con Claude" crea o revoca el token (`services/claudeConnector.ts`).
 - El conector no borra nada.
 
 # SQL

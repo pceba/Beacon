@@ -16,10 +16,12 @@ const MAX_BODY_BYTES = 64_000;
 
 const INSTRUCTIONS = [
   'Lifepp es la app de salud, hábitos y tareas de esta persona.',
-  'Usa get_today para ver el día (agua, ánimo, comidas, sueño, entrenos, hábitos, tareas abiertas y eventos).',
+  'Usa get_today para ver el día y get_week para los últimos 7 días.',
+  'Para registrar lo que dice que ha hecho: log_water, log_habit, log_meal, log_workout y log_mood.',
+  'log_habit solo marca un hábito que ya existe; si no está, no lo crees.',
   'Usa add_tasks para apuntar tareas nuevas; no dupliques las que ya están abiertas.',
   'Las fechas van en formato yyyy-mm-dd y en la zona horaria del usuario.',
-  'No inventes datos de salud.',
+  'No inventes datos de salud y no borres nada.',
 ].join(' ');
 
 type Json = Record<string, unknown>;
@@ -93,6 +95,105 @@ const TOOLS = [
       additionalProperties: false,
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'log_water',
+    title: 'Anotar agua',
+    description: 'Suma mililitros de agua a un día. Cada llamada admite de 1 a 5000 ml. Si ya había agua, se acumula.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ml: { type: 'integer', minimum: 1, maximum: 5000, description: 'Mililitros a sumar' },
+        date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' },
+      },
+      required: ['ml'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'log_habit',
+    title: 'Marcar hábito',
+    description:
+      'Marca o desmarca un hábito que ya existe. Indica name o id. Si no existe, falla y no lo crea. done por defecto es true.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nombre del hábito, si no pasas id' },
+        id: { type: 'string', description: 'id del hábito' },
+        done: { type: 'boolean', description: 'true hecho, false pendiente. Por defecto true' },
+        date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'log_meal',
+    title: 'Anotar comida',
+    description:
+      'Añade una comida. meal_type: breakfast, lunch, dinner, snack u other. at es yyyy-mm-dd o yyyy-mm-dd HH:mm en la zona del usuario; si falta, ahora.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nombre de la comida' },
+        calories: { type: 'integer', minimum: 0, maximum: 10000 },
+        protein_g: { type: 'number', minimum: 0, maximum: 9999 },
+        carbs_g: { type: 'number', minimum: 0, maximum: 9999 },
+        fat_g: { type: 'number', minimum: 0, maximum: 9999 },
+        meal_type: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack', 'other'] },
+        at: { type: 'string', description: 'yyyy-mm-dd o yyyy-mm-dd HH:mm; si falta, ahora' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'log_workout',
+    title: 'Anotar entreno',
+    description: 'Añade un entreno ya hecho. at es yyyy-mm-dd o yyyy-mm-dd HH:mm; si falta, ahora.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nombre de la sesión' },
+        duration_minutes: { type: 'integer', minimum: 1, maximum: 1440 },
+        notes: { type: 'string' },
+        at: { type: 'string', description: 'yyyy-mm-dd o yyyy-mm-dd HH:mm; si falta, ahora' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'log_mood',
+    title: 'Anotar ánimo',
+    description: 'Guarda el ánimo del día (1-5). Si ya había uno, lo sustituye. La energía y las notas solo cambian si las envías.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        mood: { type: 'integer', minimum: 1, maximum: 5, description: 'Ánimo de 1 a 5' },
+        energy: { type: 'integer', minimum: 1, maximum: 5, description: 'Energía de 1 a 5, opcional' },
+        notes: { type: 'string' },
+        date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' },
+      },
+      required: ['mood'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'get_week',
+    title: 'Ver la semana',
+    description:
+      'Últimos 7 días, acabando en end_date o en hoy. Por día: agua, calorías, horas de sueño, entrenos, hábitos hechos y total, y ánimo. También las tareas abiertas y completadas cuya fecha límite cae en esa semana.',
+    inputSchema: {
+      type: 'object',
+      properties: { end_date: { type: 'string', description: 'Último día yyyy-mm-dd; si falta, hoy' } },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   },
 ];
 
@@ -181,6 +282,69 @@ const runTool = async (token: string, name: string, args: Json) => {
       if (Object.keys(changes).length === 0) throw new RpcError('No hay cambios', 400);
       return await callRpc('mcp_update_task', { p_token: token, p_task_id: id, p_changes: changes });
     }
+    case 'log_water': {
+      const ml = args.ml;
+      if (typeof ml !== 'number' || !Number.isInteger(ml) || ml < 1 || ml > 5000) {
+        throw new RpcError('ml debe ser un entero entre 1 y 5000', 400);
+      }
+      return await callRpc('mcp_log_water', { p_token: token, p_ml: ml, p_date: str(args.date) ?? null });
+    }
+    case 'log_habit': {
+      const id = str(args.id);
+      const name = str(args.name)?.trim();
+      if (id && !/^[0-9a-f-]{36}$/i.test(id)) throw new RpcError('id de hábito no válido', 400);
+      if (!id && !name) throw new RpcError('indica el nombre o el id del hábito', 400);
+      return await callRpc('mcp_log_habit', {
+        p_token: token,
+        p_habit_id: id ?? null,
+        p_name: name ?? null,
+        p_done: args.done !== false,
+        p_date: str(args.date) ?? null,
+      });
+    }
+    case 'log_meal': {
+      const name = str(args.name)?.trim();
+      if (!name) throw new RpcError('la comida necesita un nombre', 400);
+      return await callRpc('mcp_log_meal', {
+        p_token: token,
+        p_name: name,
+        p_calories: args.calories ?? null,
+        p_protein_g: args.protein_g ?? null,
+        p_carbs_g: args.carbs_g ?? null,
+        p_fat_g: args.fat_g ?? null,
+        p_meal_type: str(args.meal_type) ?? null,
+        p_at: str(args.at) ?? null,
+      });
+    }
+    case 'log_workout': {
+      const name = str(args.name)?.trim();
+      if (!name) throw new RpcError('el entreno necesita un nombre', 400);
+      return await callRpc('mcp_log_workout', {
+        p_token: token,
+        p_name: name,
+        p_duration_minutes: args.duration_minutes ?? null,
+        p_notes: str(args.notes) ?? null,
+        p_at: str(args.at) ?? null,
+      });
+    }
+    case 'log_mood': {
+      const mood = args.mood;
+      if (typeof mood !== 'number' || !Number.isInteger(mood) || mood < 1 || mood > 5) {
+        throw new RpcError('ánimo debe ser un entero de 1 a 5', 400);
+      }
+      if (args.energy != null && (typeof args.energy !== 'number' || !Number.isInteger(args.energy) || args.energy < 1 || args.energy > 5)) {
+        throw new RpcError('energía debe ser un entero de 1 a 5', 400);
+      }
+      return await callRpc('mcp_log_mood', {
+        p_token: token,
+        p_mood: mood,
+        p_energy: args.energy ?? null,
+        p_notes: str(args.notes) ?? null,
+        p_date: str(args.date) ?? null,
+      });
+    }
+    case 'get_week':
+      return await callRpc('mcp_get_week', { p_token: token, p_end_date: str(args.end_date) ?? null });
     default:
       throw new RpcError(`Herramienta desconocida: ${name}`, 404);
   }
