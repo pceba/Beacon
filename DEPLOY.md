@@ -65,7 +65,25 @@ npx eas build -p android --profile preview   # genera un .apk instalable
 `EXPO_PUBLIC_SUPABASE_ANON_KEY`); van dentro del bundle por diseño. El plan gratuito de
 Expo incluye builds. iOS necesita cuenta de Apple Developer.
 
-## 4. Web (opcional)
+## 4. Actualizar la app
+
+El primer APK con `expo-updates` hay que instalarlo encima del anterior, sin desinstalar. Mismo paquete y misma firma: Android lo trata como actualización y conserva la cuenta anónima. Si desinstalas, esa cuenta se pierde.
+
+Build nuevo, una vez (y cada vez que haga falta otro APK):
+
+```
+npx eas-cli@latest build -p android --profile preview
+```
+
+Cambios solo de JavaScript o TypeScript, sin dependencias nativas nuevas:
+
+```
+npx eas-cli@latest update --channel preview --message "..."
+```
+
+Hace falta un APK nuevo si añades o quitas un módulo nativo, cambias `app.json` (plugins, permisos, icono, `runtimeVersion`) o subes `expo.version`. Con la política `appVersion`, la versión del runtime es `1.0.0`: un update solo llega a builds de esa misma versión. Subir `version` obliga a otro build. El canal `preview` es el del APK; `production` es el del perfil de tienda.
+
+## 5. Web (opcional)
 
 `npm run build:web` genera `dist/` para cualquier hosting estático (Vercel, Netlify…), con
 las mismas dos variables.
