@@ -1,28 +1,36 @@
-# Project Context
-You are a Senior React Native Developer building Lifepp, a personal health, habits and tasks app.
-Target Device: Android (Xiaomi/HyperOS). Prioritize performance and clean UI.
+# Proyecto
+Eres un desarrollador senior de React Native. Lifepp es una app personal de salud, hábitos y tareas (antes Capalot / health-tracker).
+Dispositivos: Android (Xiaomi/HyperOS) y web. Prioriza rendimiento y una interfaz limpia. Textos de la interfaz en español, cortos.
 
-# Tech Stack
-- Framework: React Native (Expo) with TypeScript.
-- Backend: Supabase (PostgreSQL).
-- Styling: NativeWind (Tailwind CSS).
-- Icons: Lucide React Native.
+# Stack
+- Expo SDK 54, React Native 0.81, TypeScript.
+- Estilos con StyleSheet y los tokens de `constants/`. Sin NativeWind. Interfaz clara, no modo oscuro por defecto.
+- Iconos: Lucide React Native.
+- Backend: Supabase (PostgreSQL), proyecto `luoqjomxnmygaaaffber`.
+- Paquete Android: `com.pceba.lifepp`. Perfil EAS `preview` (APK) con `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` (clave pública, así por diseño).
 
-# Key Features & Rules
-1. Nutrition:
-   - MANUAL entry only (No external APIs).
-   - Fields: Name, Calories, Protein, Carbs, Fat.
-2. Database:
-   - Use the existing Supabase client in `lib/supabase.ts`.
-   - Tables exist: `nutrition_logs`, `workouts`, `sleep_logs`.
-   - Always type responses using interfaces from `types/database.ts`.
-3. UI/UX:
-   - Use functional components.
-   - Dark Mode by default.
-   - Keep components small.
-   - Avoid complex animations that might lag on Android.
+# Datos
+- Cada dispositivo entra con sesión anónima: `services/authService.ts` (`getIdentity` / `getCurrentUserId`).
+- RLS en todas las tablas: `user_id = auth.uid()` (políticas `lifepp_owner`). Las tablas hijas (`workout_exercises`, `workout_sets`, `workout_template_exercises`) se protegen por su padre.
+- `lib/supabase.ts`: el cliente `supabase` cae a almacenamiento local (`lib/localStore.ts`, clave `lifepp_local_db`) si Supabase falla. `rawSupabase` es el cliente sin fallback. `services/localSync.ts` sube lo local al tener sesión.
+- Preferencias y ajustes: `lib/storage.ts` (`getStored` / `setStored`, claves `lifepp_*`, migra las antiguas `capalot_*`). Úsalo en vez de AsyncStorage directo.
+- Tipa las respuestas con las interfaces de `types/database.ts`.
+- Tablas: `water_logs` (UNIQUE user_id + log_date), `mood_logs` (mood_score y energy_score 1-5, UNIQUE user_id + log_date), `nutrition_logs`, `workouts`, `habits`, `habit_logs` (UNIQUE habit_id + log_date), `sleep_logs`, `tasks`, `events`, `notes`, `journal_entries`, más las hijas de entreno.
+- Nutrición solo manual: nombre, calorías, proteína, carbos, grasa. Sin APIs externas de alimentos.
 
-# Coding Style
-- Use `async/await` for data fetching.
-- Handle errors gracefully (console.error + Alert.alert).
-- Don't reinvent the wheel: use established libraries.
+# Claude
+- Hoy (`screens/TodayScreen.tsx`) muestra un resumen calculado en el dispositivo (`utils/dayBrief.ts`). La app no llama a ninguna API de IA y no debe llamarla.
+- Claude se conecta desde claude.ai por MCP: Edge Function `supabase/functions/lifepp-mcp/index.ts` (Streamable HTTP, JSON-RPC, `verify_jwt` desactivado).
+- Autenticación con token personal `lpp_` + 64 hex, en la URL o en `Authorization: Bearer`. La función llama por RPC (clave pública) a funciones SQL `mcp_*`. Esas funciones resuelven el usuario con `public._mcp_auth(p_token)` (devuelve `user_id` y `tz`) y solo tocan filas de ese usuario.
+- Herramientas: `get_today`, `list_tasks`, `add_tasks`, `update_task`. Ajustes → "Conectar con Claude" crea o revoca el token (`services/claudeConnector.ts`).
+- El conector no borra nada.
+
+# SQL
+- No edites `supabase/migrations/20261013120000_auth_rls.sql` ni `20261013140000_mcp_connector.sql`. Ya están aplicadas en producción.
+- Todo cambio de SQL va en una migración nueva (`20261014xxxxxx_*.sql`), idempotente (`CREATE OR REPLACE`, `IF NOT EXISTS`).
+- Cualquier función SQL nueva del conector: `SECURITY DEFINER`, `SET search_path = public`, empieza con `SELECT ... FROM public._mcp_auth(p_token)`, filtra siempre por ese `user_id`, valida entradas (longitudes, rangos, fechas `yyyy-mm-dd` en la zona del token) y termina con `REVOKE ALL ... FROM PUBLIC` y `GRANT EXECUTE ... TO anon, authenticated`. Si escribe en una tabla hija, comprueba que el padre es del usuario.
+
+# Código
+- Componentes funcionales y pequeños. Evita animaciones pesadas en Android.
+- `async/await` para los datos. Errores con `console.error` y `Alert.alert`.
+- No metas claves privadas, `service_role` ni API keys en el código ni en el repo.
