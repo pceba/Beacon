@@ -97,7 +97,7 @@ DECLARE
   me uuid;
   zone text;
   d date;
-  habit_id uuid;
+  v_habit_id uuid;
   habit_name text;
   matches integer;
   clean text;
@@ -107,9 +107,9 @@ BEGIN
   d := public._mcp_day(p_date, zone);
 
   IF p_habit_id IS NOT NULL THEN
-    SELECT h.id, h.name INTO habit_id, habit_name
+    SELECT h.id, h.name INTO v_habit_id, habit_name
       FROM habits h WHERE h.id = p_habit_id AND h.user_id = me;
-    IF habit_id IS NULL THEN
+    IF v_habit_id IS NULL THEN
       RAISE EXCEPTION 'hábito no encontrado' USING ERRCODE = 'P0002';
     END IF;
   ELSE
@@ -125,17 +125,17 @@ BEGIN
     IF matches > 1 THEN
       RAISE EXCEPTION 'hay varios hábitos llamados %; usa el id', clean USING ERRCODE = '22023';
     END IF;
-    SELECT h.id, h.name INTO habit_id, habit_name
+    SELECT h.id, h.name INTO v_habit_id, habit_name
       FROM habits h WHERE h.user_id = me AND lower(btrim(h.name)) = lower(clean);
   END IF;
 
   INSERT INTO habit_logs (habit_id, user_id, log_date, completed)
-  VALUES (habit_id, me, d, done)
+  VALUES (v_habit_id, me, d, done)
   ON CONFLICT (habit_id, log_date) DO UPDATE
     SET completed = EXCLUDED.completed
   WHERE habit_logs.user_id = me;
 
-  RETURN jsonb_build_object('habit_id', habit_id, 'name', habit_name, 'date', d, 'done', done);
+  RETURN jsonb_build_object('habit_id', v_habit_id, 'name', habit_name, 'date', d, 'done', done);
 END;
 $$;
 
