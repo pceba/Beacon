@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
@@ -7,7 +7,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Lora_400Regular, Lora_700Bold } from '@expo-google-fonts/lora';
 import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { Colors } from './constants/colors';
+import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
+import { bindReminderOpen, syncReminders } from './services/reminders';
 // Sube a Supabase lo guardado en local en cuanto hay sesión.
 import './services/localSync';
 
@@ -57,6 +59,11 @@ export default function App() {
     Outfit_600SemiBold,
   });
 
+  useEffect(() => {
+    syncReminders().catch((error) => console.error(error));
+    return bindReminderOpen();
+  }, []);
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -69,7 +76,7 @@ export default function App() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={styles.stage}>
         <SafeAreaProvider style={styles.column}>
-          <NavigationContainer theme={navTheme}>
+          <NavigationContainer ref={navigationRef} theme={navTheme}>
             <StatusBar style="dark" />
             <RootNavigator />
           </NavigationContainer>

@@ -443,8 +443,6 @@ export const TodayScreen = () => {
         ) : (
           habits.map((habit) => {
             const done = completedHabitIds.has(habit.id);
-            const streak = habitStreak(habitLogs, habit.id);
-            const meta = streak === 0 ? 'Sin racha' : `${streak} día${streak === 1 ? '' : 's'}`;
             const letters = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
             const marks = Array.from({ length: 7 }, (_, index) => {
               const day = subDays(new Date(), 6 - index);
@@ -461,7 +459,7 @@ export const TodayScreen = () => {
                 icon={habit.icon}
                 color={habit.color || Colors.gold}
                 done={done}
-                meta={meta}
+                streak={habitStreak(habitLogs, habit.id)}
                 marks={marks}
                 onPress={() => onToggleHabit(habit)}
                 onLongPress={() => onDeleteHabit(habit)}

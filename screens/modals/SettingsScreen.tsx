@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
@@ -9,6 +9,7 @@ import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
 import { createConnectorUrl, getConnectorStatus, revokeConnector } from '../../services/claudeConnector';
 import { getPreferences, Preferences, savePreferences } from '../../services/preferencesService';
+import { applyReminders, getReminders, parseReminderTime, ReminderSettings, ReminderSlot } from '../../services/reminders';
 
 const asNumber = (value: string, fallback: number) => {
   const parsed = Number(value);
@@ -28,6 +29,7 @@ export const SettingsScreen = () => {
   const [connectorLink, setConnectorLink] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [reminders, setReminders] = useState<ReminderSettings | null>(null);
 
   const refreshConnector = async () => {
     const status = await getConnectorStatus();
@@ -64,7 +66,48 @@ export const SettingsScreen = () => {
       setSleep(String(preferences.sleepHours));
     });
     refreshConnector().catch(() => setConnectorStatus('No se ha podido comprobar.'));
+    getReminders().then(setReminders).catch((error) => console.error(error));
   }, []);
+
+  const commitReminders = async (next: ReminderSettings) => {
+    try {
+      const saved = await applyReminders(next);
+      if (!saved) {
+        Alert.alert(Platform.OS === 'web' ? 'Solo en el móvil' : 'Sin permiso', Platform.OS === 'web' ? 'Los recordatorios se programan en la app de Android.' : 'Activa las notificaciones de Lifepp en los ajustes del sistema.');
+        return;
+      }
+      setReminders(saved);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('No se ha podido programar el aviso');
+    }
+  };
+
+  const onToggleReminder = (key: keyof ReminderSettings, enabled: boolean) => {
+    if (!reminders) return;
+    const time = parseReminderTime(reminders[key].time);
+    if (enabled && !time) {
+      Alert.alert('Usa el formato hh:mm');
+      return;
+    }
+    void commitReminders({ ...reminders, [key]: { ...reminders[key], enabled, time: time?.label ?? reminders[key].time } });
+  };
+
+  const onReminderTime = (key: keyof ReminderSettings, time: string) => {
+    if (!reminders) return;
+    setReminders({ ...reminders, [key]: { ...reminders[key], time } });
+  };
+
+  const onReminderTimeEnd = (key: keyof ReminderSettings) => {
+    if (!reminders) return;
+    const time = parseReminderTime(reminders[key].time);
+    if (!time) {
+      Alert.alert('Usa el formato hh:mm');
+      getReminders().then(setReminders).catch((error) => console.error(error));
+      return;
+    }
+    void commitReminders({ ...reminders, [key]: { enabled: reminders[key].enabled, time: time.label } });
+  };
 
   const onSave = async () => {
     const preferences: Preferences = {
@@ -93,6 +136,24 @@ export const SettingsScreen = () => {
         <Input label="Agua (ml)" value={water} onChangeText={setWater} keyboardType="number-pad" />
         <Input label="Calorías" value={calories} onChangeText={setCalories} keyboardType="number-pad" />
         <Input label="Sueño (horas)" value={sleep} onChangeText={setSleep} keyboardType="decimal-pad" />
+        <Text style={styles.section}>Recordatorios</Text>
+        <Text style={styles.help}>Avisos en este móvil, a la hora que elijas.</Text>
+        {reminders
+          ? ([
+              ['water', 'Agua'],
+              ['habits', 'Hábitos pendientes'],
+              ['tasks', 'Tareas de hoy'],
+            ] as const).map(([key, label]) => (
+              <ReminderLine
+                key={key}
+                label={label}
+                slot={reminders[key]}
+                onToggle={(enabled) => onToggleReminder(key, enabled)}
+                onTime={(time) => onReminderTime(key, time)}
+                onTimeEnd={() => onReminderTimeEnd(key)}
+              />
+            ))
+          : null}
         <Text style={styles.section}>Conectar con Claude</Text>
         <Text style={styles.help}>
           Añade Lifepp como conector en claude.ai (sirve también en la app de Claude del móvil). Claude podrá ver tu día y apuntar o cambiar tareas cuando se lo pidas. Usa tu plan de Claude; no hace falta API key.
@@ -162,6 +223,40 @@ export const SettingsScreen = () => {
   );
 };
 
+const ReminderLine = ({
+  label,
+  slot,
+  onToggle,
+  onTime,
+  onTimeEnd,
+}: {
+  label: string;
+  slot: ReminderSlot;
+  onToggle: (enabled: boolean) => void;
+  onTime: (time: string) => void;
+  onTimeEnd: () => void;
+}) => (
+  <View style={styles.reminder}>
+    <Text style={styles.reminderLabel}>{label}</Text>
+    <TextInput
+      accessibilityLabel={`Hora de ${label}`}
+      value={slot.time}
+      onChangeText={onTime}
+      onEndEditing={onTimeEnd}
+      keyboardType="numbers-and-punctuation"
+      maxLength={5}
+      style={styles.time}
+    />
+    <Switch
+      accessibilityLabel={label}
+      value={slot.enabled}
+      onValueChange={onToggle}
+      trackColor={{ false: Colors.border, true: Colors.gold }}
+      thumbColor={Colors.white}
+    />
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
@@ -170,4 +265,18 @@ const styles = StyleSheet.create({
   linkBox: { gap: Spacing.sm, padding: Spacing.md, borderRadius: 12, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
   link: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textPrimary },
   status: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textMuted },
+  reminder: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  reminderLabel: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
+  time: {
+    width: 72,
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    textAlign: 'center',
+    fontFamily: Typography.fontMedium,
+    fontSize: Typography.md,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.surface,
+  },
 });
