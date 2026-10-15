@@ -13,6 +13,7 @@ import { toast } from '../../lib/toast';
 import { getCurrentUserId } from '../../services/authService';
 import { addWater } from '../../services/waterService';
 import { MainTabParamList, RootStackParamList } from '../../types/navigation';
+import { formatWater } from '../../utils/format';
 import { Sheet } from '../ui/Sheet';
 
 type Nav = CompositeNavigationProp<BottomTabNavigationProp<MainTabParamList>, NativeStackNavigationProp<RootStackParamList>>;
@@ -79,19 +80,15 @@ export const AddSheet = ({ visible, onClose }: Props) => {
       </View>
       <Text style={styles.caption}>Agua rápida</Text>
       <View style={styles.water}>
-        {[
-          [250, '+250 ml', '+250 ml de agua'],
-          [500, '+500 ml', '+500 ml de agua'],
-          [1000, '+1 L', '+1 L de agua'],
-        ].map(([ml, label, message]) => (
+        {[250, 500, 1000].map((ml) => (
           <Pressable
-            key={label}
+            key={ml}
             accessibilityRole="button"
-            accessibilityLabel={String(message)}
-            onPress={() => void quickWater(Number(ml), String(message))}
+            accessibilityLabel={`+${formatWater(ml)} de agua`}
+            onPress={() => void quickWater(ml, `+${formatWater(ml)} de agua`)}
             style={styles.waterBtn}
           >
-            <Text style={styles.waterText}>{label}</Text>
+            <Text style={styles.waterText}>+{formatWater(ml)}</Text>
           </Pressable>
         ))}
       </View>

@@ -12,6 +12,7 @@ import { getCurrentUserId } from '../../services/authService';
 import { createBodyMetric, getBodyMetrics, updateBodyMetric } from '../../services/bodyMetricsService';
 import { BodyMetric } from '../../types/database';
 import { LogStackParamList } from '../../types/navigation';
+import { formatFlexible } from '../../utils/format';
 
 type Route = RouteProp<LogStackParamList, 'LogBodyScreen'>;
 
@@ -69,7 +70,7 @@ export const LogBodyScreen = () => {
         {history.map((item) => (
           <Card key={item.id}>
             <Text style={styles.item}>
-              {item.date} · {item.weight_kg ?? '—'} kg
+              {item.date} · {item.weight_kg != null ? `${formatFlexible(item.weight_kg, 1)} kg` : '—'}
             </Text>
           </Card>
         ))}

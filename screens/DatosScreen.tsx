@@ -19,11 +19,20 @@ import { getPreferences } from '../services/preferencesService';
 import { getSleepLogs } from '../services/sleepService';
 import { getWaterLogs } from '../services/waterService';
 import { getWorkouts } from '../services/workoutService';
-import { formatHours, formatLiters, formatNumber } from '../utils/format';
+import { formatFlexible, formatHours, formatNumber, formatWater } from '../utils/format';
 
 type Period = '7' | '30' | '90';
 
-type Point = { label: string; hours: number };
+type Kpi = {
+  label: string;
+  value: string;
+  unit: string;
+  delta: number;
+  deltaLabel: string;
+  comparable: boolean;
+  empty: boolean;
+  emptyNote: string;
+};
 
 const dayKey = (date: Date) => format(date, 'yyyy-MM-dd');
 
@@ -31,6 +40,19 @@ const hoursBetween = (bed: string, wake: string) => {
   const hours = (new Date(wake).getTime() - new Date(bed).getTime()) / 3_600_000;
   if (!Number.isFinite(hours) || hours <= 0) return 0;
   return Math.min(hours, 24);
+};
+
+type Point = { label: string; hours: number };
+
+const mean = (values: number[]) => (values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0);
+
+const dailyTotals = <T,>(rows: T[], day: (row: T) => string, amount: (row: T) => number) => {
+  const totals = new Map<string, number>();
+  rows.forEach((row) => {
+    const key = day(row);
+    totals.set(key, (totals.get(key) ?? 0) + amount(row));
+  });
+  return [...totals.values()];
 };
 
 const inRange = (key: string, start: string, end: string) => key >= start && key <= end;
@@ -41,8 +63,9 @@ export const DatosScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
   const [sleepGoal, setSleepGoal] = useState(7);
-  const [kpis, setKpis] = useState<Array<{ label: string; value: string; unit: string; delta: number; deltaLabel: string }>>([]);
+  const [kpis, setKpis] = useState<Kpi[]>([]);
   const [sleepBars, setSleepBars] = useState<Point[]>([]);
+  const [hasSleep, setHasSleep] = useState(false);
   const [habitRows, setHabitRows] = useState<Array<{ name: string; color: string; cells: boolean[] }>>([]);
   const [habitRate, setHabitRate] = useState(0);
   const [weight, setWeight] = useState<{ value: number | null; delta: number | null; points: number[] }>({ value: null, delta: null, points: [] });
@@ -81,35 +104,84 @@ export const DatosScreen = () => {
         sleeps
           .map((row) => ({ key: row.created_at.slice(0, 10), hours: hoursBetween(row.bed_time, row.wake_time) }))
           .filter((row) => inRange(row.key, from, to) && row.hours > 0);
-      const avg = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0);
       const currentSleep = sleepOf(startKey, endKey);
       const previousSleep = sleepOf(prevStartKey, prevEndKey);
-      const sleepAvg = avg(currentSleep.map((row) => row.hours));
-      const sleepDelta = sleepAvg - avg(previousSleep.map((row) => row.hours));
+      const sleepAvg = mean(currentSleep.map((row) => row.hours));
+      const previousSleepAvg = mean(previousSleep.map((row) => row.hours));
+      const sleepDelta = sleepAvg - previousSleepAvg;
 
-      const waterOf = (from: string, to: string) => waters.filter((row) => inRange(row.log_date.slice(0, 10), from, to));
-      const waterAvg = (rows: typeof waters) => (rows.length ? rows.reduce((sum, row) => sum + row.amount_ml, 0) / days : 0);
-      const waterNow = waterAvg(waterOf(startKey, endKey));
-      const waterDelta = waterNow - waterAvg(waterOf(prevStartKey, prevEndKey));
+      const waterDays = (from: string, to: string) =>
+        dailyTotals(
+          waters.filter((row) => inRange(row.log_date.slice(0, 10), from, to)),
+          (row) => row.log_date.slice(0, 10),
+          (row) => row.amount_ml,
+        );
+      const waterNowDays = waterDays(startKey, endKey);
+      const waterPrevDays = waterDays(prevStartKey, prevEndKey);
+      const waterNow = mean(waterNowDays);
+      const waterDelta = waterNow - mean(waterPrevDays);
+      const waterParts = waterNow < 1000
+        ? { value: formatNumber(Math.round(waterNow), 0), unit: 'ml' }
+        : { value: formatFlexible(waterNow / 1000, 2), unit: 'L' };
 
       const workoutOf = (from: string, to: string) =>
         workouts.filter((row) => inRange(row.started_at.slice(0, 10), from, to) && row.completed);
       const workoutNow = workoutOf(startKey, endKey).length;
-      const workoutDelta = workoutNow - workoutOf(prevStartKey, prevEndKey).length;
+      const workoutPrev = workoutOf(prevStartKey, prevEndKey).length;
+      const workoutDelta = workoutNow - workoutPrev;
 
-      const mealsOf = (from: string, to: string) => meals.filter((row) => inRange(row.logged_at.slice(0, 10), from, to));
-      const calorieAvg = (rows: typeof meals) => {
-        const total = rows.reduce((sum, row) => sum + row.calories, 0);
-        return days ? total / days : 0;
-      };
-      const caloriesNow = calorieAvg(mealsOf(startKey, endKey));
-      const calorieDelta = caloriesNow - calorieAvg(mealsOf(prevStartKey, prevEndKey));
+      const mealDays = (from: string, to: string) =>
+        dailyTotals(
+          meals.filter((row) => inRange(row.logged_at.slice(0, 10), from, to)),
+          (row) => row.logged_at.slice(0, 10),
+          (row) => row.calories,
+        );
+      const calorieDays = mealDays(startKey, endKey);
+      const caloriePrevDays = mealDays(prevStartKey, prevEndKey);
+      const caloriesNow = mean(calorieDays);
+      const calorieDelta = caloriesNow - mean(caloriePrevDays);
 
       setKpis([
-        { label: 'Sueño medio', value: formatNumber(sleepAvg, 1), unit: 'h', delta: sleepDelta, deltaLabel: `${formatNumber(Math.abs(sleepDelta), 1)} h` },
-        { label: 'Agua al día', value: formatNumber(waterNow / 1000, 1), unit: 'L', delta: waterDelta, deltaLabel: formatLiters(Math.abs(waterDelta)) },
-        { label: 'Entrenos', value: String(workoutNow), unit: '', delta: workoutDelta, deltaLabel: String(Math.abs(workoutDelta)) },
-        { label: 'Calorías', value: formatNumber(caloriesNow, 0), unit: 'kcal', delta: calorieDelta, deltaLabel: formatNumber(Math.abs(calorieDelta), 0) },
+        {
+          label: 'Sueño medio',
+          value: formatFlexible(sleepAvg, 1),
+          unit: 'h',
+          delta: sleepDelta,
+          deltaLabel: `${formatFlexible(Math.abs(sleepDelta), 1)} h`,
+          comparable: previousSleep.length > 0,
+          empty: currentSleep.length === 0,
+          emptyNote: 'Ninguna noche',
+        },
+        {
+          label: 'Agua al día',
+          value: waterParts.value,
+          unit: waterParts.unit,
+          delta: waterDelta,
+          deltaLabel: formatWater(Math.abs(waterDelta)),
+          comparable: waterPrevDays.length > 0,
+          empty: waterNowDays.length === 0,
+          emptyNote: 'Ningún día con agua',
+        },
+        {
+          label: 'Entrenos',
+          value: formatNumber(workoutNow),
+          unit: '',
+          delta: workoutDelta,
+          deltaLabel: formatNumber(Math.abs(workoutDelta)),
+          comparable: true,
+          empty: false,
+          emptyNote: '',
+        },
+        {
+          label: 'Calorías',
+          value: formatNumber(Math.round(caloriesNow)),
+          unit: 'kcal',
+          delta: calorieDelta,
+          deltaLabel: formatNumber(Math.abs(Math.round(calorieDelta))),
+          comparable: caloriePrevDays.length > 0,
+          empty: calorieDays.length === 0,
+          emptyNote: 'Ningún día con comidas',
+        },
       ]);
 
       const bars: Point[] = [];
@@ -120,8 +192,9 @@ export const DatosScreen = () => {
         else date.setDate(end.getDate() - (chartDays - 1 - index));
         const key = dayKey(date);
         const match = currentSleep.find((row) => row.key === key);
-        bars.push({ label: formatNumber(match?.hours ?? 0, match ? 1 : 0), hours: match?.hours ?? 0 });
+        bars.push({ label: match ? formatFlexible(match.hours, 1) : '', hours: match?.hours ?? 0 });
       }
+      setHasSleep(currentSleep.length > 0);
       setSleepBars(bars);
 
       const habitDays = Array.from({ length: Math.min(days, 7) }, (_, index) => {
@@ -201,11 +274,21 @@ export const DatosScreen = () => {
         {kpis.map((kpi) => (
           <Card key={kpi.label} style={styles.kpi}>
             <Text style={styles.kpiLabel}>{kpi.label}</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.kpiValue}>
-              {kpi.value}
-              {kpi.unit ? <Text style={styles.unit}> {kpi.unit}</Text> : null}
-            </Text>
-            <DeltaPill delta={kpi.delta} label={kpi.deltaLabel} />
+            {kpi.empty ? (
+              <>
+                <Text maxFontSizeMultiplier={1.3} style={styles.kpiValue}>—</Text>
+                <Text style={styles.note}>{kpi.emptyNote}</Text>
+              </>
+            ) : (
+              <>
+                <Text maxFontSizeMultiplier={1.3} style={styles.kpiValue}>
+                  {kpi.value}
+                  {kpi.unit ? <Text style={styles.unit}> {kpi.unit}</Text> : null}
+                </Text>
+                {kpi.comparable && kpi.delta === 0 ? <DeltaPill delta={0} label="igual" /> : null}
+                {kpi.comparable && kpi.delta !== 0 ? <DeltaPill delta={kpi.delta} label={kpi.deltaLabel} /> : null}
+              </>
+            )}
           </Card>
         ))}
       </View>
@@ -215,23 +298,25 @@ export const DatosScreen = () => {
           <Text style={styles.section}>Sueño</Text>
           <Text style={styles.meta}>objetivo {formatHours(sleepGoal)}</Text>
         </View>
-        <Svg width="100%" height={150} viewBox="0 0 280 150">
-          <Line
-            x1="0"
-            x2="280"
-            y1={140 - (sleepGoal / maxHours) * 110}
-            y2={140 - (sleepGoal / maxHours) * 110}
-            stroke={Colors.text4}
-            strokeDasharray="4 4"
-            strokeWidth="1.5"
-          />
-          {sleepBars.map((bar, index) => {
-            const slot = 280 / Math.max(sleepBars.length, 1);
-            const height = (bar.hours / maxHours) * 110;
-            const x = index * slot + slot * 0.25;
-            return (
-              <React.Fragment key={index}>
+        {hasSleep ? (
+          <Svg width="100%" height={150} viewBox="0 0 280 150">
+            <Line
+              x1="0"
+              x2="280"
+              y1={140 - (sleepGoal / maxHours) * 110}
+              y2={140 - (sleepGoal / maxHours) * 110}
+              stroke={Colors.text4}
+              strokeDasharray="4 4"
+              strokeWidth="1.5"
+            />
+            {sleepBars.map((bar, index) => {
+              if (bar.hours <= 0) return null;
+              const slot = 280 / Math.max(sleepBars.length, 1);
+              const height = (bar.hours / maxHours) * 110;
+              const x = index * slot + slot * 0.25;
+              return (
                 <Line
+                  key={index}
                   x1={x}
                   x2={x + slot * 0.5}
                   y1={140 - height}
@@ -240,23 +325,37 @@ export const DatosScreen = () => {
                   strokeWidth={Math.max(8, slot * 0.45)}
                   strokeLinecap="round"
                 />
-              </React.Fragment>
-            );
-          })}
-        </Svg>
-        <View style={styles.barLabels}>
-          {sleepBars.map((bar, index) => (
-            <Text key={index} style={styles.barLabel}>
-              {bar.hours > 0 ? bar.label : ''}
-            </Text>
-          ))}
-        </View>
+              );
+            })}
+          </Svg>
+        ) : (
+          <View>
+            <Svg width="100%" height={150} viewBox="0 0 280 150">
+              <Line x1="0" x2="280" y1="36" y2="36" stroke={Colors.text4} strokeDasharray="4 4" strokeWidth="1.5" />
+              {Array.from({ length: 7 }, (_, index) => {
+                const slot = 280 / 7;
+                const x = index * slot + slot * 0.25;
+                return <Line key={index} x1={x} x2={x + slot * 0.5} y1={140} y2={140} stroke={Colors.track} strokeWidth={Math.max(8, slot * 0.45)} strokeLinecap="round" />;
+              })}
+            </Svg>
+            <Text style={styles.empty}>Sin sueño en este periodo</Text>
+          </View>
+        )}
+        {hasSleep ? (
+          <View style={styles.barLabels}>
+            {sleepBars.map((bar, index) => (
+              <Text key={index} style={styles.barLabel}>
+                {bar.hours > 0 ? bar.label : ''}
+              </Text>
+            ))}
+          </View>
+        ) : null}
       </Card>
 
       <Card>
         <View style={styles.sectionHead}>
           <Text style={styles.section}>Hábitos</Text>
-          <Text style={styles.meta}>{habitRate} % cumplidos</Text>
+          <Text style={styles.meta}>{formatNumber(habitRate)} % cumplidos</Text>
         </View>
         {habitRows.length === 0 ? <Text style={styles.empty}>Aún no hay hábitos.</Text> : null}
         {habitRows.map((row) => (
@@ -274,16 +373,18 @@ export const DatosScreen = () => {
       <Card>
         <View style={styles.sectionHead}>
           <Text style={styles.section}>Peso</Text>
-          {weight.delta != null ? (
+          {weight.delta == null ? null : weight.delta === 0 ? (
+            <Text style={styles.meta}>igual</Text>
+          ) : (
             <Text style={[styles.meta, { color: weight.delta <= 0 ? Colors.success : Colors.danger }]}>
               {weight.delta > 0 ? '+' : '−'}
-              {formatNumber(Math.abs(weight.delta), 1)} kg en 30 días
+              {formatFlexible(Math.abs(weight.delta), 1)} kg en 30 días
             </Text>
-          ) : null}
+          )}
         </View>
         <Text maxFontSizeMultiplier={1.3} style={styles.kpiValue}>
-          {weight.value != null ? formatNumber(weight.value, 1) : '—'}
-          <Text style={styles.unit}> kg</Text>
+          {weight.value != null ? formatFlexible(weight.value, 1) : '—'}
+          {weight.value != null ? <Text style={styles.unit}> kg</Text> : null}
         </Text>
         {spark.length > 1 ? (
           <Svg width="100%" height={70} viewBox="0 0 320 70" accessibilityLabel="Tendencia del peso">
@@ -318,6 +419,7 @@ const styles = StyleSheet.create({
   barLabels: { flexDirection: 'row', marginTop: 6 },
   barLabel: { flex: 1, textAlign: 'center', ...Type.caption, ...tabular, fontSize: 11, color: Colors.text2 },
   empty: { ...Type.body, color: Colors.text3 },
+  note: { ...Type.caption, color: Colors.text3 },
   habit: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   habitName: { width: 110, ...Type.caption, color: Colors.ink, fontSize: 14 },
   cell: { flex: 1, height: 22, borderRadius: 6 },

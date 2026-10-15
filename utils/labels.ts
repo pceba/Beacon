@@ -1,3 +1,5 @@
+import { formatNumber } from './format';
+
 const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -9,19 +11,19 @@ const asDate = (value: string | Date) => {
 
 export const weekdayName = (date: Date) => WEEKDAYS[date.getDay()];
 
-export const monthDay = (date: Date) => `${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+export const monthDay = (date: Date) => `${formatNumber(date.getDate())} de ${MONTHS[date.getMonth()]}`;
 
 export const weekdayHeading = (date: Date) =>
-  `${WEEKDAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+  `${WEEKDAYS[date.getDay()]} ${formatNumber(date.getDate())} de ${MONTHS[date.getMonth()]}`;
 
 export const shortDay = (value: string | Date) => {
   const date = asDate(value);
-  return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+  return `${formatNumber(date.getDate())} ${MONTHS_SHORT[date.getMonth()]}`;
 };
 
 export const longDay = (value: string | Date) => {
   const date = asDate(value);
-  return `${date.getDate()} de ${MONTHS[date.getMonth()]} de ${date.getFullYear()}`;
+  return `${formatNumber(date.getDate())} de ${MONTHS[date.getMonth()]} de ${date.getFullYear()}`;
 };
 
 const MEALS: Record<string, string> = {

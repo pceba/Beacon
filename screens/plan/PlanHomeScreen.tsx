@@ -19,6 +19,7 @@ import { createTask, deleteTask, getTasks, toggleTaskCompleted } from '../../ser
 import { Event, Task } from '../../types/database';
 import { monthDay, weekdayName } from '../../utils/labels';
 import { taskTiming } from '../../utils/taskMeta';
+import { formatNumber } from '../../utils/format';
 
 const LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -221,7 +222,7 @@ export const PlanHomeScreen = () => {
                     style={[styles.day, on ? styles.dayOn : null]}
                   >
                     <Text style={[styles.letter, on ? styles.onText : null]}>{LETTERS[index]}</Text>
-                    <Text style={[styles.number, on ? styles.onText : null]}>{date.getDate()}</Text>
+                    <Text style={[styles.number, on ? styles.onText : null]}>{formatNumber(date.getDate())}</Text>
                     <View style={styles.dots}>
                       {dotsFor(key).map((color, dotIndex) => (
                         <View key={dotIndex} style={[styles.dot, { backgroundColor: on ? Colors.surface : color }]} />
@@ -235,7 +236,7 @@ export const PlanHomeScreen = () => {
         </View>
 
         <Text style={styles.section}>
-          {weekdayName(selected)} {selected.getDate()}
+          {weekdayName(selected)} {formatNumber(selected.getDate())}
         </Text>
         <Card inset>
           {filteredEvents.length === 0 ? <Text style={styles.empty}>Nada en la agenda.</Text> : null}
@@ -260,7 +261,7 @@ export const PlanHomeScreen = () => {
         <View style={styles.sectionHead}>
           <Text style={styles.section}>Tareas</Text>
           <Text style={styles.meta}>
-            {doneTasks} de {dayTasks.length} hechas
+            {formatNumber(doneTasks)} de {formatNumber(dayTasks.length)} hechas
           </Text>
         </View>
         <Card inset>
@@ -317,7 +318,7 @@ export const PlanHomeScreen = () => {
                 }}
                 style={[styles.monthDay, on ? styles.dayOn : null]}
               >
-                <Text style={[styles.monthNum, !inMonth ? styles.monthOut : null, on ? styles.onText : null]}>{date.getDate()}</Text>
+                <Text style={[styles.monthNum, !inMonth ? styles.monthOut : null, on ? styles.onText : null]}>{formatNumber(date.getDate())}</Text>
               </Pressable>
             );
           })}

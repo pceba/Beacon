@@ -1,6 +1,8 @@
 // Resumen del día calculado en el dispositivo: sin red, sin coste y para todos.
 // (La revisión con Claude va por el conector MCP, desde claude.ai.)
 
+import { formatWater } from './format';
+
 type BriefTask = { title: string; deadline: string | null; completed: boolean };
 
 export type BriefInput = {
@@ -16,8 +18,6 @@ export type BriefInput = {
   tasks: BriefTask[];
 };
 
-const liters = (ml: number) => `${(ml / 1000).toFixed(1).replace('.', ',')} L`;
-
 export const dayBrief = (input: BriefInput): string => {
   const open = input.tasks.filter((task) => !task.completed);
   const overdue = open.filter((task) => task.deadline && task.deadline.slice(0, 10) < input.todayKey);
@@ -30,7 +30,7 @@ export const dayBrief = (input: BriefInput): string => {
   if (nothingLogged) return 'Empieza el día: apunta agua, sueño o una comida.';
 
   const clauses: string[] = [];
-  if (waterLeft > 0 && input.waterGoalMl > 0) clauses.push(`te falta ${liters(waterLeft)} de agua`);
+  if (waterLeft > 0 && input.waterGoalMl > 0) clauses.push(`te falta ${formatWater(waterLeft)} de agua`);
   if (habitLeft > 0) clauses.push(habitLeft === 1 ? 'queda 1 hábito' : `quedan ${habitLeft} hábitos`);
 
   let sentence = '';

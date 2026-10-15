@@ -20,7 +20,7 @@ import { confirmEmailLink, requestEmailLink } from '../../services/emailAuth';
 import { createConnectorUrl, getConnectorStatus, revokeConnector } from '../../services/claudeConnector';
 import { getPreferences, Preferences, savePreferences } from '../../services/preferencesService';
 import { applyReminders, getReminders, ReminderSettings } from '../../services/reminders';
-import { formatHours, formatLiters, formatRelative } from '../../utils/format';
+import { formatHours, formatNumber, formatRelative, formatWater } from '../../utils/format';
 import app from '../../app.json';
 
 export const SettingsScreen = () => {
@@ -122,7 +122,7 @@ export const SettingsScreen = () => {
               <View style={styles.goal}>
                 <Text style={styles.goalLabel}>Agua</Text>
                 <Stepper
-                  value={formatLiters(prefs.waterMl)}
+                  value={formatWater(prefs.waterMl)}
                   decrementLabel="Menos agua"
                   incrementLabel="Más agua"
                   onDecrement={() => updatePrefs({ waterMl: Math.max(250, prefs.waterMl - 250) })}
@@ -132,7 +132,7 @@ export const SettingsScreen = () => {
               <View style={styles.goal}>
                 <Text style={styles.goalLabel}>Calorías</Text>
                 <Stepper
-                  value={String(prefs.calories)}
+                  value={formatNumber(prefs.calories)}
                   decrementLabel="Menos calorías"
                   incrementLabel="Más calorías"
                   onDecrement={() => updatePrefs({ calories: Math.max(50, prefs.calories - 50) })}

@@ -178,7 +178,7 @@ export const LogMealScreen = () => {
           <Text style={styles.caption}>Recientes</Text>
           <View style={styles.chips}>
             {templates.slice(0, 8).map((template) => (
-              <Chip key={template.id} label={`${template.name} · ${template.calories} kcal`} onPress={() => applyTemplate(template)} />
+              <Chip key={template.id} label={`${template.name} · ${formatNumber(template.calories)} kcal`} onPress={() => applyTemplate(template)} />
             ))}
           </View>
         </View>
@@ -195,7 +195,7 @@ export const LogMealScreen = () => {
         maxFontSizeMultiplier={1.3}
       />
       <Text style={styles.kcal}>kcal</Text>
-      <Text style={styles.caption}>Llevas {formatNumber(todayCalories, 0)} de 2.000 hoy</Text>
+      <Text style={styles.caption}>Llevas {formatNumber(todayCalories)} de {formatNumber(2000)} hoy</Text>
       <View style={styles.macros}>
         <View style={styles.macro}>
           <Text style={styles.caption}>Proteína</Text>

@@ -28,6 +28,7 @@ import { createWorkout, deleteWorkout, getWorkouts } from '../services/workoutSe
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { dayBrief } from '../utils/dayBrief';
+import { formatHours, formatNumber, formatWater } from '../utils/format';
 import { taskTiming } from '../utils/taskMeta';
 import { monthDay, weekdayName } from '../utils/labels';
 import { habitStreak } from '../utils/streak';
@@ -348,9 +349,6 @@ export const TodayScreen = () => {
   const initial = (prefs?.displayName || 'L').trim().charAt(0).toUpperCase() || 'L';
   const checks = [waterDone, sleepDone, summary.workout, summary.calories > 0, ...habits.map((habit) => completedHabitIds.has(habit.id))];
   const doneCount = checks.filter(Boolean).length;
-  const waterValue = (summary.waterMl / 1000).toFixed(1).replace('.', ',');
-  const goalLiters = (goals.waterMl / 1000).toFixed(1).replace('.', ',');
-  const sleepValue = String(summary.sleep).replace('.', ',');
   const faces = [Frown, Meh, Smile, SmilePlus, Laugh];
 
   return (
@@ -372,12 +370,12 @@ export const TodayScreen = () => {
       <BriefLine text={brief} />
       <View style={styles.segments}>
         <View style={styles.segmentRow}>
-          {checks.map((on, index) => (
-            <View key={index} style={[styles.segment, on ? styles.segmentOn : null]} />
+          {checks.map((_, index) => (
+            <View key={index} style={[styles.segment, index < doneCount ? styles.segmentOn : null]} />
           ))}
         </View>
         <Text style={styles.segmentCount}>
-          {doneCount} de {checks.length}
+          {formatNumber(doneCount)} de {formatNumber(checks.length)}
         </Text>
       </View>
 
@@ -389,8 +387,8 @@ export const TodayScreen = () => {
           </View>
           <View style={styles.metricValueRow}>
             <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-              {waterValue}
-              <Text style={styles.metricUnit}> / {goalLiters} L</Text>
+              {formatWater(summary.waterMl)}
+              <Text style={styles.metricUnit}> / {formatWater(goals.waterMl)}</Text>
             </Text>
             <View style={styles.plus}>
               <Plus color={Colors.water} size={18} />
@@ -408,8 +406,7 @@ export const TodayScreen = () => {
           </View>
           <View style={styles.metricValueRow}>
             <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-              {summary.sleep > 0 ? sleepValue : '—'}
-              {summary.sleep > 0 ? <Text style={styles.metricUnit}> h</Text> : null}
+              {summary.sleep > 0 ? formatHours(summary.sleep) : '—'}
             </Text>
             {sleepDone ? (
               <View style={styles.doneMark}>
@@ -440,8 +437,8 @@ export const TodayScreen = () => {
             <Text style={styles.metricName}>Comida</Text>
           </View>
           <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-            {summary.calories.toLocaleString('es-ES')}
-            <Text style={styles.metricUnit}> / {goals.calories.toLocaleString('es-ES')} kcal</Text>
+            {formatNumber(summary.calories)}
+            <Text style={styles.metricUnit}> / {formatNumber(goals.calories)} kcal</Text>
           </Text>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.calories / Math.max(goals.calories, 1)) * 100))}%`, backgroundColor: Colors.food }]} />
@@ -451,7 +448,7 @@ export const TodayScreen = () => {
 
       <View style={styles.sectionHead}>
         <Text style={styles.section}>
-          Hábitos <Text style={styles.sectionMeta}>{habits.length - habitsLeft} de {habits.length}</Text>
+          Hábitos <Text style={styles.sectionMeta}>{formatNumber(habits.length - habitsLeft)} de {formatNumber(habits.length)}</Text>
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Añadir hábito" hitSlop={8} onPress={() => navigation.navigate('AddHabitModal')} style={styles.linkHit}>
           <Text style={styles.link}>Añadir</Text>
@@ -474,7 +471,7 @@ export const TodayScreen = () => {
                 <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
                   {habit.name}
                 </Text>
-                {streak >= 2 ? <Text style={styles.streak}>{streak} días</Text> : null}
+                {streak >= 2 ? <Text style={styles.streak}>{formatNumber(streak)} días</Text> : null}
               </Pressable>
               <View style={styles.week}>
                 {marks.map((on, markIndex) => (
@@ -511,7 +508,7 @@ export const TodayScreen = () => {
 
       <View style={styles.sectionHead}>
         <Text style={styles.section}>
-          Tareas <Text style={styles.sectionMeta}>{tasks.length} hoy</Text>
+          Tareas <Text style={styles.sectionMeta}>{formatNumber(tasks.length)} hoy</Text>
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Ver plan" hitSlop={8} onPress={() => navigation.navigate('Plan')} style={styles.linkHit}>
           <Text style={styles.link}>Ver plan</Text>
@@ -552,7 +549,7 @@ export const TodayScreen = () => {
 };
 
 const BriefLine = ({ text }: { text: string }) => {
-  const parts = text.split(/(«[^»]+»|\d[\d.]*|,\d+)/).filter((part) => part.length > 0);
+  const parts = text.split(/(«[^»]+»|\d{1,3}(?:\.\d{3})*(?:,\d+)?(?:\s(?:ml|L|h|kcal|min))?)/).filter((part) => part.length > 0);
   return (
     <Text style={styles.brief}>
       {parts.map((part, index) =>
@@ -582,7 +579,7 @@ const styles = StyleSheet.create({
   segments: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: -8 },
   segmentRow: { flex: 1, flexDirection: 'row', gap: 4 },
   segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: Colors.border },
-  segmentOn: { backgroundColor: Colors.accent },
+  segmentOn: { backgroundColor: Colors.ink },
   segmentCount: { ...Type.caption, ...tabular, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   metric: { width: '47%', flexGrow: 1, backgroundColor: Colors.surface, borderRadius: 18, padding: 14, gap: 10, minHeight: 118 },

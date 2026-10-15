@@ -13,6 +13,7 @@ import { getCurrentUserId } from '../../services/authService';
 import { addExercise, addSet, getWorkoutById, updateWorkout } from '../../services/workoutService';
 import { LogStackParamList } from '../../types/navigation';
 import { finishLog, useReturnToToday } from '../../utils/finishLog';
+import { formatFlexible, formatNumber } from '../../utils/format';
 
 type Route = RouteProp<LogStackParamList, 'WorkoutDetailScreen'>;
 
@@ -101,7 +102,7 @@ export const WorkoutDetailScreen = () => {
   return (
     <FormScreen title="Sesión" saveLabel="Terminar entreno" onSave={() => void finishWorkout()}>
       <Text style={styles.title}>{workoutName || 'Sesión'}</Text>
-      <Text style={styles.subtitle}>{Math.max(0, Math.round((Date.now() - startedAt) / 60000))} min</Text>
+      <Text style={styles.subtitle}>{formatNumber(Math.max(0, Math.round((Date.now() - startedAt) / 60000)))} min</Text>
       <Input label="Ejercicio" value={exerciseName} onChangeText={setExerciseName} />
       <Button title="Añadir ejercicio" onPress={addExerciseInline} />
       {exerciseRows.map((exercise) => (
@@ -109,7 +110,7 @@ export const WorkoutDetailScreen = () => {
           <Text style={styles.exercise}>{exercise.name}</Text>
           {exercise.sets.map((set, idx) => (
             <Text key={`${exercise.id}-${idx}`} style={styles.row}>
-              Serie {idx + 1}: {set.reps} × {set.weight} kg
+              Serie {formatNumber(idx + 1)}: {formatNumber(Number(set.reps))} × {formatFlexible(Number(set.weight), 1)} kg
             </Text>
           ))}
           <View style={styles.inline}>

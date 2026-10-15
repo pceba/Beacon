@@ -4,8 +4,9 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 're
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { differenceInMinutes } from 'date-fns';
 import { Input } from '../../components/Input';
-import { FormScreen } from '../../components/ui/FormScreen';
 import { StarRating } from '../../components/StarRating';
+import { FormScreen } from '../../components/ui/FormScreen';
+import { formatDuration } from '../../utils/format';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -97,7 +98,7 @@ export const LogSleepScreen = () => {
     <FormScreen title="Sueño" saveLabel="Guardar sueño" onSave={() => void onSubmit()}>
         <Input label="Acostarse" value={bedTime} onChangeText={setBedTime} />
         <Input label="Levantarse" value={wakeTime} onChangeText={setWakeTime} />
-        <Text style={styles.info}>{hours.toFixed(1).replace('.', ',')} h</Text>
+        <Text style={styles.info}>{formatDuration(hours)}</Text>
         <StarRating value={quality} onChange={setQuality} />
         <Input label="Notas" value={notes} onChangeText={setNotes} multiline numberOfLines={6} />
     </FormScreen>
