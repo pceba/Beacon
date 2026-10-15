@@ -28,7 +28,7 @@ export const ScreenHeader = ({ kicker, title, subtitle, onSettings, action }: Pr
     ) : null}
     {onSettings ? (
       <PressableScale accessibilityLabel="Ajustes" hitSlop={8} onPress={onSettings} style={styles.button}>
-        <Settings color={Colors.brownPrimary} size={18} />
+        <Settings color={Colors.ink} size={18} />
       </PressableScale>
     ) : null}
   </View>
@@ -40,22 +40,22 @@ const styles = StyleSheet.create({
   kicker: {
     fontFamily: Typography.fontMedium,
     fontSize: Typography.sm,
-    color: Colors.textMuted,
+    color: Colors.text3,
   },
   title: {
     fontFamily: Typography.fontBold,
     fontSize: 24,
     lineHeight: 30,
-    color: Colors.textPrimary,
+    color: Colors.ink,
   },
   subtitle: {
     fontFamily: Typography.fontRegular,
     fontSize: Typography.sm,
     lineHeight: 20,
-    color: Colors.textMuted,
+    color: Colors.text3,
   },
   action: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  actionText: { fontFamily: Typography.fontBold, fontSize: Typography.sm, color: Colors.gold },
+  actionText: { fontFamily: Typography.fontBold, fontSize: Typography.sm, color: Colors.accent },
   button: {
     width: 44,
     height: 44,
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.hairline,
+    borderColor: Colors.line,
   },
 });

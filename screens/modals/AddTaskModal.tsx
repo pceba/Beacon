@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Button } from '../../components/Button';
@@ -42,7 +43,7 @@ export const AddTaskModal = () => {
       navigation.goBack();
     } catch (saveError) {
       console.error(saveError);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     } finally {
       setSaving(false);
     }
@@ -70,11 +71,11 @@ export const AddTaskModal = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   label: {
     fontFamily: Typography.fontMedium,
     fontSize: Typography.sm,
-    color: Colors.textSecondary,
+    color: Colors.text2,
   },
 });

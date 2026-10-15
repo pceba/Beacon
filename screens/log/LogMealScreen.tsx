@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Segmented } from '../../components/Segmented';
@@ -74,7 +75,7 @@ export const LogMealScreen = () => {
         setTemplates(await getMealTemplates(userId));
       } catch (loadError) {
         console.error(loadError);
-        Alert.alert('No se han cargado las comidas guardadas');
+        toast.show({ message: 'No se han cargado las comidas guardadas', kind: 'error' });
       }
     };
     loadTemplates();
@@ -104,7 +105,7 @@ export const LogMealScreen = () => {
       finishLog(navigation, route.params?.fromToday);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
@@ -155,12 +156,12 @@ export const LogMealScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   toggleHit: { minHeight: 44, justifyContent: 'center' },
-  toggle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  toggle: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
   saved: { gap: 8 },
-  savedLabel: { color: Colors.textMuted, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
+  savedLabel: { color: Colors.text3, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
   savedRow: {
     minHeight: 44,
     flexDirection: 'row',
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: Colors.surface,
   },
-  savedName: { flex: 1, color: Colors.textPrimary, fontFamily: Typography.fontMedium, fontSize: Typography.md },
-  savedMeta: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  savedName: { flex: 1, color: Colors.ink, fontFamily: Typography.fontMedium, fontSize: Typography.md },
+  savedMeta: { color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
   error: { color: Colors.danger, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
 });

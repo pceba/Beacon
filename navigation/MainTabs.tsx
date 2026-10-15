@@ -24,15 +24,15 @@ const PlanStack = createNativeStackNavigator<PlanStackParamList>();
 
 const stackOptions = {
   headerBackButtonDisplayMode: 'minimal' as const,
-  headerStyle: { backgroundColor: Colors.background },
+  headerStyle: { backgroundColor: Colors.bg },
   headerShadowVisible: false,
-  headerTintColor: Colors.brownPrimary,
+  headerTintColor: Colors.ink,
   headerTitleStyle: {
     fontFamily: Typography.fontBold,
     fontSize: 16,
-    color: Colors.textPrimary,
+    color: Colors.ink,
   },
-  contentStyle: { backgroundColor: Colors.background },
+  contentStyle: { backgroundColor: Colors.bg },
 };
 
 const LogNavigator = () => (
@@ -76,8 +76,8 @@ export const MainTabs = () => {
           paddingBottom: insets.bottom,
           elevation: 0,
         },
-        tabBarActiveTintColor: Colors.gold,
-        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarActiveTintColor: Colors.accent,
+        tabBarInactiveTintColor: Colors.text3,
         tabBarLabelStyle: {
           fontFamily: Typography.fontMedium,
           fontSize: 11,

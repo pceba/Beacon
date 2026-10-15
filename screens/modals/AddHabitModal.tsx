@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { HABIT_COLORS, HABIT_ICON_OPTIONS } from '../../components/habitVisuals';
@@ -32,7 +33,7 @@ export const AddHabitModal = () => {
       navigation.goBack();
     } catch (saveError) {
       console.error(saveError);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     } finally {
       setSaving(false);
     }
@@ -55,7 +56,7 @@ export const AddHabitModal = () => {
                 onPress={() => setIcon(option.id)}
                 style={({ pressed }) => [styles.iconButton, selected ? { borderColor: color, backgroundColor: `${color}18` } : null, pressed ? styles.pressed : null]}
               >
-                <Icon color={selected ? color : Colors.textSecondary} size={18} />
+                <Icon color={selected ? color : Colors.text2} size={18} />
               </Pressable>
             );
           })}
@@ -82,12 +83,12 @@ export const AddHabitModal = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   label: {
     fontFamily: Typography.fontMedium,
     fontSize: Typography.sm,
-    color: Colors.textSecondary,
+    color: Colors.text2,
   },
   iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   iconButton: {
@@ -102,6 +103,6 @@ const styles = StyleSheet.create({
   },
   colorRow: { flexDirection: 'row', gap: Spacing.sm },
   swatch: { width: 44, height: 44, borderRadius: 22 },
-  swatchOn: { borderWidth: 3, borderColor: Colors.white, outlineWidth: 2, outlineColor: Colors.ink, outlineOffset: 1 },
+  swatchOn: { borderWidth: 3, borderColor: Colors.surface, outlineWidth: 2, outlineColor: Colors.ink, outlineOffset: 1 },
   pressed: { opacity: 0.75 },
 });

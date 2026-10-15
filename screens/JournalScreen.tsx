@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../lib/toast';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,7 +40,7 @@ export const JournalScreen = () => {
       setNotes(noteRows);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido cargar', 'Tira hacia abajo para reintentar.');
+      toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
     } finally {
       setRefreshing(false);
     }
@@ -96,7 +97,7 @@ export const JournalScreen = () => {
       />
 
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brownPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
         contentContainerStyle={{ paddingTop: Spacing.sm, paddingBottom: tabClearance(insets.bottom), gap: Spacing.md }}
       >
         {segment === 'reflections' && entries.length === 0 ? (
@@ -135,8 +136,8 @@ export const JournalScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.lg, gap: Spacing.md },
-  title: { color: Colors.textPrimary, fontFamily: Typography.fontDisplay, fontSize: Typography.lg, lineHeight: 24 },
-  meta: { color: Colors.textMuted, fontFamily: Typography.fontMedium, fontSize: Typography.xs, marginTop: 4, marginBottom: Spacing.sm },
-  body: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
+  container: { flex: 1, backgroundColor: Colors.bg, paddingHorizontal: Spacing.lg, gap: Spacing.md },
+  title: { color: Colors.ink, fontFamily: Typography.fontDisplay, fontSize: Typography.lg, lineHeight: 24 },
+  meta: { color: Colors.text3, fontFamily: Typography.fontMedium, fontSize: Typography.xs, marginTop: 4, marginBottom: Spacing.sm },
+  body: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
 });

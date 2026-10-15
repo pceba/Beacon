@@ -17,7 +17,7 @@ type Props = {
 export const CheckRow = ({ title, meta, done, onPress, emphasis }: Props) => (
   <PressableScale accessibilityLabel={`${title}, ${done ? 'hecha' : 'pendiente'}`} onPress={onPress} style={styles.row}>
     <View style={[styles.box, done ? styles.boxDone : null]}>
-      {done ? <Check color={Colors.white} size={14} strokeWidth={2.8} /> : null}
+      {done ? <Check color={Colors.surface} size={14} strokeWidth={2.8} /> : null}
     </View>
     <View style={styles.copy}>
       <Text numberOfLines={2} style={[styles.title, done ? styles.titleDone : null]}>
@@ -40,15 +40,15 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: Colors.brownLight,
+    borderColor: Colors.text3,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   boxDone: { backgroundColor: Colors.success, borderColor: Colors.success },
   copy: { flex: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
-  titleDone: { color: Colors.textMuted, textDecorationLine: 'line-through' },
-  meta: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, color: Colors.textMuted },
-  emphasis: { fontFamily: Typography.fontBold, fontSize: Typography.xs, letterSpacing: 0.8, color: Colors.task },
+  title: { fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.ink },
+  titleDone: { color: Colors.text3, textDecorationLine: 'line-through' },
+  meta: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, color: Colors.text3 },
+  emphasis: { fontFamily: Typography.fontBold, fontSize: Typography.xs, letterSpacing: 0.8, color: Colors.danger },
 });

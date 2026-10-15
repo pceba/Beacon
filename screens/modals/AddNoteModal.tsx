@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
@@ -20,7 +21,7 @@ export const AddNoteModal = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
@@ -36,6 +37,6 @@ export const AddNoteModal = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md },
 });

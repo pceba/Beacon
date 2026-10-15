@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../lib/toast';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-gifted-charts';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,7 +52,7 @@ export const StatsScreen = () => {
       setBody(bodyStats);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se han podido cargar los datos');
+      toast.show({ message: 'No se han podido cargar los datos', kind: 'error' });
     } finally {
       setRefreshing(false);
     }
@@ -69,7 +70,7 @@ export const StatsScreen = () => {
 
   return (
     <ScrollView
-      style={{ backgroundColor: Colors.background }}
+      style={{ backgroundColor: Colors.bg }}
       contentContainerStyle={{ paddingTop: insets.top + Spacing.md, paddingHorizontal: Spacing.lg, paddingBottom: tabClearance(insets.bottom), gap: Spacing.lg }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
     >
@@ -98,8 +99,8 @@ export const StatsScreen = () => {
             color={Colors.sleep}
             hideDataPoints
             noOfSections={3}
-            yAxisTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
-            xAxisLabelTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            yAxisTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            xAxisLabelTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
             areaChart
             startFillColor={Colors.sleep}
             startOpacity={0.15}
@@ -122,10 +123,10 @@ export const StatsScreen = () => {
         {nutrition.caloriesByDay.length > 0 ? (
           <BarChart
             data={nutrition.caloriesByDay}
-            frontColor={Colors.nutrition}
+            frontColor={Colors.food}
             noOfSections={4}
-            yAxisTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
-            xAxisLabelTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            yAxisTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            xAxisLabelTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
             barBorderRadius={4}
             initialSpacing={10}
           />
@@ -160,8 +161,8 @@ export const StatsScreen = () => {
           <BarChart
             data={workouts.sessionsByWeek}
             frontColor={Colors.workout}
-            yAxisTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
-            xAxisLabelTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            yAxisTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            xAxisLabelTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
             barBorderRadius={4}
             initialSpacing={10}
           />
@@ -191,12 +192,12 @@ export const StatsScreen = () => {
         {body.points.length > 1 ? (
           <LineChart
             data={body.points}
-            color={Colors.journal}
+            color={Colors.mood}
             noOfSections={4}
-            yAxisTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
-            xAxisLabelTextStyle={{ color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            yAxisTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
+            xAxisLabelTextStyle={{ color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.xs }}
             areaChart
-            startFillColor={Colors.journal}
+            startFillColor={Colors.mood}
             startOpacity={0.15}
             endOpacity={0}
             initialSpacing={10}
@@ -210,39 +211,39 @@ export const StatsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  title: { color: Colors.brownDark, fontFamily: Typography.fontBold, fontSize: Typography.xl },
+  title: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.xl },
   periodRow: { flexDirection: 'row', gap: Spacing.sm },
   period: {
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 999,
-    color: Colors.brownPrimary,
+    color: Colors.ink,
     fontFamily: Typography.fontRegular,
     fontSize: Typography.sm,
   },
-  periodActive: { backgroundColor: Colors.brownPrimary, color: Colors.textOnDark, borderColor: Colors.brownPrimary },
-  body: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.md, marginBottom: Spacing.sm },
+  periodActive: { backgroundColor: Colors.ink, color: Colors.surface, borderColor: Colors.ink },
+  body: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.md, marginBottom: Spacing.sm },
   noData: {
     paddingVertical: Spacing.lg,
     alignItems: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
     borderRadius: 8,
     marginTop: Spacing.sm,
   },
   noDataText: {
-    color: Colors.textMuted,
+    color: Colors.text3,
     fontFamily: Typography.fontRegular,
     fontSize: Typography.sm,
   },
   macroWrap: { marginTop: Spacing.md, alignItems: 'center', gap: Spacing.sm },
-  macroTitle: { color: Colors.textSecondary, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
+  macroTitle: { color: Colors.text2, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
   macroLegend: { flexDirection: 'row', gap: Spacing.md, flexWrap: 'wrap', justifyContent: 'center' },
   macroItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   macroColor: { width: 10, height: 10, borderRadius: 5 },
-  macroLabel: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
-  habitTrack: { height: 8, borderRadius: 99, backgroundColor: Colors.surfaceAlt, overflow: 'hidden' },
-  habitFill: { height: 8, borderRadius: 99, backgroundColor: Colors.gold },
+  macroLabel: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  habitTrack: { height: 8, borderRadius: 99, backgroundColor: Colors.fill, overflow: 'hidden' },
+  habitFill: { height: 8, borderRadius: 99, backgroundColor: Colors.accent },
 });

@@ -35,9 +35,9 @@ export const getNutritionStats = async (userId: string, days = 7): Promise<Nutri
     averageProtein: Number(averageProtein.toFixed(0)),
     caloriesByDay: rows.map((row, i) => ({ label: `${i + 1}`, value: row.calories })),
     macros: [
-      { label: 'Protein', value: proteins, color: Colors.nutrition },
-      { label: 'Carbs', value: carbs, color: Colors.gold },
-      { label: 'Fat', value: fats, color: Colors.task },
+      { label: 'Protein', value: proteins, color: Colors.food },
+      { label: 'Carbs', value: carbs, color: Colors.accent },
+      { label: 'Fat', value: fats, color: Colors.danger },
     ],
   };
 };

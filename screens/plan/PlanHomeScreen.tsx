@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../../lib/toast';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
@@ -49,7 +50,7 @@ export const PlanHomeScreen = () => {
       setEvents(eventRows);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido cargar', 'Tira hacia abajo para reintentar.');
+      toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
     } finally {
       setRefreshing(false);
     }
@@ -72,7 +73,7 @@ export const PlanHomeScreen = () => {
     const marks: Record<string, { dots: { color: string }[]; selected?: boolean; selectedColor?: string }> = {};
     events.forEach((event) => {
       const key = dayOf(event.event_date);
-      marks[key] = { dots: [...(marks[key]?.dots ?? []), { color: Colors.gold }] };
+      marks[key] = { dots: [...(marks[key]?.dots ?? []), { color: Colors.accent }] };
     });
     tasks.forEach((task) => {
       if (!task.deadline) return;
@@ -80,7 +81,7 @@ export const PlanHomeScreen = () => {
       const color = task.completed ? Colors.success : Colors.danger;
       marks[key] = { dots: [...(marks[key]?.dots ?? []), { color }] };
     });
-    marks[selectedDate] = { ...(marks[selectedDate] ?? { dots: [] }), selected: true, selectedColor: Colors.brownPrimary };
+    marks[selectedDate] = { ...(marks[selectedDate] ?? { dots: [] }), selected: true, selectedColor: Colors.ink };
     return marks;
   }, [events, tasks, selectedDate]);
 
@@ -94,7 +95,7 @@ export const PlanHomeScreen = () => {
     } catch (error) {
       console.error(error);
       setTasks(tasks);
-      Alert.alert('No se ha actualizado la tarea');
+      toast.show({ message: 'No se ha actualizado la tarea', kind: 'error' });
     }
   };
 
@@ -104,7 +105,7 @@ export const PlanHomeScreen = () => {
     <View style={[styles.container, { paddingTop: insets.top + Spacing.md }]}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: tabClearance(insets.bottom) }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brownPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
       >
         <ScreenHeader title={heading} />
 
@@ -117,14 +118,14 @@ export const PlanHomeScreen = () => {
             theme={{
               backgroundColor: Colors.surface,
               calendarBackground: Colors.surface,
-              textSectionTitleColor: Colors.textMuted,
-              selectedDayBackgroundColor: Colors.brownPrimary,
-              selectedDayTextColor: Colors.textOnDark,
-              todayTextColor: Colors.gold,
-              dayTextColor: Colors.textPrimary,
+              textSectionTitleColor: Colors.text3,
+              selectedDayBackgroundColor: Colors.ink,
+              selectedDayTextColor: Colors.surface,
+              todayTextColor: Colors.accent,
+              dayTextColor: Colors.ink,
               textDisabledColor: Colors.border,
-              arrowColor: Colors.brownPrimary,
-              monthTextColor: Colors.textPrimary,
+              arrowColor: Colors.ink,
+              monthTextColor: Colors.ink,
               textDayFontFamily: Typography.fontRegular,
               textMonthFontFamily: Typography.fontDisplay,
               textDayHeaderFontFamily: Typography.fontMedium,
@@ -160,7 +161,7 @@ export const PlanHomeScreen = () => {
                     {[event.event_time, event.location].filter(Boolean).join(' · ') || shortDay(event.event_date)}
                   </Text>
                 </View>
-                <ChevronRight color={Colors.textMuted} size={18} />
+                <ChevronRight color={Colors.text3} size={18} />
               </Pressable>
             ))
           )}
@@ -189,9 +190,9 @@ export const PlanHomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
-  showAll: { color: Colors.gold, fontFamily: Typography.fontBold, fontSize: Typography.sm, marginTop: Spacing.md },
+  showAll: { color: Colors.accent, fontFamily: Typography.fontBold, fontSize: Typography.sm, marginTop: Spacing.md },
   actions: { flexDirection: 'row', gap: Spacing.sm },
   event: {
     minHeight: 56,
@@ -200,12 +201,12 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairline,
+    borderBottomColor: Colors.line,
   },
   eventLast: { borderBottomWidth: 0 },
   eventCopy: { flex: 1, minWidth: 0, gap: 2 },
-  title: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.md },
-  subtitle: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
-  empty: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
+  title: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.md },
+  subtitle: { color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  empty: { color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
   pressed: { opacity: 0.72 },
 });

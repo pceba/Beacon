@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ConfirmSheet } from '../../components/ui/ConfirmSheet';
+import { warning } from '../../lib/haptics';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
@@ -23,6 +26,7 @@ export const SettingsScreen = () => {
   const [calories, setCalories] = useState('2000');
   const [sleep, setSleep] = useState('7');
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState<null | 'link' | 'disconnect'>(null);
   const [connectorStatus, setConnectorStatus] = useState('Comprobando…');
   const [connectorAccount, setConnectorAccount] = useState(false);
   const [connectorActive, setConnectorActive] = useState(false);
@@ -52,7 +56,7 @@ export const SettingsScreen = () => {
       setConnectorLink(await createConnectorUrl());
       await refreshConnector();
     } catch (error) {
-      Alert.alert(error instanceof Error ? error.message : 'No se ha podido crear el enlace.');
+      toast.show({ message: 'No se ha podido crear el enlace.', kind: 'error' });
     } finally {
       setConnecting(false);
     }
@@ -73,13 +77,13 @@ export const SettingsScreen = () => {
     try {
       const saved = await applyReminders(next);
       if (!saved) {
-        Alert.alert(Platform.OS === 'web' ? 'Solo en el móvil' : 'Sin permiso', Platform.OS === 'web' ? 'Los recordatorios se programan en la app de Android.' : 'Activa las notificaciones de Lifepp en los ajustes del sistema.');
+        toast.show({ message: Platform.OS === 'web' ? 'Los recordatorios se programan en el móvil.' : 'Activa las notificaciones de Lifepp en los ajustes del sistema.', kind: 'error' });
         return;
       }
       setReminders(saved);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido programar el aviso');
+      toast.show({ message: 'No se ha podido programar el aviso', kind: 'error' });
     }
   };
 
@@ -87,7 +91,7 @@ export const SettingsScreen = () => {
     if (!reminders) return;
     const time = parseReminderTime(reminders[key].time);
     if (enabled && !time) {
-      Alert.alert('Usa el formato hh:mm');
+      toast.show({ message: 'Usa el formato hh:mm', kind: 'error' });
       return;
     }
     void commitReminders({ ...reminders, [key]: { ...reminders[key], enabled, time: time?.label ?? reminders[key].time } });
@@ -102,7 +106,7 @@ export const SettingsScreen = () => {
     if (!reminders) return;
     const time = parseReminderTime(reminders[key].time);
     if (!time) {
-      Alert.alert('Usa el formato hh:mm');
+      toast.show({ message: 'Usa el formato hh:mm', kind: 'error' });
       getReminders().then(setReminders).catch((error) => console.error(error));
       return;
     }
@@ -122,7 +126,7 @@ export const SettingsScreen = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     } finally {
       setSaving(false);
     }
@@ -187,38 +191,47 @@ export const SettingsScreen = () => {
               void onCreateLink();
               return;
             }
-            Alert.alert('Crear enlace nuevo', 'El enlace anterior dejará de funcionar en Claude.', [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Crear', onPress: () => void onCreateLink() },
-            ]);
+            setConfirm('link');
           }}
         />
         {connectorActive ? (
-          <Button
-            title="Desconectar Claude"
-            variant="secondary"
-            onPress={() =>
-              Alert.alert('Desconectar Claude', 'Claude dejará de ver tus datos. Puedes volver a conectarlo cuando quieras.', [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Desconectar',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await revokeConnector();
-                      setConnectorLink('');
-                      await refreshConnector();
-                    } catch (error) {
-                      Alert.alert(error instanceof Error ? error.message : 'No se ha podido desconectar.');
-                    }
-                  },
-                },
-              ])
-            }
-          />
+          <Button title="Desconectar Claude" variant="secondary" onPress={() => setConfirm('disconnect')} />
         ) : null}
         <Button title="Guardar" onPress={onSave} loading={saving} />
       </ScrollView>
+      <ConfirmSheet
+        visible={confirm === 'link'}
+        title="¿Crear un enlace nuevo?"
+        body="El enlace anterior dejará de funcionar en Claude."
+        confirmLabel="Crear enlace"
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          warning();
+          setConfirm(null);
+          void onCreateLink();
+        }}
+      />
+      <ConfirmSheet
+        visible={confirm === 'disconnect'}
+        title="¿Desconectar Claude?"
+        body="Claude dejará de ver tus datos. Puedes volver a conectarlo cuando quieras."
+        confirmLabel="Desconectar"
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          warning();
+          setConfirm(null);
+          void (async () => {
+            try {
+              await revokeConnector();
+              setConnectorLink('');
+              await refreshConnector();
+            } catch (error) {
+              console.error(error);
+              toast.show({ message: 'No se ha podido desconectar.', kind: 'error' });
+            }
+          })();
+        }}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -251,22 +264,22 @@ const ReminderLine = ({
       accessibilityLabel={label}
       value={slot.enabled}
       onValueChange={onToggle}
-      trackColor={{ false: Colors.border, true: Colors.gold }}
-      thumbColor={Colors.white}
+      trackColor={{ false: Colors.border, true: Colors.accent }}
+      thumbColor={Colors.surface}
     />
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  help: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textSecondary },
-  section: { fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary, marginTop: Spacing.md },
+  help: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.text2 },
+  section: { fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.ink, marginTop: Spacing.md },
   linkBox: { gap: Spacing.sm, padding: Spacing.md, borderRadius: 12, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
-  link: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textPrimary },
-  status: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.textMuted },
+  link: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.ink },
+  status: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20, color: Colors.text3 },
   reminder: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  reminderLabel: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
+  reminderLabel: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.ink },
   time: {
     width: 72,
     minHeight: 44,
@@ -276,7 +289,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: Typography.fontMedium,
     fontSize: Typography.md,
-    color: Colors.textPrimary,
+    color: Colors.ink,
     backgroundColor: Colors.surface,
   },
 });

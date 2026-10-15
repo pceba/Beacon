@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../../lib/toast';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
@@ -57,7 +58,7 @@ export const WorkoutDetailScreen = () => {
       setExerciseName('');
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha añadido el ejercicio');
+      toast.show({ message: 'No se ha añadido el ejercicio', kind: 'error' });
     }
   };
 
@@ -80,7 +81,7 @@ export const WorkoutDetailScreen = () => {
       );
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha añadido la serie');
+      toast.show({ message: 'No se ha añadido la serie', kind: 'error' });
     }
   };
 
@@ -92,7 +93,7 @@ export const WorkoutDetailScreen = () => {
       finishLog(navigation, route.params.fromToday);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha cerrado el entreno');
+      toast.show({ message: 'No se ha cerrado el entreno', kind: 'error' });
     }
   };
 
@@ -123,11 +124,11 @@ export const WorkoutDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  title: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.xl },
-  subtitle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
-  exercise: { color: Colors.brownPrimary, fontFamily: Typography.fontBold, fontSize: Typography.lg },
-  row: { color: Colors.textPrimary, fontFamily: Typography.fontRegular, fontSize: Typography.md },
+  title: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.xl },
+  subtitle: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  exercise: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.lg },
+  row: { color: Colors.ink, fontFamily: Typography.fontRegular, fontSize: Typography.md },
   inline: { flexDirection: 'row', gap: Spacing.sm },
 });

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { differenceInMinutes } from 'date-fns';
 import { Input } from '../../components/Input';
@@ -77,7 +78,7 @@ export const LogSleepScreen = () => {
 
   const onSubmit = async () => {
     if (!bedIso || !wakeIso) {
-      Alert.alert('Usa el formato aaaa-mm-dd hh:mm');
+      toast.show({ message: 'Usa el formato aaaa-mm-dd hh:mm', kind: 'error' });
       return;
     }
     try {
@@ -88,7 +89,7 @@ export const LogSleepScreen = () => {
       finishLog(navigation, route.params?.fromToday);
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
@@ -107,7 +108,7 @@ export const LogSleepScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  info: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.md },
+  info: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.md },
 });

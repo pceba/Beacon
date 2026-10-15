@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lifepp",
     "slug": "lifepp",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -38,9 +38,10 @@
       [
         "expo-notifications",
         {
-          "color": "#1C4ED8"
+          "color": "#2448D8"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

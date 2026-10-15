@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { warning } from '../../lib/haptics';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
@@ -49,19 +51,39 @@ export const EventDetailScreen = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
   const onDelete = async () => {
     if (!route.params?.eventId) return;
+    const snapshot = {
+      title,
+      description: description || null,
+      event_date: eventDate,
+      event_time: eventTime || null,
+      location: location || null,
+    };
     try {
       const userId = await getCurrentUserId();
       await deleteEvent(userId, route.params.eventId);
+      warning();
       navigation.goBack();
+      toast.show({
+        message: 'Evento eliminado',
+        action: {
+          label: 'Deshacer',
+          onPress: () => {
+            void createEvent(userId, snapshot).catch((error) => {
+              console.error(error);
+              toast.show({ message: 'No se ha podido recuperar el evento.', kind: 'error' });
+            });
+          },
+        },
+      });
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido eliminar');
+      toast.show({ message: 'No se ha podido eliminar.', kind: 'error' });
     }
   };
 
@@ -81,6 +103,6 @@ export const EventDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
 });

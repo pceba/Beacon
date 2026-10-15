@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { toast } from '../lib/toast';
+import { warning } from '../lib/haptics';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -18,7 +20,7 @@ import { Colors } from '../constants/colors';
 import { Radius, Spacing, tabClearance } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { getCurrentUserId } from '../services/authService';
-import { deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
+import { createHabit, deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
 import { getMoodLog, migrateMoodScores, upsertMoodLog } from '../services/moodService';
 import { MOODS, moodScale } from '../utils/mood';
 import { getNutritionLogs } from '../services/nutritionService';
@@ -125,7 +127,7 @@ export const TodayScreen = () => {
       );
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido cargar', 'Tira hacia abajo para reintentar.');
+      toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
     } finally {
       setRefreshing(false);
     }
@@ -166,7 +168,7 @@ export const TodayScreen = () => {
     } catch (error) {
       console.error(error);
       setMood(previous);
-      Alert.alert('No se ha guardado el ánimo');
+      toast.show({ message: 'No se ha guardado el ánimo', kind: 'error' });
     }
   };
 
@@ -181,7 +183,7 @@ export const TodayScreen = () => {
     } catch (error) {
       console.error(error);
       setSummary((current) => ({ ...current, waterMl: Math.max(0, current.waterMl - delta) }));
-      Alert.alert('No se ha guardado el agua');
+      toast.show({ message: 'No se ha guardado el agua', kind: 'error' });
     }
   };
 
@@ -214,7 +216,7 @@ export const TodayScreen = () => {
       console.error(error);
       setSummary((state) => ({ ...state, sleep: current }));
       setSleepId(previousId);
-      Alert.alert('No se ha guardado el sueño');
+      toast.show({ message: 'No se ha guardado el sueño', kind: 'error' });
     } finally {
       sleepLock.current = false;
     }
@@ -245,7 +247,7 @@ export const TodayScreen = () => {
       console.error(error);
       setSummary((state) => ({ ...state, workout: wasDone }));
       setQuickWorkoutId(previous);
-      Alert.alert('No se ha guardado el movimiento');
+      toast.show({ message: 'No se ha guardado el movimiento', kind: 'error' });
     } finally {
       moveLock.current = false;
     }
@@ -277,7 +279,7 @@ export const TodayScreen = () => {
       setHabitLogs((current) =>
         current.map((log) => (log.id === `local-${habit.id}` ? { ...log, completed: wasDone } : log)),
       );
-      Alert.alert('No se ha actualizado el hábito');
+      toast.show({ message: 'No se ha actualizado el hábito', kind: 'error' });
     }
   };
 
@@ -290,30 +292,44 @@ export const TodayScreen = () => {
     } catch (error) {
       console.error(error);
       setTasks((current) => [task, ...current]);
-      Alert.alert('No se ha actualizado la tarea');
+      toast.show({ message: 'No se ha actualizado la tarea', kind: 'error' });
     }
   };
 
-  const onDeleteHabit = (habit: Habit) => {
-    Alert.alert(habit.name, 'Se quita de la lista.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          const previous = habits;
-          setHabits((current) => current.filter((item) => item.id !== habit.id));
-          try {
-            const userId = await getCurrentUserId();
-            await deleteHabit(userId, habit.id);
-          } catch (error) {
-            console.error(error);
-            setHabits(previous);
-            Alert.alert('No se ha podido eliminar');
-          }
+  const onDeleteHabit = async (habit: Habit) => {
+    const previous = habits;
+    setHabits((current) => current.filter((item) => item.id !== habit.id));
+    try {
+      const userId = await getCurrentUserId();
+      await deleteHabit(userId, habit.id);
+      warning();
+      toast.show({
+        message: 'Hábito eliminado',
+        action: {
+          label: 'Deshacer',
+          onPress: () => {
+            void (async () => {
+              try {
+                const created = await createHabit(userId, {
+                  name: habit.name,
+                  icon: habit.icon,
+                  color: habit.color,
+                  frequency: habit.frequency,
+                });
+                setHabits((current) => [created, ...current]);
+              } catch (undoError) {
+                console.error(undoError);
+                toast.show({ message: 'No se ha podido recuperar el hábito.', kind: 'error' });
+              }
+            })();
+          },
         },
-      },
-    ]);
+      });
+    } catch (error) {
+      console.error(error);
+      setHabits(previous);
+      toast.show({ message: 'No se ha podido eliminar.', kind: 'error' });
+    }
   };
 
   const onAddTask = async () => {
@@ -333,7 +349,7 @@ export const TodayScreen = () => {
     } catch (error) {
       console.error(error);
       setTaskDraft(title);
-      Alert.alert('No se ha guardado la tarea');
+      toast.show({ message: 'No se ha guardado la tarea', kind: 'error' });
     }
   };
 
@@ -344,7 +360,7 @@ export const TodayScreen = () => {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.md, paddingBottom: tabClearance(insets.bottom) }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brownPrimary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
     >
       <ScreenHeader
         title={dateTitle}
@@ -393,7 +409,7 @@ export const TodayScreen = () => {
                 <Plus color={Colors.sleep} size={14} />
               </Pressable>
               <Pressable accessibilityLabel="Detalle del sueño" hitSlop={8} onPress={openSleep} style={({ pressed }) => pressed && styles.pressed}>
-                <ChevronRight color={Colors.textMuted} size={18} />
+                <ChevronRight color={Colors.text3} size={18} />
               </Pressable>
             </View>
           }
@@ -413,10 +429,10 @@ export const TodayScreen = () => {
                 onPress={toggleMove}
                 style={({ pressed }) => [styles.step, summary.workout ? styles.stepOn : null, pressed && styles.pressed]}
               >
-                <Check color={summary.workout ? Colors.white : Colors.workout} size={14} strokeWidth={2.6} />
+                <Check color={summary.workout ? Colors.surface : Colors.workout} size={14} strokeWidth={2.6} />
               </Pressable>
               <Pressable accessibilityLabel="Detalle del entreno" hitSlop={8} onPress={openWorkout} style={({ pressed }) => pressed && styles.pressed}>
-                <ChevronRight color={Colors.textMuted} size={18} />
+                <ChevronRight color={Colors.text3} size={18} />
               </Pressable>
             </View>
           }
@@ -427,9 +443,9 @@ export const TodayScreen = () => {
           value={summary.calories > 0 ? `${summary.calories} kcal` : 'Anotar'}
           hint={summary.calories > 0 ? `de ${goals.calories}` : 'Sin registro'}
           progress={goals.calories ? summary.calories / goals.calories : 0}
-          tint={Colors.nutrition}
+          tint={Colors.food}
           onPress={openMeal}
-          trailing={<ChevronRight color={Colors.textMuted} size={18} />}
+          trailing={<ChevronRight color={Colors.text3} size={18} />}
           last
         />
       </Card>
@@ -460,7 +476,7 @@ export const TodayScreen = () => {
                 key={habit.id}
                 name={habit.name}
                 icon={habit.icon}
-                color={habit.color || Colors.gold}
+                color={habit.color || Colors.accent}
                 done={done}
                 streak={habitStreak(habitLogs, habit.id)}
                 marks={marks}
@@ -499,7 +515,7 @@ export const TodayScreen = () => {
           onChangeText={setTaskDraft}
           onSubmitEditing={onAddTask}
           placeholder="Nueva tarea"
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={Colors.text3}
           returnKeyType="done"
           style={styles.taskInput}
         />
@@ -523,16 +539,16 @@ export const TodayScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
   stepper: { flexDirection: 'row', gap: 6 },
-  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
+  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.fill },
   stepOn: { backgroundColor: Colors.workout },
   taskInput: {
     minHeight: 44,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceAlt,
-    color: Colors.textPrimary,
+    backgroundColor: Colors.fill,
+    color: Colors.ink,
     fontFamily: Typography.fontRegular,
     fontSize: 16,
     paddingHorizontal: Spacing.md,
@@ -545,19 +561,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
     paddingHorizontal: 2,
   },
-  moodChipOn: { backgroundColor: Colors.gold },
-  moodNum: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
-  moodNumOn: { color: Colors.white },
-  empty: { fontFamily: Typography.fontRegular, fontSize: Typography.md, color: Colors.textMuted, lineHeight: 22 },
+  moodChipOn: { backgroundColor: Colors.accent },
+  moodNum: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.text2, textAlign: 'center' },
+  moodNumOn: { color: Colors.surface },
+  empty: { fontFamily: Typography.fontRegular, fontSize: Typography.md, color: Colors.text3, lineHeight: 22 },
   pressed: { opacity: 0.78 },
   brief: {
     fontFamily: Typography.fontRegular,
     fontSize: Typography.md,
     lineHeight: 22,
-    color: Colors.textSecondary,
+    color: Colors.text2,
     marginTop: -Spacing.sm,
   },
 });

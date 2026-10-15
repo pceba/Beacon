@@ -37,11 +37,11 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     minWidth: 0,
-    color: Colors.textPrimary,
+    color: Colors.ink,
     fontFamily: Typography.fontBold,
     fontSize: Typography.md,
   },
   hit: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  action: { color: Colors.gold, fontFamily: Typography.fontBold, fontSize: Typography.sm },
+  action: { color: Colors.accent, fontFamily: Typography.fontBold, fontSize: Typography.sm },
   pressed: { opacity: 0.7 },
 });

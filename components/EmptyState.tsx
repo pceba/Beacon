@@ -16,7 +16,7 @@ interface Props {
 export const EmptyState = ({ icon: Icon, title, subtitle, action }: Props) => (
   <View style={styles.container}>
     <View style={styles.iconWrap}>
-      <Icon size={22} color={Colors.brownMedium} />
+      <Icon size={22} color={Colors.text2} />
     </View>
     <Text style={styles.title}>{title}</Text>
     <Text style={styles.subtitle}>{subtitle}</Text>
@@ -36,18 +36,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
   },
-  title: { color: Colors.textPrimary, fontFamily: Typography.fontDisplay, fontSize: Typography.lg, textAlign: 'center' },
-  subtitle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.sm, textAlign: 'center', lineHeight: 20 },
+  title: { color: Colors.ink, fontFamily: Typography.fontDisplay, fontSize: Typography.lg, textAlign: 'center' },
+  subtitle: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.sm, textAlign: 'center', lineHeight: 20 },
   action: {
     marginTop: Spacing.sm,
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.full,
-    backgroundColor: Colors.brownPrimary,
+    backgroundColor: Colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionText: { color: Colors.textOnDark, fontFamily: Typography.fontBold, fontSize: Typography.sm },
+  actionText: { color: Colors.surface, fontFamily: Typography.fontBold, fontSize: Typography.sm },
 });

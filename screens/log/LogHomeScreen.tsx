@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,7 +61,7 @@ export const LogHomeScreen = () => {
       setTimeline(rows.sort((a, b) => b.sortKey.localeCompare(a.sortKey)));
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido cargar', 'Tira hacia abajo para reintentar.');
+      toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
     } finally {
       setRefreshing(false);
     }
@@ -75,15 +76,15 @@ export const LogHomeScreen = () => {
   const options = [
     { title: 'Sueño', detail: 'Horas y calidad', icon: Moon, screen: 'LogSleepScreen' as const, tint: Colors.sleep },
     { title: 'Entreno', detail: 'La sesión', icon: Dumbbell, screen: 'LogWorkoutScreen' as const, tint: Colors.workout },
-    { title: 'Comida', detail: 'Qué has comido', icon: Utensils, screen: 'LogMealScreen' as const, tint: Colors.nutrition },
-    { title: 'Cuerpo', detail: 'Peso', icon: Scale, screen: 'LogBodyScreen' as const, tint: Colors.journal },
+    { title: 'Comida', detail: 'Qué has comido', icon: Utensils, screen: 'LogMealScreen' as const, tint: Colors.food },
+    { title: 'Cuerpo', detail: 'Peso', icon: Scale, screen: 'LogBodyScreen' as const, tint: Colors.mood },
   ];
 
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={{ paddingTop: insets.top + Spacing.md, paddingHorizontal: Spacing.lg, paddingBottom: tabClearance(insets.bottom), gap: Spacing.lg }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brownPrimary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
     >
       <ScreenHeader title="Registro" />
       <Card>
@@ -95,7 +96,7 @@ export const LogHomeScreen = () => {
             label={item.title}
             hint={item.detail}
             onPress={() => navigation.navigate(item.screen)}
-            trailing={<ChevronRight color={Colors.textMuted} size={18} />}
+            trailing={<ChevronRight color={Colors.text3} size={18} />}
             last={index === options.length - 1}
           />
         ))}
@@ -106,7 +107,7 @@ export const LogHomeScreen = () => {
         {timeline.length === 0 ? <Text style={styles.empty}>Nada registrado hoy.</Text> : null}
         {timeline.map((entry, index) => {
           const icon = entry.type === 'sleep' ? Moon : entry.type === 'workout' ? Dumbbell : Utensils;
-          const tint = entry.type === 'sleep' ? Colors.sleep : entry.type === 'workout' ? Colors.workout : Colors.nutrition;
+          const tint = entry.type === 'sleep' ? Colors.sleep : entry.type === 'workout' ? Colors.workout : Colors.food;
           return (
             <LineRow
               key={entry.id}
@@ -120,7 +121,7 @@ export const LogHomeScreen = () => {
                 else if (entry.type === 'workout') navigation.navigate('WorkoutDetailScreen', { workoutId: entry.id });
                 else navigation.navigate('LogMealScreen', { logId: entry.id });
               }}
-              trailing={<ChevronRight color={Colors.textMuted} size={18} />}
+              trailing={<ChevronRight color={Colors.text3} size={18} />}
               last={index === timeline.length - 1}
             />
           );
@@ -131,6 +132,6 @@ export const LogHomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.background },
-  empty: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
+  screen: { flex: 1, backgroundColor: Colors.bg },
+  empty: { color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.md, lineHeight: 22 },
 });

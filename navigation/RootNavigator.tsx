@@ -16,15 +16,15 @@ const modalOptions = {
   headerShown: true,
   headerBackButtonDisplayMode: 'minimal' as const,
   presentation: 'modal' as const,
-  headerStyle: { backgroundColor: Colors.background },
+  headerStyle: { backgroundColor: Colors.bg },
   headerShadowVisible: false,
-  headerTintColor: Colors.brownPrimary,
+  headerTintColor: Colors.ink,
   headerTitleStyle: {
     fontFamily: Typography.fontBold,
     fontSize: 16,
-    color: Colors.textPrimary,
+    color: Colors.ink,
   },
-  contentStyle: { backgroundColor: Colors.background },
+  contentStyle: { backgroundColor: Colors.bg },
 };
 
 export const RootNavigator = () => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
@@ -29,7 +30,7 @@ export const AddReflectionModal = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
@@ -63,7 +64,7 @@ export const AddReflectionModal = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md },
   moodRow: { flexDirection: 'row', gap: 4 },
   moodChip: {
@@ -72,10 +73,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
     paddingHorizontal: 2,
   },
-  moodChipOn: { backgroundColor: Colors.gold },
-  moodLabel: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
-  moodLabelOn: { color: Colors.white },
+  moodChipOn: { backgroundColor: Colors.accent },
+  moodLabel: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.text2, textAlign: 'center' },
+  moodLabelOn: { color: Colors.surface },
 });

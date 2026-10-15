@@ -31,7 +31,7 @@ export const HabitRow = ({ name, icon, color, done, meta, streak = 0, marks, onP
       style={styles.row}
     >
       <View style={[styles.mark, done ? { backgroundColor: color, borderColor: color } : { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-        {done ? <Check color={Colors.white} size={16} strokeWidth={2.6} /> : <Icon color={color} size={16} />}
+        {done ? <Check color={Colors.surface} size={16} strokeWidth={2.6} /> : <Icon color={color} size={16} />}
       </View>
       <View style={styles.copy}>
         <View style={styles.nameLine}>
@@ -77,13 +77,13 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, minWidth: 0, gap: 2 },
   nameLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  name: { flexShrink: 1, fontFamily: Typography.fontBold, fontSize: Typography.md, color: Colors.textPrimary },
-  streak: { flexShrink: 0, fontFamily: Typography.fontMedium, fontSize: Typography.sm, color: Colors.textMuted },
-  meta: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, color: Colors.textMuted },
+  name: { flexShrink: 1, fontFamily: Typography.fontBold, fontSize: Typography.md, color: Colors.ink },
+  streak: { flexShrink: 0, fontFamily: Typography.fontMedium, fontSize: Typography.sm, color: Colors.text3 },
+  meta: { fontFamily: Typography.fontRegular, fontSize: Typography.sm, color: Colors.text3 },
   week: { flexDirection: 'row', gap: 3, flexShrink: 0 },
   day: { width: 14, alignItems: 'center', gap: 4 },
-  letter: { fontFamily: Typography.fontMedium, fontSize: 10, color: Colors.textMuted },
-  letterToday: { color: Colors.textPrimary },
+  letter: { fontFamily: Typography.fontMedium, fontSize: 10, color: Colors.text3 },
+  letterToday: { color: Colors.ink },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotEmpty: { backgroundColor: Colors.border },
 });
