@@ -3,7 +3,7 @@ import { toast } from '../../lib/toast';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Card } from '../../components/Card';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
@@ -56,9 +56,8 @@ export const LogWorkoutScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <FormScreen title="Entreno" saveLabel="Empezar entreno" onSave={() => void startBlank()}>
       <Input label="Nombre" value={name} onChangeText={setName} placeholder="Piernas, torso…" />
-      <Button title="Empezar" onPress={startBlank} />
       <Text style={styles.header}>Plantillas</Text>
       {templates.map((template) => (
         <Card key={template.id} onPress={() => useTemplate(template.id)}>
@@ -66,7 +65,7 @@ export const LogWorkoutScreen = () => {
           {template.description ? <Text style={styles.subtitle}>{template.description}</Text> : null}
         </Card>
       ))}
-    </ScrollView>
+    </FormScreen>
   );
 };
 

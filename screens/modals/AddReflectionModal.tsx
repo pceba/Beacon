@@ -3,7 +3,7 @@ import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -35,8 +35,7 @@ export const AddReflectionModal = () => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <FormScreen title="Reflexión" saveLabel="Guardar reflexión" onSave={() => void onSave()}>
         <Input label="Título" value={title} onChangeText={setTitle} placeholder="Opcional" />
         <Input label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
         <View style={styles.moodRow}>
@@ -57,9 +56,7 @@ export const AddReflectionModal = () => {
           })}
         </View>
         <Input label="Etiquetas" value={tags} onChangeText={setTags} placeholder="separadas por comas" />
-        <Button title="Guardar" onPress={onSave} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 

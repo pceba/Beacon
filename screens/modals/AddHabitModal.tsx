@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { HABIT_COLORS, HABIT_ICON_OPTIONS } from '../../components/habitVisuals';
 import { Input } from '../../components/Input';
 import { Colors } from '../../constants/colors';
@@ -40,8 +40,7 @@ export const AddHabitModal = () => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <FormScreen title="Hábito" saveLabel="Guardar hábito" onSave={() => void onSave()} loading={saving}>
         <Input label="Nombre" value={name} onChangeText={setName} placeholder="Leer, caminar, estirar…" error={error} />
         <Text style={styles.label}>Icono</Text>
         <View style={styles.iconRow}>
@@ -76,9 +75,7 @@ export const AddHabitModal = () => {
             );
           })}
         </View>
-        <Button title="Guardar" onPress={onSave} loading={saving} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 

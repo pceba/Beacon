@@ -1,7 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
-import { Typography } from '../constants/typography';
 import { RootStackParamList } from '../types/navigation';
 import { MainTabs } from './MainTabs';
 import { AddHabitModal } from '../screens/modals/AddHabitModal';
@@ -18,17 +17,8 @@ import { LogBodyScreen } from '../screens/log/LogBodyScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const modalOptions = {
-  headerShown: true,
-  headerBackButtonDisplayMode: 'minimal' as const,
+  headerShown: false,
   presentation: 'modal' as const,
-  headerStyle: { backgroundColor: Colors.bg },
-  headerShadowVisible: false,
-  headerTintColor: Colors.ink,
-  headerTitleStyle: {
-    fontFamily: Typography.fontBold,
-    fontSize: 16,
-    color: Colors.ink,
-  },
   contentStyle: { backgroundColor: Colors.bg },
 };
 
@@ -40,7 +30,18 @@ export const RootNavigator = () => {
       <Stack.Screen name="AddReflectionModal" component={AddReflectionModal} options={{ ...modalOptions, title: 'Reflexión' }} />
       <Stack.Screen name="AddNoteModal" component={AddNoteModal} options={{ ...modalOptions, title: 'Nota' }} />
       <Stack.Screen name="AddTaskModal" component={AddTaskModal} options={{ ...modalOptions, title: 'Tarea' }} />
-      <Stack.Screen name="SettingsScreen" component={SettingsScreen} options={{ ...modalOptions, title: 'Ajustes' }} />
+      <Stack.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Ajustes',
+          headerStyle: { backgroundColor: Colors.bg },
+          headerShadowVisible: false,
+          headerTintColor: Colors.ink,
+        }}
+      />
       <Stack.Screen name="LogMealScreen" component={LogMealScreen} options={{ ...modalOptions, title: 'Comida' }} />
       <Stack.Screen name="LogWorkoutScreen" component={LogWorkoutScreen} options={{ ...modalOptions, title: 'Entreno' }} />
       <Stack.Screen name="WorkoutDetailScreen" component={WorkoutDetailScreen} options={{ ...modalOptions, title: 'Sesión' }} />

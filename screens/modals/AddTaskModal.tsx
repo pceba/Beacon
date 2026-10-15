@@ -3,7 +3,7 @@ import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Input } from '../../components/Input';
 import { Segmented } from '../../components/Segmented';
 import { Colors } from '../../constants/colors';
@@ -50,8 +50,7 @@ export const AddTaskModal = () => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <FormScreen title="Tarea" saveLabel="Guardar tarea" onSave={() => void onSave()} loading={saving}>
         <Input label="Tarea" value={title} onChangeText={setTitle} placeholder="Llamar, comprar…" error={error} />
         <Input label="Notas" value={notes} onChangeText={setNotes} placeholder="Opcional" multiline />
         <Text style={styles.label}>Prioridad</Text>
@@ -64,9 +63,7 @@ export const AddTaskModal = () => {
             { value: 'high', label: 'Alta' },
           ]}
         />
-        <Button title="Guardar" onPress={onSave} loading={saving} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 

@@ -4,7 +4,8 @@ import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
+import { Button } from '../../components/ui/Button';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { createEvent, deleteEvent, getEvents, updateEvent } from '../../services/eventService';
@@ -88,17 +89,18 @@ export const EventDetailScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <FormScreen
+      title="Evento"
+      saveLabel={route.params?.eventId ? 'Guardar evento' : 'Guardar evento'}
+      onSave={() => void onSave()}
+      footer={route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={() => void onDelete()} /> : null}
+    >
         <Input label="Título" value={title} onChangeText={setTitle} />
         <Input label="Descripción" value={description} onChangeText={setDescription} multiline numberOfLines={4} />
         <Input label="Fecha" value={eventDate} onChangeText={setEventDate} />
         <Input label="Hora" value={eventTime} onChangeText={setEventTime} />
         <Input label="Lugar" value={location} onChangeText={setLocation} />
-        <Button title={route.params?.eventId ? 'Actualizar' : 'Guardar'} onPress={onSave} />
-        {route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={onDelete} /> : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 
