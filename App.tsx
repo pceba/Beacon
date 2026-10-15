@@ -12,6 +12,7 @@ import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
 import { migrateMoodOnce } from './services/moodMigration';
 import { bindReminderOpen, syncReminders } from './services/reminders';
+import { notifyRoute } from './lib/toast';
 // Sube a Supabase lo guardado en local en cuanto hay sesión.
 import './services/localSync';
 
@@ -79,7 +80,14 @@ export default function App() {
         <SafeAreaProvider style={styles.column}>
           <BottomSheetModalProvider>
             <ToastProvider>
-              <NavigationContainer ref={navigationRef} theme={navTheme}>
+              <NavigationContainer
+              ref={navigationRef}
+              theme={navTheme}
+              onStateChange={() => {
+                const route = navigationRef.getCurrentRoute();
+                if (route) notifyRoute(route.name);
+              }}
+            >
                 <StatusBar style="dark" />
                 <RootNavigator />
               </NavigationContainer>

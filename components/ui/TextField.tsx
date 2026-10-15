@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { KeyboardTypeOptions, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Colors } from '../constants/colors';
-import { Radius, Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { Colors } from '../../constants/colors';
+import { Radius, Spacing } from '../../constants/spacing';
+import { Type } from '../../constants/typography';
 
-interface Props {
+type Props = {
   label?: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -15,9 +15,9 @@ interface Props {
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   error?: string;
-}
+};
 
-export const Input = ({
+export const TextField = ({
   label,
   value,
   onChangeText,
@@ -40,7 +40,7 @@ export const Input = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.text3}
+        placeholderTextColor={Colors.text4}
         multiline={multiline}
         numberOfLines={numberOfLines}
         keyboardType={keyboardType}
@@ -50,6 +50,7 @@ export const Input = ({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         selectionColor={Colors.accent}
+        accessibilityLabel={label}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -58,22 +59,17 @@ export const Input = ({
 
 const styles = StyleSheet.create({
   wrapper: { gap: Spacing.xs },
-  label: {
-    color: Colors.text2,
-    fontSize: Typography.sm,
-    fontFamily: Typography.fontMedium,
-  },
+  label: { ...Type.caption, color: Colors.text2 },
   input: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderRadius: Radius.md,
     color: Colors.ink,
-    fontFamily: Typography.fontRegular,
-    fontSize: 16,
+    ...Type.body,
     minHeight: 52,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
   },
   multiline: { minHeight: 120, textAlignVertical: 'top' },
-  error: { color: Colors.danger, fontFamily: Typography.fontRegular, fontSize: Typography.xs },
+  error: { ...Type.caption, color: Colors.danger },
 });

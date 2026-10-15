@@ -5,12 +5,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { BookOpenText } from 'lucide-react-native';
-import { Card } from '../components/Card';
+import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { InlineError } from '../components/ui/InlineError';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Segmented } from '../components/Segmented';
-import { TimelineItem } from '../components/TimelineItem';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { Segmented } from '../components/ui/Segmented';
+import { TimelineItem } from '../components/ui/TimelineItem';
 import { Colors } from '../constants/colors';
 import { Spacing, tabClearance } from '../constants/spacing';
 import { Typography } from '../constants/typography';
@@ -86,7 +86,11 @@ export const JournalScreen = () => {
     <View style={[styles.container, { paddingTop: insets.top + Spacing.md }]}>
       <ScreenHeader
         title="Diario"
-        action={segment === 'feed' ? undefined : { label: segment === 'notes' ? 'Nota' : 'Escribir', onPress: openComposer }}
+        action={
+          segment === 'feed' || (segment === 'notes' ? notes.length === 0 : entries.length === 0)
+            ? undefined
+            : { label: segment === 'notes' ? 'Nota' : 'Escribir', onPress: openComposer }
+        }
       />
       <Segmented
         value={segment}

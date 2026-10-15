@@ -4,8 +4,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/Card';
-import { Input } from '../../components/Input';
+import { Card } from '../../components/ui/Card';
+import { TextField } from '../../components/ui/TextField';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -103,7 +103,7 @@ export const WorkoutDetailScreen = () => {
     <FormScreen title="Sesión" saveLabel="Terminar entreno" onSave={() => void finishWorkout()}>
       <Text style={styles.title}>{workoutName || 'Sesión'}</Text>
       <Text style={styles.subtitle}>{formatNumber(Math.max(0, Math.round((Date.now() - startedAt) / 60000)))} min</Text>
-      <Input label="Ejercicio" value={exerciseName} onChangeText={setExerciseName} />
+      <TextField label="Ejercicio" value={exerciseName} onChangeText={setExerciseName} />
       <Button title="Añadir ejercicio" onPress={addExerciseInline} />
       {exerciseRows.map((exercise) => (
         <Card key={exercise.id}>
@@ -114,8 +114,8 @@ export const WorkoutDetailScreen = () => {
             </Text>
           ))}
           <View style={styles.inline}>
-            <Input label="Reps" value={reps} onChangeText={setReps} keyboardType="numeric" />
-            <Input label="Peso" value={weight} onChangeText={setWeight} keyboardType="numeric" />
+            <TextField label="Reps" value={reps} onChangeText={setReps} keyboardType="numeric" />
+            <TextField label="Peso" value={weight} onChangeText={setWeight} keyboardType="numeric" />
           </View>
           <Button title="Añadir serie" variant="secondary" onPress={() => addSetInline(exercise.id)} />
         </Card>

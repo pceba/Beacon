@@ -3,7 +3,7 @@ import { warning } from '../../lib/haptics';
 import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Button } from '../../components/ui/Button';
 import { Colors } from '../../constants/colors';
@@ -95,11 +95,11 @@ export const EventDetailScreen = () => {
       onSave={() => void onSave()}
       footer={route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={() => void onDelete()} /> : null}
     >
-        <Input label="Título" value={title} onChangeText={setTitle} />
-        <Input label="Descripción" value={description} onChangeText={setDescription} multiline numberOfLines={4} />
-        <Input label="Fecha" value={eventDate} onChangeText={setEventDate} />
-        <Input label="Hora" value={eventTime} onChangeText={setEventTime} />
-        <Input label="Lugar" value={location} onChangeText={setLocation} />
+        <TextField label="Título" value={title} onChangeText={setTitle} />
+        <TextField label="Descripción" value={description} onChangeText={setDescription} multiline numberOfLines={4} />
+        <TextField label="Fecha" value={eventDate} onChangeText={setEventDate} />
+        <TextField label="Hora" value={eventTime} onChangeText={setEventTime} />
+        <TextField label="Lugar" value={location} onChangeText={setLocation} />
     </FormScreen>
   );
 };

@@ -11,11 +11,21 @@ export type ToastPayload = {
 };
 
 type Listener = (item: ToastPayload) => void;
+type RouteListener = (name: string) => void;
 
 let listener: Listener | null = null;
+let routeListener: RouteListener | null = null;
 
 export const registerToast = (next: Listener | null) => {
   listener = next;
+};
+
+export const notifyRoute = (name: string) => {
+  routeListener?.(name);
+};
+
+export const registerRouteToast = (next: RouteListener | null) => {
+  routeListener = next;
 };
 
 export const toast = {

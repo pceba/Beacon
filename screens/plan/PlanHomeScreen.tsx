@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
-import { MoreHorizontal } from 'lucide-react-native';
+import { MoreHorizontal, Plus } from 'lucide-react-native';
 import { Card } from '../../components/ui/Card';
 import { CheckBox } from '../../components/ui/CheckBox';
 import { Sheet } from '../../components/ui/Sheet';
@@ -50,6 +50,7 @@ export const PlanHomeScreen = () => {
   const [monthOpen, setMonthOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [taskDraft, setTaskDraft] = useState('');
   const swipeLock = useRef(false);
 
   const load = useCallback(async (manual = false) => {
@@ -134,6 +135,27 @@ export const PlanHomeScreen = () => {
       console.error(error);
       setTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
       toast.show({ message: 'No se ha actualizado la tarea.', kind: 'error' });
+    }
+  };
+
+  const onAddTask = async () => {
+    const title = taskDraft.trim();
+    if (!title) return;
+    setTaskDraft('');
+    try {
+      const userId = await getCurrentUserId();
+      const created = await createTask(userId, {
+        title,
+        description: null,
+        deadline: selectedDate,
+        completed: false,
+        priority: 'medium',
+      });
+      setTasks((current) => [created, ...current]);
+    } catch (error) {
+      console.error(error);
+      setTaskDraft(title);
+      toast.show({ message: 'No se ha guardado la tarea', kind: 'error' });
     }
   };
 
@@ -265,6 +287,19 @@ export const PlanHomeScreen = () => {
           </Text>
         </View>
         <Card inset>
+          <View style={styles.taskDraft}>
+            <Plus color={Colors.text3} size={14} />
+            <TextInput
+              value={taskDraft}
+              onChangeText={setTaskDraft}
+              onSubmitEditing={() => void onAddTask()}
+              placeholder="Añadir tarea"
+              placeholderTextColor={Colors.text4}
+              accessibilityLabel="Añadir tarea"
+              returnKeyType="done"
+              style={styles.taskInput}
+            />
+          </View>
           {dayTasks.length === 0 ? <Text style={styles.empty}>Sin tareas este día.</Text> : null}
           {dayTasks.map((task) => (
             <Swipeable
@@ -365,6 +400,8 @@ const styles = StyleSheet.create({
   agendaTitle: { ...Type.bodyStrong, color: Colors.ink },
   meta: { ...Type.caption, color: Colors.text3 },
   task: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.surface },
+  taskDraft: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.line },
+  taskInput: { flex: 1, minHeight: 44, ...Type.body, color: Colors.ink },
   taskCopy: { flex: 1, gap: 2 },
   taskTitle: { ...Type.body, color: Colors.ink },
   taskDone: { color: Colors.text4, textDecorationLine: 'line-through' },

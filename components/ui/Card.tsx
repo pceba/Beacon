@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { cardShadow, Radius } from '../../constants/spacing';
 
@@ -7,11 +7,20 @@ type Props = {
   children: React.ReactNode;
   inset?: boolean;
   style?: StyleProp<ViewStyle>;
+  onPress?: () => void;
 };
 
-export const Card = ({ children, inset, style }: Props) => (
-  <View style={[styles.card, inset ? styles.inset : null, style]}>{children}</View>
-);
+export const Card = ({ children, inset, style, onPress }: Props) => {
+  const box = [styles.card, inset ? styles.inset : null, style];
+  if (onPress) {
+    return (
+      <Pressable accessibilityRole="button" onPress={onPress} style={box}>
+        {children}
+      </Pressable>
+    );
+  }
+  return <View style={box}>{children}</View>;
+};
 
 const styles = StyleSheet.create({
   card: {

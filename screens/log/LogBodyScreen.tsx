@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { FormScreen } from '../../components/ui/FormScreen';
-import { Card } from '../../components/Card';
+import { Card } from '../../components/ui/Card';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -62,10 +62,10 @@ export const LogBodyScreen = () => {
 
   return (
     <FormScreen title="Peso" saveLabel="Guardar peso" onSave={() => void onSubmit()}>
-        <Input label="Fecha" value={date} onChangeText={setDate} />
-        <Input label="Peso (kg)" value={weight} onChangeText={setWeight} keyboardType="numeric" />
-        <Input label="Grasa (%)" value={bodyFat} onChangeText={setBodyFat} keyboardType="numeric" />
-        <Input label="Notas" value={notes} onChangeText={setNotes} multiline numberOfLines={4} />
+        <TextField label="Fecha" value={date} onChangeText={setDate} />
+        <TextField label="Peso (kg)" value={weight} onChangeText={setWeight} keyboardType="numeric" />
+        <TextField label="Grasa (%)" value={bodyFat} onChangeText={setBodyFat} keyboardType="numeric" />
+        <TextField label="Notas" value={notes} onChangeText={setNotes} multiline numberOfLines={4} />
         <Text style={styles.header}>Últimos registros</Text>
         {history.map((item) => (
           <Card key={item.id}>

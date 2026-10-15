@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useNavigation } from '@react-navigation/native';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { HABIT_COLORS, HABIT_ICON_OPTIONS } from '../../components/habitVisuals';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { Colors } from '../../constants/colors';
 import { Radius, Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -41,7 +41,7 @@ export const AddHabitModal = () => {
 
   return (
     <FormScreen title="Hábito" saveLabel="Guardar hábito" onSave={() => void onSave()} loading={saving}>
-        <Input label="Nombre" value={name} onChangeText={setName} placeholder="Leer, caminar, estirar…" error={error} />
+        <TextField label="Nombre" value={name} onChangeText={setName} placeholder="Leer, caminar, estirar…" error={error} />
         <Text style={styles.label}>Icono</Text>
         <View style={styles.iconRow}>
           {HABIT_ICON_OPTIONS.map((option) => {

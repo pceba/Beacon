@@ -4,8 +4,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 're
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { FormScreen } from '../../components/ui/FormScreen';
-import { Input } from '../../components/Input';
-import { Segmented } from '../../components/Segmented';
+import { TextField } from '../../components/ui/TextField';
+import { Segmented } from '../../components/ui/Segmented';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -51,8 +51,8 @@ export const AddTaskModal = () => {
 
   return (
     <FormScreen title="Tarea" saveLabel="Guardar tarea" onSave={() => void onSave()} loading={saving}>
-        <Input label="Tarea" value={title} onChangeText={setTitle} placeholder="Llamar, comprar…" error={error} />
-        <Input label="Notas" value={notes} onChangeText={setNotes} placeholder="Opcional" multiline />
+        <TextField label="Tarea" value={title} onChangeText={setTitle} placeholder="Llamar, comprar…" error={error} />
+        <TextField label="Notas" value={notes} onChangeText={setNotes} placeholder="Opcional" multiline />
         <Text style={styles.label}>Prioridad</Text>
         <Segmented
           value={priority}

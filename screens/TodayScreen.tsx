@@ -8,7 +8,8 @@ import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-n
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, isToday, subDays } from 'date-fns';
-import { Check, Droplets, Dumbbell, Frown, Laugh, Meh, Moon, Plus, Smile, SmilePlus, Utensils } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
+import { MoodFace } from '../components/ui/MoodFace';
 import { CheckBox } from '../components/ui/CheckBox';
 import { CheckCircle } from '../components/ui/CheckCircle';
 import { Card } from '../components/ui/Card';
@@ -349,7 +350,6 @@ export const TodayScreen = () => {
   const initial = (prefs?.displayName || 'L').trim().charAt(0).toUpperCase() || 'L';
   const checks = [waterDone, sleepDone, summary.workout, summary.calories > 0, ...habits.map((habit) => completedHabitIds.has(habit.id))];
   const doneCount = checks.filter(Boolean).length;
-  const faces = [Frown, Meh, Smile, SmilePlus, Laugh];
 
   return (
     <ScrollView
@@ -379,10 +379,10 @@ export const TodayScreen = () => {
         </Text>
       </View>
 
-      <View style={styles.grid}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Agua" onPress={() => void changeWater(250)} onLongPress={() => void changeWater(250)} style={styles.metric}>
+      <View style={styles.board}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Agua" onPress={() => void changeWater(250)} onLongPress={() => void changeWater(250)} style={styles.cell}>
           <View style={styles.metricLabel}>
-            <Droplets color={Colors.water} size={16} />
+            <View style={[styles.catDot, { backgroundColor: Colors.water }]} />
             <Text style={styles.metricName}>Agua</Text>
           </View>
           <View style={styles.metricValueRow}>
@@ -399,9 +399,9 @@ export const TodayScreen = () => {
           </View>
         </Pressable>
 
-        <Pressable accessibilityRole="button" accessibilityLabel="Sueño" onPress={openSleep} style={styles.metric}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Sueño" onPress={openSleep} style={[styles.cell, styles.cellEdge]}>
           <View style={styles.metricLabel}>
-            <Moon color={Colors.sleep} size={16} />
+            <View style={[styles.catDot, { backgroundColor: Colors.sleep }]} />
             <Text style={styles.metricName}>Sueño</Text>
           </View>
           <View style={styles.metricValueRow}>
@@ -419,21 +419,20 @@ export const TodayScreen = () => {
           </View>
         </Pressable>
 
-        <Pressable accessibilityRole="button" accessibilityLabel={summary.workout ? 'Movimiento hecho' : 'Marcar movimiento'} onPress={toggleMove} style={styles.metric}>
+        <Pressable accessibilityRole="button" accessibilityLabel={summary.workout ? 'Movimiento hecho' : 'Marcar movimiento'} onPress={toggleMove} style={[styles.cell, styles.cellBottom]}>
           <View style={styles.metricLabel}>
-            <Dumbbell color={Colors.workout} size={16} />
+            <View style={[styles.catDot, { backgroundColor: Colors.workout }]} />
             <Text style={styles.metricName}>Movimiento</Text>
           </View>
-          <Text style={styles.pending}>{summary.workout ? 'Hecho' : 'Pendiente'}</Text>
-          <Text style={styles.metricHint}>{summary.workout ? 'Registrado hoy' : 'Toca para marcar'}</Text>
+          <Text style={styles.pending}>{summary.workout ? 'Hecho' : 'Sin marcar'}</Text>
           <View style={styles.track}>
             <View style={[styles.fill, { width: summary.workout ? '100%' : '0%', backgroundColor: Colors.workout }]} />
           </View>
         </Pressable>
 
-        <Pressable accessibilityRole="button" accessibilityLabel="Comida" onPress={openMeal} style={styles.metric}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Comida" onPress={openMeal} style={[styles.cell, styles.cellEdge, styles.cellBottom]}>
           <View style={styles.metricLabel}>
-            <Utensils color={Colors.food} size={16} />
+            <View style={[styles.catDot, { backgroundColor: Colors.food }]} />
             <Text style={styles.metricName}>Comida</Text>
           </View>
           <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
@@ -471,7 +470,10 @@ export const TodayScreen = () => {
                 <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
                   {habit.name}
                 </Text>
-                {streak >= 2 ? <Text style={styles.streak}>{formatNumber(streak)} días</Text> : null}
+                <Text style={styles.habitMeta}>
+                  {done ? 'Hecho' : 'Sin marcar'}
+                  {streak >= 2 ? ` · ${formatNumber(streak)} días` : ''}
+                </Text>
               </Pressable>
               <View style={styles.week}>
                 {marks.map((on, markIndex) => (
@@ -487,7 +489,6 @@ export const TodayScreen = () => {
       <Card>
         <View style={styles.moods}>
           {MOODS.map(({ score, label }, index) => {
-            const Face = faces[index];
             const selected = mood === score;
             return (
               <Pressable
@@ -498,7 +499,7 @@ export const TodayScreen = () => {
                 onPress={() => onMoodChange(score)}
                 style={[styles.mood, selected ? styles.moodOn : null]}
               >
-                <Face color={selected ? Colors.surface : Colors.text2} size={26} />
+                <MoodFace index={index} color={selected ? Colors.surface : Colors.text2} size={26} />
                 <Text style={[styles.moodLabel, selected ? styles.moodLabelOn : null]}>{label}</Text>
               </Pressable>
             );
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   headerCopy: { flex: 1, gap: 2 },
-  overline: { ...Type.overline, color: Colors.accent },
+  overline: { ...Type.overline, color: Colors.text3 },
   title: { ...Type.title, color: Colors.ink },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.ink, alignItems: 'center', justifyContent: 'center' },
   avatarText: { ...Type.bodyStrong, color: Colors.surface },
@@ -582,9 +583,22 @@ const styles = StyleSheet.create({
   segmentOn: { backgroundColor: Colors.ink },
   segmentCount: { ...Type.caption, ...tabular, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  board: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.surface, borderRadius: 18, overflow: 'hidden' },
+  cell: {
+    width: '50%',
+    padding: 14,
+    gap: 10,
+    minHeight: 118,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.line,
+  },
+  cellEdge: { borderRightWidth: 0 },
+  cellBottom: { borderBottomWidth: 0 },
   metric: { width: '47%', flexGrow: 1, backgroundColor: Colors.surface, borderRadius: 18, padding: 14, gap: 10, minHeight: 118 },
   metricLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metricName: { ...Type.caption, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
+  catDot: { width: 8, height: 8, borderRadius: 4 },
+  metricName: { ...Type.label, color: Colors.text2 },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 },
   metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: Colors.ink },
   metricUnit: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
@@ -605,14 +619,14 @@ const styles = StyleSheet.create({
   habitCopy: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
   habitName: { ...Type.body, color: Colors.ink },
   habitDone: { color: Colors.text3 },
-  streak: { ...Type.caption, color: Colors.workout, fontFamily: 'Outfit_600SemiBold' },
+  habitMeta: { ...Type.caption, color: Colors.text3 },
   week: { flexDirection: 'row', gap: 4 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotOff: { backgroundColor: '#EBEEF2' },
   dotToday: { borderWidth: 1, borderColor: Colors.ink },
   moods: { flexDirection: 'row', gap: 6 },
   mood: { flex: 1, minHeight: 72, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.fill },
-  moodOn: { backgroundColor: Colors.accent },
+  moodOn: { backgroundColor: Colors.ink },
   moodLabel: { fontFamily: 'Outfit_600SemiBold', fontSize: 11, color: Colors.text2, textAlign: 'center' },
   moodLabelOn: { color: Colors.surface },
   taskDraft: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.line },

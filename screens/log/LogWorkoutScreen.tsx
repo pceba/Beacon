@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { toast } from '../../lib/toast';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { FormScreen } from '../../components/ui/FormScreen';
-import { Card } from '../../components/Card';
+import { Card } from '../../components/ui/Card';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
@@ -57,7 +57,7 @@ export const LogWorkoutScreen = () => {
 
   return (
     <FormScreen title="Entreno" saveLabel="Empezar entreno" onSave={() => void startBlank()}>
-      <Input label="Nombre" value={name} onChangeText={setName} placeholder="Piernas, torso…" />
+      <TextField label="Nombre" value={name} onChangeText={setName} placeholder="Piernas, torso…" />
       <Text style={styles.header}>Plantillas</Text>
       {templates.map((template) => (
         <Card key={template.id} onPress={() => useTemplate(template.id)}>

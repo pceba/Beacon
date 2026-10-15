@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
   header: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cancel: { minWidth: 88, minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.lg },
-  cancelText: { ...Type.body, color: Colors.accent },
+  cancelText: { ...Type.body, color: Colors.text2 },
   title: { ...Type.bodyStrong, color: Colors.ink },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.md },
   dock: {

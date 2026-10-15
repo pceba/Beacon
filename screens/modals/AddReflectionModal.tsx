@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
@@ -36,8 +36,8 @@ export const AddReflectionModal = () => {
 
   return (
     <FormScreen title="Reflexión" saveLabel="Guardar reflexión" onSave={() => void onSave()}>
-        <Input label="Título" value={title} onChangeText={setTitle} placeholder="Opcional" />
-        <Input label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
+        <TextField label="Título" value={title} onChangeText={setTitle} placeholder="Opcional" />
+        <TextField label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
         <View style={styles.moodRow}>
           {MOODS.map(({ score, label }) => {
             const selected = mood === score;
@@ -55,7 +55,7 @@ export const AddReflectionModal = () => {
             );
           })}
         </View>
-        <Input label="Etiquetas" value={tags} onChangeText={setTags} placeholder="separadas por comas" />
+        <TextField label="Etiquetas" value={tags} onChangeText={setTags} placeholder="separadas por comas" />
     </FormScreen>
   );
 };

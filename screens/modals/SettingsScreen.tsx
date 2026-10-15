@@ -106,7 +106,8 @@ export const SettingsScreen = () => {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
         {!email ? (
           <View style={styles.banner}>
-            <Text style={styles.bannerText}>Vincula tu email para no perder tus datos.</Text>
+            <Text style={styles.bannerTitle}>Vincula tu email</Text>
+            <Text style={styles.bannerText}>Así no pierdes los datos si cambias de móvil. El código no se puede enviar ahora; todo sigue guardado en este móvil.</Text>
           </View>
         ) : null}
 
@@ -181,9 +182,11 @@ export const SettingsScreen = () => {
         <Text style={styles.group}>Claude</Text>
         <View style={styles.groupCard}>
           <View style={styles.claude}>
-            <View style={[styles.dot, { backgroundColor: connectorActive ? Colors.food : Colors.text4 }]} />
+            <View style={[styles.dot, { backgroundColor: connectorActive ? Colors.success : Colors.text4 }]} />
             <Text style={styles.goalLabel}>
-              {connectorActive ? `Conectado · último uso ${lastUsed ? formatRelative(lastUsed) : 'todavía no'}` : connectorAccount ? 'Sin conectar' : 'Sin conexión'}
+              {connectorActive
+                ? `Conectado · último uso ${lastUsed ? formatRelative(lastUsed) : 'todavía no'}`
+                : 'Sin conectar. Claude puede leer tu día. No borra nada.'}
             </Text>
           </View>
           {connectorLink ? (
@@ -197,7 +200,7 @@ export const SettingsScreen = () => {
             </Pressable>
           ) : null}
           <Button
-            title={connectorActive ? 'Crear enlace nuevo' : 'Crear enlace'}
+            title="Crear enlace nuevo"
             variant="secondary"
             size="md"
             loading={connecting}
@@ -270,8 +273,9 @@ const styles = StyleSheet.create({
   done: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   doneText: { ...Type.bodyStrong, color: Colors.accent },
   content: { paddingHorizontal: Spacing.lg, gap: 8 },
-  banner: { backgroundColor: Colors.warningSoft, borderRadius: 14, padding: 14, marginBottom: 8 },
-  bannerText: { ...Type.body, color: Colors.ink },
+  banner: { backgroundColor: Colors.warningSoft, borderRadius: 18, padding: 16, gap: 4, marginBottom: 8 },
+  bannerTitle: { ...Type.bodyStrong, color: Colors.ink },
+  bannerText: { ...Type.body, color: Colors.text2 },
   group: { ...Type.label, color: Colors.text3, marginTop: 12, marginBottom: 6 },
   groupCard: { backgroundColor: Colors.surface, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 4 },
   goal: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.line },

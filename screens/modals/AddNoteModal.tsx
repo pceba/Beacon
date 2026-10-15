@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Input } from '../../components/Input';
+import { TextField } from '../../components/ui/TextField';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
@@ -27,8 +27,8 @@ export const AddNoteModal = () => {
 
   return (
     <FormScreen title="Nota" saveLabel="Guardar nota" onSave={() => void onSave()}>
-        <Input label="Título" value={title} onChangeText={setTitle} />
-        <Input label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
+        <TextField label="Título" value={title} onChangeText={setTitle} />
+        <TextField label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
     </FormScreen>
   );
 };

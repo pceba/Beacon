@@ -1,10 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Settings } from 'lucide-react-native';
-import { Colors } from '../constants/colors';
-import { Radius, Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
-import { PressableScale } from './PressableScale';
+import { Colors } from '../../constants/colors';
+import { Radius, Spacing } from '../../constants/spacing';
+import { Type } from '../../constants/typography';
 
 type Props = {
   kicker?: string;
@@ -22,14 +21,14 @@ export const ScreenHeader = ({ kicker, title, subtitle, onSettings, action }: Pr
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
     {action ? (
-      <PressableScale accessibilityLabel={action.label} hitSlop={8} onPress={action.onPress} style={styles.action}>
+      <Pressable accessibilityRole="button" accessibilityLabel={action.label} hitSlop={8} onPress={action.onPress} style={styles.action}>
         <Text style={styles.actionText}>{action.label}</Text>
-      </PressableScale>
+      </Pressable>
     ) : null}
     {onSettings ? (
-      <PressableScale accessibilityLabel="Ajustes" hitSlop={8} onPress={onSettings} style={styles.button}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Ajustes" hitSlop={8} onPress={onSettings} style={styles.button}>
         <Settings color={Colors.ink} size={18} />
-      </PressableScale>
+      </Pressable>
     ) : null}
   </View>
 );
@@ -37,25 +36,11 @@ export const ScreenHeader = ({ kicker, title, subtitle, onSettings, action }: Pr
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md, minHeight: 44 },
   copy: { flex: 1, minWidth: 0, gap: 2 },
-  kicker: {
-    fontFamily: Typography.fontMedium,
-    fontSize: Typography.sm,
-    color: Colors.text3,
-  },
-  title: {
-    fontFamily: Typography.fontBold,
-    fontSize: 24,
-    lineHeight: 30,
-    color: Colors.ink,
-  },
-  subtitle: {
-    fontFamily: Typography.fontRegular,
-    fontSize: Typography.sm,
-    lineHeight: 20,
-    color: Colors.text3,
-  },
+  kicker: { ...Type.caption, color: Colors.text3 },
+  title: { ...Type.headline, fontSize: 24, lineHeight: 30, color: Colors.ink },
+  subtitle: { ...Type.caption, color: Colors.text3 },
   action: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  actionText: { fontFamily: Typography.fontBold, fontSize: Typography.sm, color: Colors.accent },
+  actionText: { ...Type.bodyStrong, fontSize: 14, color: Colors.accent },
   button: {
     width: 44,
     height: 44,

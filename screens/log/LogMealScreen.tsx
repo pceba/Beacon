@@ -45,7 +45,7 @@ export const LogMealScreen = () => {
   const [fat, setFat] = useState('');
   const [mealType, setMealType] = useState<MealKind>(defaultMeal);
   const [time, setTime] = useState(nowTime);
-  const [saveTemplate, setSaveTemplate] = useState(false);
+  const [saveTemplate, setSaveTemplate] = useState(true);
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [todayCalories, setTodayCalories] = useState(0);
   const [error, setError] = useState('');
