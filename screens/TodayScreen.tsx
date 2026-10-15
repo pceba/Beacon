@@ -9,17 +9,13 @@ import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-n
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, isToday, subDays } from 'date-fns';
-import { Check, ChevronRight, Droplets, Dumbbell, Minus, Moon, Plus, Sparkles, Utensils } from 'lucide-react-native';
-import { Card } from '../components/Card';
-import { CheckRow } from '../components/CheckRow';
-import { EmptyState } from '../components/EmptyState';
-import { HabitRow } from '../components/HabitRow';
-import { LineRow } from '../components/LineRow';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { SectionHeader } from '../components/SectionHeader';
+import { Check, Droplets, Dumbbell, Frown, Laugh, Meh, Moon, Plus, Smile, SmilePlus, Utensils } from 'lucide-react-native';
+import { CheckBox } from '../components/ui/CheckBox';
+import { CheckCircle } from '../components/ui/CheckCircle';
+import { Card } from '../components/ui/Card';
 import { Colors } from '../constants/colors';
-import { Radius, Spacing, tabClearance } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { Spacing, tabClearance } from '../constants/spacing';
+import { Type, tabular } from '../constants/typography';
 import { getCurrentUserId } from '../services/authService';
 import { createHabit, deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
 import { getMoodLog, migrateMoodScores, upsertMoodLog } from '../services/moodService';
@@ -33,8 +29,7 @@ import { createWorkout, deleteWorkout, getWorkouts } from '../services/workoutSe
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { dayBrief } from '../utils/dayBrief';
-import { dayRhythm } from '../utils/dayRhythm';
-import { shortDay, weekdayHeading } from '../utils/labels';
+import { monthDay, weekdayName } from '../utils/labels';
 import { habitStreak } from '../utils/streak';
 
 type TodayNav = CompositeNavigationProp<
@@ -151,15 +146,6 @@ export const TodayScreen = () => {
   const habitsLeft = habits.filter((habit) => !completedHabitIds.has(habit.id)).length;
   const waterDone = summary.waterMl >= goals.waterMl;
   const sleepDone = summary.sleep >= goals.sleepHours;
-  const rhythm = dayRhythm({
-    waterDone,
-    sleepDone,
-    moved: summary.workout,
-    nourished: summary.calories > 0,
-    habitsLeft,
-    habitsTotal: habits.length,
-    tasksLeft: tasks.length,
-  });
 
   const onMoodChange = async (value: number) => {
     const previous = mood;
@@ -357,226 +343,277 @@ export const TodayScreen = () => {
   };
 
   const today = new Date();
-  const dateTitle = weekdayHeading(today);
+  const initial = (prefs?.displayName || 'L').trim().charAt(0).toUpperCase() || 'L';
+  const checks = [waterDone, sleepDone, summary.workout, summary.calories > 0, ...habits.map((habit) => completedHabitIds.has(habit.id))];
+  const doneCount = checks.filter(Boolean).length;
+  const waterValue = (summary.waterMl / 1000).toFixed(1).replace('.', ',');
+  const goalLiters = (goals.waterMl / 1000).toFixed(1).replace('.', ',');
+  const sleepValue = String(summary.sleep).replace('.', ',');
+  const faces = [Frown, Meh, Smile, SmilePlus, Laugh];
 
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.md, paddingBottom: tabClearance(insets.bottom) }]}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: tabClearance(insets.bottom) + 24 }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
     >
-      <ScreenHeader
-        title={dateTitle}
-        subtitle={`${rhythm.done} de ${rhythm.total} hechos`}
-        onSettings={() => navigation.navigate('SettingsScreen')}
-      />
-      {brief ? <Text style={styles.brief}>{brief}</Text> : null}
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.overline}>{weekdayName(today)}</Text>
+          <Text style={styles.title}>{monthDay(today)}</Text>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Ajustes y cuenta" onPress={() => navigation.navigate('SettingsScreen')} style={styles.avatar}>
+          <Text style={styles.avatarText}>{initial}</Text>
+        </Pressable>
+      </View>
 
-      <Card>
-        <LineRow
-          icon={Droplets}
-          label="Agua"
-          value={summary.waterMl >= 1000 ? `${(summary.waterMl / 1000).toFixed(1)} L` : `${summary.waterMl} ml`}
-          hint={`de ${(goals.waterMl / 1000).toFixed(1)} L`}
-          progress={goals.waterMl ? summary.waterMl / goals.waterMl : 0}
-          tint={Colors.water}
-          trailing={
-            <View style={styles.stepper}>
-              <Pressable accessibilityLabel="Quitar 250 ml" hitSlop={8} onPress={() => changeWater(-250)} style={({ pressed }) => [styles.step, pressed && styles.pressed]}>
-                <Minus color={Colors.water} size={14} />
-              </Pressable>
-              <Pressable accessibilityLabel="Añadir 250 ml" hitSlop={8} onPress={() => changeWater(250)} style={({ pressed }) => [styles.step, pressed && styles.pressed]}>
-                <Plus color={Colors.water} size={14} />
-              </Pressable>
+      <BriefLine text={brief} />
+      <View style={styles.segments}>
+        <View style={styles.segmentRow}>
+          {checks.map((on, index) => (
+            <View key={index} style={[styles.segment, on ? styles.segmentOn : null]} />
+          ))}
+        </View>
+        <Text style={styles.segmentCount}>
+          {doneCount} de {checks.length}
+        </Text>
+      </View>
+
+      <View style={styles.grid}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Agua" onPress={() => void changeWater(250)} onLongPress={() => void changeWater(250)} style={styles.metric}>
+          <View style={styles.metricLabel}>
+            <Droplets color={Colors.water} size={16} />
+            <Text style={styles.metricName}>Agua</Text>
+          </View>
+          <View style={styles.metricValueRow}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
+              {waterValue}
+              <Text style={styles.metricUnit}> / {goalLiters} L</Text>
+            </Text>
+            <View style={styles.plus}>
+              <Plus color={Colors.water} size={18} />
             </View>
-          }
-        />
-        <LineRow
-          icon={Moon}
-          label="Sueño"
-          value={summary.sleep > 0 ? `${summary.sleep} h` : 'Anotar'}
-          hint={`objetivo ${goals.sleepHours} h`}
-          progress={goals.sleepHours ? summary.sleep / goals.sleepHours : 0}
-          tint={Colors.sleep}
-          trailing={
-            <View style={styles.stepper}>
-              <Pressable accessibilityLabel="Quitar 30 min" hitSlop={8} onPress={() => changeSleep(-1)} style={({ pressed }) => [styles.step, pressed && styles.pressed]}>
-                <Minus color={Colors.sleep} size={14} />
+          </View>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.waterMl / Math.max(goals.waterMl, 1)) * 100))}%`, backgroundColor: Colors.water }]} />
+          </View>
+        </Pressable>
+
+        <Pressable accessibilityRole="button" accessibilityLabel="Sueño" onPress={openSleep} style={styles.metric}>
+          <View style={styles.metricLabel}>
+            <Moon color={Colors.sleep} size={16} />
+            <Text style={styles.metricName}>Sueño</Text>
+          </View>
+          <View style={styles.metricValueRow}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
+              {summary.sleep > 0 ? sleepValue : '—'}
+              {summary.sleep > 0 ? <Text style={styles.metricUnit}> h</Text> : null}
+            </Text>
+            {sleepDone ? (
+              <View style={styles.doneMark}>
+                <Check color={Colors.surface} size={14} strokeWidth={2.6} />
+              </View>
+            ) : null}
+          </View>
+          <View style={[styles.track, sleepDone ? { backgroundColor: Colors.sleep } : null]}>
+            {sleepDone ? null : <View style={[styles.fill, { width: summary.sleep > 0 ? '70%' : '0%', backgroundColor: Colors.sleepLow }]} />}
+          </View>
+        </Pressable>
+
+        <Pressable accessibilityRole="button" accessibilityLabel={summary.workout ? 'Movimiento hecho' : 'Marcar movimiento'} onPress={toggleMove} style={styles.metric}>
+          <View style={styles.metricLabel}>
+            <Dumbbell color={Colors.workout} size={16} />
+            <Text style={styles.metricName}>Movimiento</Text>
+          </View>
+          <Text style={styles.pending}>{summary.workout ? 'Hecho' : 'Pendiente'}</Text>
+          <Text style={styles.metricHint}>{summary.workout ? 'Registrado hoy' : 'Toca para marcar'}</Text>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: summary.workout ? '100%' : '0%', backgroundColor: Colors.workout }]} />
+          </View>
+        </Pressable>
+
+        <Pressable accessibilityRole="button" accessibilityLabel="Comida" onPress={openMeal} style={styles.metric}>
+          <View style={styles.metricLabel}>
+            <Utensils color={Colors.food} size={16} />
+            <Text style={styles.metricName}>Comida</Text>
+          </View>
+          <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
+            {summary.calories.toLocaleString('es-ES')}
+            <Text style={styles.metricUnit}> / {goals.calories.toLocaleString('es-ES')} kcal</Text>
+          </Text>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.calories / Math.max(goals.calories, 1)) * 100))}%`, backgroundColor: Colors.food }]} />
+          </View>
+        </Pressable>
+      </View>
+
+      <View style={styles.sectionHead}>
+        <Text style={styles.section}>
+          Hábitos <Text style={styles.sectionMeta}>{habits.length - habitsLeft} de {habits.length}</Text>
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Añadir hábito" hitSlop={8} onPress={() => navigation.navigate('AddHabitModal')} style={styles.linkHit}>
+          <Text style={styles.link}>Añadir</Text>
+        </Pressable>
+      </View>
+      <Card inset>
+        {habits.length === 0 ? <Text style={styles.empty}>Aún no hay hábitos. Añade el primero.</Text> : null}
+        {habits.map((habit, index) => {
+          const done = completedHabitIds.has(habit.id);
+          const streak = habitStreak(habitLogs, habit.id);
+          const marks = Array.from({ length: 7 }, (_, markIndex) => {
+            const day = subDays(new Date(), 6 - markIndex);
+            const key = format(day, 'yyyy-MM-dd');
+            return habitLogs.some((log) => log.habit_id === habit.id && log.completed && log.log_date.slice(0, 10) === key);
+          });
+          return (
+            <View key={habit.id} style={[styles.habit, index === habits.length - 1 ? styles.habitLast : null]}>
+              <CheckCircle done={done} color={habit.color || Colors.accent} label={habit.name} onPress={() => onToggleHabit(habit)} />
+              <Pressable accessibilityRole="button" accessibilityLabel={`Quitar ${habit.name}`} onLongPress={() => onDeleteHabit(habit)} style={styles.habitCopy}>
+                <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
+                  {habit.name}
+                </Text>
+                {streak >= 2 ? <Text style={styles.streak}>{streak} días</Text> : null}
               </Pressable>
-              <Pressable
-                accessibilityLabel={summary.sleep > 0 ? 'Añadir 30 min' : `Anotar ${goals.sleepHours} h`}
-                hitSlop={8}
-                onPress={() => changeSleep(1)}
-                style={({ pressed }) => [styles.step, pressed && styles.pressed]}
-              >
-                <Plus color={Colors.sleep} size={14} />
-              </Pressable>
-              <Pressable accessibilityLabel="Detalle del sueño" hitSlop={8} onPress={openSleep} style={({ pressed }) => pressed && styles.pressed}>
-                <ChevronRight color={Colors.text3} size={18} />
-              </Pressable>
+              <View style={styles.week}>
+                {marks.map((on, markIndex) => (
+                  <View key={markIndex} style={[styles.dot, on ? { backgroundColor: habit.color || Colors.accent } : styles.dotOff, markIndex === 6 ? styles.dotToday : null]} />
+                ))}
+              </View>
             </View>
-          }
-        />
-        <LineRow
-          icon={Dumbbell}
-          label="Movimiento"
-          value={summary.workout ? 'Hecho' : 'Pendiente'}
-          hint={summary.workout ? 'Registrado hoy' : 'Sin sesión'}
-          progress={summary.workout ? 1 : 0}
-          tint={Colors.workout}
-          trailing={
-            <View style={styles.stepper}>
-              <Pressable
-                accessibilityLabel={summary.workout && !quickWorkoutId ? 'Ver sesión' : summary.workout ? 'Quitar movimiento' : 'Marcar movimiento'}
-                hitSlop={8}
-                onPress={toggleMove}
-                style={({ pressed }) => [styles.step, summary.workout ? styles.stepOn : null, pressed && styles.pressed]}
-              >
-                <Check color={summary.workout ? Colors.surface : Colors.workout} size={14} strokeWidth={2.6} />
-              </Pressable>
-              <Pressable accessibilityLabel="Detalle del entreno" hitSlop={8} onPress={openWorkout} style={({ pressed }) => pressed && styles.pressed}>
-                <ChevronRight color={Colors.text3} size={18} />
-              </Pressable>
-            </View>
-          }
-        />
-        <LineRow
-          icon={Utensils}
-          label="Comida"
-          value={summary.calories > 0 ? `${summary.calories} kcal` : 'Anotar'}
-          hint={summary.calories > 0 ? `de ${goals.calories}` : 'Sin registro'}
-          progress={goals.calories ? summary.calories / goals.calories : 0}
-          tint={Colors.food}
-          onPress={openMeal}
-          trailing={<ChevronRight color={Colors.text3} size={18} />}
-          last
-        />
+          );
+        })}
       </Card>
 
+      <Text style={styles.section}>¿Cómo estás hoy?</Text>
       <Card>
-        <SectionHeader title="Hábitos" action={{ label: 'Añadir', onPress: () => navigation.navigate('AddHabitModal') }} />
-        {habits.length === 0 ? (
-          <EmptyState
-            icon={Sparkles}
-            title="Sin hábitos"
-            subtitle="Añade el primero."
-            action={{ label: 'Nuevo hábito', onPress: () => navigation.navigate('AddHabitModal') }}
-          />
-        ) : (
-          habits.map((habit) => {
-            const done = completedHabitIds.has(habit.id);
-            const letters = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
-            const marks = Array.from({ length: 7 }, (_, index) => {
-              const day = subDays(new Date(), 6 - index);
-              const key = format(day, 'yyyy-MM-dd');
-              return {
-                letter: letters[day.getDay()],
-                on: habitLogs.some((log) => log.habit_id === habit.id && log.completed && log.log_date.slice(0, 10) === key),
-              };
-            });
-            return (
-              <HabitRow
-                key={habit.id}
-                name={habit.name}
-                icon={habit.icon}
-                color={habit.color || Colors.accent}
-                done={done}
-                streak={habitStreak(habitLogs, habit.id)}
-                marks={marks}
-                onPress={() => onToggleHabit(habit)}
-                onLongPress={() => onDeleteHabit(habit)}
-              />
-            );
-          })
-        )}
-      </Card>
-
-      <Card>
-        <SectionHeader title="Ánimo" />
-        <View style={styles.moodRow}>
-          {MOODS.map(({ score, label }) => {
+        <View style={styles.moods}>
+          {MOODS.map(({ score, label }, index) => {
+            const Face = faces[index];
             const selected = mood === score;
             return (
               <Pressable
                 key={score}
+                accessibilityRole="button"
                 accessibilityLabel={label}
                 accessibilityState={{ selected }}
                 onPress={() => onMoodChange(score)}
-                style={({ pressed }) => [styles.moodChip, selected ? styles.moodChipOn : null, pressed ? styles.pressed : null]}
+                style={[styles.mood, selected ? styles.moodOn : null]}
               >
-                <Text style={[styles.moodNum, selected ? styles.moodNumOn : null]}>{label}</Text>
+                <Face color={selected ? Colors.surface : Colors.text2} size={26} />
+                <Text style={[styles.moodLabel, selected ? styles.moodLabelOn : null]}>{label}</Text>
               </Pressable>
             );
           })}
         </View>
       </Card>
 
-      <Card>
-        <SectionHeader title="Tareas" action={{ label: 'Añadir', onPress: () => navigation.navigate('AddTaskModal', { date: todayKey }) }} />
-        <TextInput
-          value={taskDraft}
-          onChangeText={setTaskDraft}
-          onSubmitEditing={onAddTask}
-          placeholder="Nueva tarea"
-          placeholderTextColor={Colors.text3}
-          returnKeyType="done"
-          style={styles.taskInput}
-        />
-        {tasks.length === 0 ? (
-          <Text style={styles.empty}>Nada pendiente.</Text>
-        ) : (
-          tasks.map((task) => (
-            <CheckRow
-              key={task.id}
-              title={task.title}
-              done={task.completed}
-              emphasis={task.priority === 'high' ? 'ALTA' : undefined}
-              meta={task.deadline && task.deadline.slice(0, 10) !== todayKey ? shortDay(task.deadline) : undefined}
-              onPress={() => onToggleTask(task)}
-            />
-          ))
-        )}
+      <View style={styles.sectionHead}>
+        <Text style={styles.section}>
+          Tareas <Text style={styles.sectionMeta}>{tasks.length} hoy</Text>
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Ver plan" hitSlop={8} onPress={() => navigation.navigate('Plan')} style={styles.linkHit}>
+          <Text style={styles.link}>Ver plan</Text>
+        </Pressable>
+      </View>
+      <Card inset>
+        <View style={styles.taskDraft}>
+          <Plus color={Colors.text3} size={14} />
+          <TextInput
+            value={taskDraft}
+            onChangeText={setTaskDraft}
+            onSubmitEditing={onAddTask}
+            placeholder="Añadir tarea para hoy"
+            placeholderTextColor={Colors.text4}
+            accessibilityLabel="Nueva tarea"
+            returnKeyType="done"
+            style={styles.taskInput}
+          />
+        </View>
+        {tasks.length === 0 ? <Text style={styles.empty}>Nada pendiente.</Text> : null}
+        {tasks.map((task) => (
+          <View key={task.id} style={styles.task}>
+            <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
+            <Text numberOfLines={2} style={styles.taskTitle}>
+              {task.title}
+            </Text>
+            {task.priority === 'high' ? <Text style={styles.alta}>ALTA</Text> : null}
+          </View>
+        ))}
       </Card>
     </ScrollView>
+  );
+};
+
+const BriefLine = ({ text }: { text: string }) => {
+  const parts = text.split(/(«[^»]+»|\d[\d.]*|,\d+)/).filter((part) => part.length > 0);
+  return (
+    <Text style={styles.brief}>
+      {parts.map((part, index) =>
+        /^(\d|«)/.test(part) ? (
+          <Text key={index} style={styles.briefStrong}>
+            {part}
+          </Text>
+        ) : (
+          <Text key={index}>{part}</Text>
+        ),
+      )}
+    </Text>
   );
 };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
-  stepper: { flexDirection: 'row', gap: 6 },
-  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.fill },
-  stepOn: { backgroundColor: Colors.workout },
-  taskInput: {
-    minHeight: 44,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.fill,
-    color: Colors.ink,
-    fontFamily: Typography.fontRegular,
-    fontSize: 16,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  moodRow: { flexDirection: 'row', gap: 4 },
-  moodChip: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.fill,
-    paddingHorizontal: 2,
-  },
-  moodChipOn: { backgroundColor: Colors.accent },
-  moodNum: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.text2, textAlign: 'center' },
-  moodNumOn: { color: Colors.surface },
-  empty: { fontFamily: Typography.fontRegular, fontSize: Typography.md, color: Colors.text3, lineHeight: 22 },
-  pressed: { opacity: 0.78 },
-  brief: {
-    fontFamily: Typography.fontRegular,
-    fontSize: Typography.md,
-    lineHeight: 22,
-    color: Colors.text2,
-    marginTop: -Spacing.sm,
-  },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  headerCopy: { flex: 1, gap: 2 },
+  overline: { ...Type.overline, color: Colors.accent },
+  title: { ...Type.title, color: Colors.ink },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.ink, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { ...Type.bodyStrong, color: Colors.surface },
+  brief: { ...Type.body, color: Colors.text2, fontSize: 15, lineHeight: 22 },
+  briefStrong: { ...Type.bodyStrong, color: Colors.ink, fontSize: 15, lineHeight: 22 },
+  segments: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: -8 },
+  segmentRow: { flex: 1, flexDirection: 'row', gap: 4 },
+  segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: Colors.border },
+  segmentOn: { backgroundColor: Colors.accent },
+  segmentCount: { ...Type.caption, ...tabular, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  metric: { width: '47%', flexGrow: 1, backgroundColor: Colors.surface, borderRadius: 18, padding: 14, gap: 10, minHeight: 118 },
+  metricLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  metricName: { ...Type.caption, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
+  metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 },
+  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: Colors.ink },
+  metricUnit: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
+  metricHint: { ...Type.caption, color: Colors.text3, marginTop: -6 },
+  pending: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: Colors.ink },
+  plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center' },
+  doneMark: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.sleep, alignItems: 'center', justifyContent: 'center' },
+  track: { height: 8, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden' },
+  fill: { height: 8, borderRadius: 99 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  section: { ...Type.section, color: Colors.ink },
+  sectionMeta: { ...Type.caption, color: Colors.text3 },
+  linkHit: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  link: { ...Type.bodyStrong, color: Colors.accent, fontSize: 15 },
+  empty: { ...Type.body, color: Colors.text3, paddingVertical: 12 },
+  habit: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.line },
+  habitLast: { borderBottomWidth: 0 },
+  habitCopy: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
+  habitName: { ...Type.body, color: Colors.ink },
+  habitDone: { color: Colors.text3 },
+  streak: { ...Type.caption, color: Colors.workout, fontFamily: 'Outfit_600SemiBold' },
+  week: { flexDirection: 'row', gap: 4 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotOff: { backgroundColor: '#EBEEF2' },
+  dotToday: { borderWidth: 1, borderColor: Colors.ink },
+  moods: { flexDirection: 'row', gap: 6 },
+  mood: { flex: 1, minHeight: 72, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.fill },
+  moodOn: { backgroundColor: Colors.accent },
+  moodLabel: { fontFamily: 'Outfit_600SemiBold', fontSize: 11, color: Colors.text2, textAlign: 'center' },
+  moodLabelOn: { color: Colors.surface },
+  taskDraft: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.line },
+  taskInput: { flex: 1, minHeight: 44, ...Type.body, color: Colors.ink },
+  task: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  taskTitle: { ...Type.body, color: Colors.ink, flex: 1 },
+  alta: { ...Type.label, color: Colors.danger, backgroundColor: Colors.dangerSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
 });
