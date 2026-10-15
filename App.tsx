@@ -10,6 +10,7 @@ import { Colors } from './constants/colors';
 import { ToastProvider } from './components/ui/Toast';
 import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
+import { migrateMoodOnce } from './services/moodMigration';
 import { bindReminderOpen, syncReminders } from './services/reminders';
 // Sube a Supabase lo guardado en local en cuanto hay sesión.
 import './services/localSync';
@@ -60,6 +61,7 @@ export default function App() {
 
   useEffect(() => {
     syncReminders().catch((error) => console.error(error));
+    migrateMoodOnce();
     return bindReminderOpen();
   }, []);
 

@@ -18,6 +18,7 @@ import { getEvents } from '../../services/eventService';
 import { createTask, deleteTask, getTasks, toggleTaskCompleted } from '../../services/taskService';
 import { Event, Task } from '../../types/database';
 import { monthDay, weekdayName } from '../../utils/labels';
+import { taskTiming } from '../../utils/taskMeta';
 
 const LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -277,7 +278,10 @@ export const PlanHomeScreen = () => {
                 <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
                 <View style={styles.taskCopy}>
                   <Text style={[styles.taskTitle, task.completed ? styles.taskDone : null]}>{task.title}</Text>
-                  {dayOf(task.deadline) === todayKey && !task.completed ? <Text style={styles.due}>Vence hoy</Text> : null}
+                  {(() => {
+                    const timing = !task.completed ? taskTiming(task.deadline, todayKey, task.priority) : null;
+                    return timing ? <Text style={timing.overdue ? styles.due : styles.when}>{timing.text}</Text> : null;
+                  })()}
                 </View>
                 <Pressable accessibilityRole="button" accessibilityLabel={`Opciones de ${task.title}`} hitSlop={10} onPress={() => void removeTask(task)} style={styles.more}>
                   <MoreHorizontal color={Colors.text3} size={18} />
@@ -364,6 +368,7 @@ const styles = StyleSheet.create({
   taskTitle: { ...Type.body, color: Colors.ink },
   taskDone: { color: Colors.text4, textDecorationLine: 'line-through' },
   due: { ...Type.caption, color: Colors.danger },
+  when: { ...Type.caption, color: Colors.text2 },
   more: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   swipe: { backgroundColor: Colors.danger, justifyContent: 'center', paddingHorizontal: 16 },
   swipeText: { ...Type.bodyStrong, color: Colors.surface },

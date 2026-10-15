@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Chip } from '../../components/ui/Chip';
@@ -50,6 +50,7 @@ export const LogMealScreen = () => {
   const [todayCalories, setTodayCalories] = useState(0);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const kcalRef = useRef<TextInput>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -87,6 +88,7 @@ export const LogMealScreen = () => {
     if (template.meal_type === 'breakfast' || template.meal_type === 'lunch' || template.meal_type === 'dinner' || template.meal_type === 'snack') {
       setMealType(template.meal_type);
     }
+    requestAnimationFrame(() => kcalRef.current?.focus());
   };
 
   const onSubmit = async () => {
@@ -163,8 +165,11 @@ export const LogMealScreen = () => {
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
+        onSubmitEditing={() => kcalRef.current?.focus()}
         placeholder="Nombre"
         placeholderTextColor={Colors.text4}
+        accessibilityLabel="Nombre de la comida"
+        returnKeyType="next"
         style={[styles.name, focused ? styles.nameOn : null]}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -178,21 +183,40 @@ export const LogMealScreen = () => {
           </View>
         </View>
       ) : null}
-      <TextInput value={calories} onChangeText={setCalories} keyboardType="numeric" style={styles.display} maxFontSizeMultiplier={1.3} />
+      <TextInput
+        ref={kcalRef}
+        value={calories}
+        onChangeText={setCalories}
+        keyboardType="numeric"
+        placeholder="0"
+        placeholderTextColor={Colors.text4}
+        accessibilityLabel="Calorías"
+        style={styles.display}
+        maxFontSizeMultiplier={1.3}
+      />
       <Text style={styles.kcal}>kcal</Text>
       <Text style={styles.caption}>Llevas {formatNumber(todayCalories, 0)} de 2.000 hoy</Text>
       <View style={styles.macros}>
         <View style={styles.macro}>
           <Text style={styles.caption}>Proteína</Text>
-          <TextInput value={protein} onChangeText={setProtein} keyboardType="numeric" style={styles.macroInput} />
+          <View style={styles.macroRow}>
+            <TextInput value={protein} onChangeText={setProtein} keyboardType="numeric" placeholder="0" placeholderTextColor={Colors.text4} accessibilityLabel="Proteína en gramos" style={styles.macroInput} />
+            <Text style={styles.suffix}>g</Text>
+          </View>
         </View>
         <View style={styles.macro}>
           <Text style={styles.caption}>Carbos</Text>
-          <TextInput value={carbs} onChangeText={setCarbs} keyboardType="numeric" style={styles.macroInput} />
+          <View style={styles.macroRow}>
+            <TextInput value={carbs} onChangeText={setCarbs} keyboardType="numeric" placeholder="0" placeholderTextColor={Colors.text4} accessibilityLabel="Carbos en gramos" style={styles.macroInput} />
+            <Text style={styles.suffix}>g</Text>
+          </View>
         </View>
         <View style={styles.macro}>
           <Text style={styles.caption}>Grasa</Text>
-          <TextInput value={fat} onChangeText={setFat} keyboardType="numeric" style={styles.macroInput} />
+          <View style={styles.macroRow}>
+            <TextInput value={fat} onChangeText={setFat} keyboardType="numeric" placeholder="0" placeholderTextColor={Colors.text4} accessibilityLabel="Grasa en gramos" style={styles.macroInput} />
+            <Text style={styles.suffix}>g</Text>
+          </View>
         </View>
       </View>
       <Segmented
@@ -236,7 +260,9 @@ const styles = StyleSheet.create({
   kcal: { ...Type.caption, color: Colors.text3, marginTop: -8 },
   macros: { flexDirection: 'row', gap: 8 },
   macro: { flex: 1, backgroundColor: Colors.fill, borderRadius: 14, padding: 12, gap: 4 },
-  macroInput: { ...Type.section, ...tabular, color: Colors.ink, minHeight: 32 },
+  macroInput: { ...Type.section, ...tabular, color: Colors.ink, minHeight: 32, flex: 1, padding: 0 },
+  macroRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  suffix: { ...Type.body, color: Colors.text3 },
   row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowLabel: { ...Type.body, color: Colors.ink },
 });

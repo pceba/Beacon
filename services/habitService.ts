@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Habit, HabitLog } from '../types/database';
 
 export const getHabits = async (userId: string): Promise<Habit[]> => {
-  const { data, error } = await supabase.from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []) as Habit[];
 };

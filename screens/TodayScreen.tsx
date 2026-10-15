@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '../lib/toast';
-import { warning } from '../lib/haptics';
+import { light, medium, selection, warning } from '../lib/haptics';
 import { onDayRefresh } from '../lib/refresh';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +17,7 @@ import { Spacing, tabClearance } from '../constants/spacing';
 import { Type, tabular } from '../constants/typography';
 import { getCurrentUserId } from '../services/authService';
 import { createHabit, deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
-import { getMoodLog, migrateMoodScores, upsertMoodLog } from '../services/moodService';
+import { getMoodLog, upsertMoodLog } from '../services/moodService';
 import { MOODS, moodScale } from '../utils/mood';
 import { getNutritionLogs } from '../services/nutritionService';
 import { getPreferences, Preferences } from '../services/preferencesService';
@@ -29,6 +28,7 @@ import { createWorkout, deleteWorkout, getWorkouts } from '../services/workoutSe
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { dayBrief } from '../utils/dayBrief';
+import { taskTiming } from '../utils/taskMeta';
 import { monthDay, weekdayName } from '../utils/labels';
 import { habitStreak } from '../utils/streak';
 
@@ -61,7 +61,7 @@ export const TodayScreen = () => {
   const sleepLock = useRef(false);
   const moveLock = useRef(false);
   const [taskDraft, setTaskDraft] = useState('');
-  const [brief, setBrief] = useState('');
+  const [sourceTasks, setSourceTasks] = useState<Task[]>([]);
 
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -85,11 +85,11 @@ export const TodayScreen = () => {
       const quick = todayWorkouts.find((workout) => workout.notes === 'rapido');
 
       setPrefs(preferences);
-      await migrateMoodScores(userId);
       const scaledMood = moodScale(moodLog?.mood_score);
       setMood(scaledMood);
-      setHabits([...habitRows].reverse());
+      setHabits(habitRows);
       setHabitLogs(logs);
+      setSourceTasks(allTasks);
       setTasks(
         allTasks
           .filter((task) => !task.completed && (!task.deadline || task.deadline.slice(0, 10) <= todayKey))
@@ -104,23 +104,6 @@ export const TodayScreen = () => {
         workout: todayWorkouts.length > 0,
         waterMl: waterLog?.amount_ml ?? 0,
       });
-      const doneHabitIds = new Set(
-        logs.filter((log) => log.completed && log.log_date.slice(0, 10) === todayKey).map((log) => log.habit_id),
-      );
-      setBrief(
-        dayBrief({
-          todayKey,
-          waterMl: waterLog?.amount_ml ?? 0,
-          waterGoalMl: preferences.waterMl,
-          sleepHours: todaySleep ? sleepHours(todaySleep.bed_time, todaySleep.wake_time) : 0,
-          sleepGoalHours: preferences.sleepHours,
-          moved: todayWorkouts.length > 0,
-          calories: todayMeals.reduce((acc, meal) => acc + (meal.calories ?? 0), 0),
-          pendingHabits: habitRows.filter((habit) => !doneHabitIds.has(habit.id)).map((habit) => habit.name),
-          habitsTotal: habitRows.length,
-          tasks: allTasks,
-        }),
-      );
     } catch (error) {
       console.error(error);
       toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
@@ -144,6 +127,22 @@ export const TodayScreen = () => {
     [habitLogs, todayKey],
   );
   const habitsLeft = habits.filter((habit) => !completedHabitIds.has(habit.id)).length;
+  const brief = useMemo(
+    () =>
+      dayBrief({
+        todayKey,
+        waterMl: summary.waterMl,
+        waterGoalMl: goals.waterMl,
+        sleepHours: summary.sleep,
+        sleepGoalHours: goals.sleepHours,
+        moved: summary.workout,
+        calories: summary.calories,
+        pendingHabits: habits.filter((habit) => !completedHabitIds.has(habit.id)).map((habit) => habit.name),
+        habitsTotal: habits.length,
+        tasks: sourceTasks,
+      }),
+    [completedHabitIds, goals.sleepHours, goals.waterMl, habits, sourceTasks, summary, todayKey],
+  );
   const waterDone = summary.waterMl >= goals.waterMl;
   const sleepDone = summary.sleep >= goals.sleepHours;
 
@@ -151,7 +150,7 @@ export const TodayScreen = () => {
     const previous = mood;
     setMood(value);
     try {
-      await Haptics.selectionAsync();
+      selection();
       const userId = await getCurrentUserId();
       await upsertMoodLog(userId, { log_date: todayKey, mood_score: value, energy_score: null, notes: null });
     } catch (error) {
@@ -165,7 +164,7 @@ export const TodayScreen = () => {
     const next = Math.max(0, summary.waterMl + delta);
     setSummary((current) => ({ ...current, waterMl: next }));
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      light();
       const userId = await getCurrentUserId();
       if (delta > 0) await addWater(userId, new Date(), delta);
       else await upsertWaterLog(userId, todayKey, next);
@@ -188,7 +187,7 @@ export const TodayScreen = () => {
     const previousId = sleepId;
     setSummary((state) => ({ ...state, sleep: next }));
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      light();
       const userId = await getCurrentUserId();
       if (next <= 0) {
         if (previousId) await deleteSleepLog(userId, previousId);
@@ -223,7 +222,7 @@ export const TodayScreen = () => {
     setSummary((state) => ({ ...state, workout: previous ? hasSession : true }));
     setQuickWorkoutId(previous ? null : 'pending');
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      light();
       const userId = await getCurrentUserId();
       if (previous) {
         await deleteWorkout(userId, previous);
@@ -259,7 +258,7 @@ export const TodayScreen = () => {
       ];
     });
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      medium();
       const userId = await getCurrentUserId();
       const saved = await toggleHabit(userId, habit.id, new Date());
       setHabitLogs((current) => [...current.filter((log) => log.id !== `local-${habit.id}` && log.id !== saved.id), saved]);
@@ -274,13 +273,15 @@ export const TodayScreen = () => {
 
   const onToggleTask = async (task: Task) => {
     setTasks((current) => current.filter((item) => item.id !== task.id));
+    setSourceTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: true } : item)));
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      light();
       const userId = await getCurrentUserId();
       await toggleTaskCompleted(userId, task);
     } catch (error) {
       console.error(error);
       setTasks((current) => [task, ...current]);
+      setSourceTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
       toast.show({ message: 'No se ha actualizado la tarea', kind: 'error' });
     }
   };
@@ -305,7 +306,7 @@ export const TodayScreen = () => {
                   color: habit.color,
                   frequency: habit.frequency,
                 });
-                setHabits((current) => [created, ...current]);
+                setHabits((current) => [...current, created]);
               } catch (undoError) {
                 console.error(undoError);
                 toast.show({ message: 'No se ha podido recuperar el hábito.', kind: 'error' });
@@ -335,6 +336,7 @@ export const TodayScreen = () => {
         priority: 'medium',
       });
       setTasks((current) => [created, ...current].slice(0, 5));
+      setSourceTasks((current) => [created, ...current]);
     } catch (error) {
       console.error(error);
       setTaskDraft(title);
@@ -530,15 +532,20 @@ export const TodayScreen = () => {
           />
         </View>
         {tasks.length === 0 ? <Text style={styles.empty}>Nada pendiente.</Text> : null}
-        {tasks.map((task) => (
-          <View key={task.id} style={styles.task}>
-            <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
-            <Text numberOfLines={2} style={styles.taskTitle}>
-              {task.title}
-            </Text>
-            {task.priority === 'high' ? <Text style={styles.alta}>ALTA</Text> : null}
-          </View>
-        ))}
+        {tasks.map((task) => {
+          const timing = taskTiming(task.deadline, todayKey, task.priority);
+          return (
+            <View key={task.id} style={styles.task}>
+              <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
+              <View style={styles.taskCopy}>
+                <Text numberOfLines={2} style={styles.taskTitle}>
+                  {task.title}
+                </Text>
+                {timing ? <Text style={timing.overdue ? styles.overdue : styles.when}>{timing.text}</Text> : null}
+              </View>
+            </View>
+          );
+        })}
       </Card>
     </ScrollView>
   );
@@ -614,6 +621,8 @@ const styles = StyleSheet.create({
   taskDraft: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.line },
   taskInput: { flex: 1, minHeight: 44, ...Type.body, color: Colors.ink },
   task: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  taskTitle: { ...Type.body, color: Colors.ink, flex: 1 },
-  alta: { ...Type.label, color: Colors.danger, backgroundColor: Colors.dangerSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, overflow: 'hidden' },
+  taskCopy: { flex: 1, gap: 2 },
+  taskTitle: { ...Type.body, color: Colors.ink },
+  when: { ...Type.caption, color: Colors.text2 },
+  overdue: { ...Type.caption, color: Colors.danger },
 });
