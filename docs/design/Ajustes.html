@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Ajustes</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2448D8}a:hover{color:#1A36A8}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(16,19,24,.04),0 6px 16px rgba(16,19,24,.04)}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button{font-family:inherit;border:0;cursor:pointer}
+.gl{margin:0 0 8px;padding:0 4px;font-size:13px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#6B7380}
+.row{min-height:56px;display:flex;align-items:center;gap:12px;padding:0 14px}
+.sep{border-bottom:1px solid #EEF1F4}
+.step{width:44px;height:44px;border-radius:22px;background:#F2F4F7;color:#101318;display:flex;align-items:center;justify-content:center}
+</style>
+</helmet>
+<div style="width:390px;height:1180px;box-sizing:border-box;position:relative;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;overflow:hidden">
+  <div style="padding:58px 20px 40px;display:flex;flex-direction:column;gap:22px">
+    <header style="display:flex;align-items:flex-end;justify-content:space-between">
+      <h1 style="margin:0;font-size:32px;line-height:36px;font-weight:600;letter-spacing:-.6px">Ajustes</h1>
+      <a href="Main.dc.html" style="min-height:44px;display:flex;align-items:center;font-size:16px;font-weight:600;text-decoration:none">Listo</a>
+    </header>
+
+    <div role="note" style="border-radius:18px;background:#FFF6E0;padding:14px;display:flex;gap:12px;align-items:flex-start">
+      <span style="width:36px;height:36px;border-radius:18px;background:#FDE7B0;color:#8A5A00;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:16px;font-weight:600;color:#5C3D00">Vincula tu email para no perder tus datos</span>
+        <span style="font-size:14px;line-height:19px;color:#7A5410">Ahora tu cuenta solo vive en este móvil. Con un email puedes recuperarla si cambias de teléfono.</span>
+      </div>
+    </div>
+
+    <section aria-label="Cuenta">
+      <h2 class="gl">Cuenta</h2>
+      <div class="card">
+        <button class="row" style="width:100%;background:transparent;text-align:left;font-size:16px;color:#101318">
+          <span style="flex:1">Email</span>
+          <span style="display:flex;align-items:center;gap:6px;color:#2448D8;font-weight:600">Vincular <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color:#9AA2AE"><path d="m9 18 6-6-6-6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <section aria-label="Objetivos">
+      <h2 class="gl">Objetivos</h2>
+      <div class="card">
+        <sc-for list="{{goals}}" as="g" hint-placeholder-count="3">
+          <div class="row" style="border-bottom:{{g.border}};min-height:64px">
+            <span style="width:32px;height:32px;border-radius:10px;background:{{g.soft}};color:{{g.color}};display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="{{g.icon}}"/></svg></span>
+            <span style="flex:1;font-size:16px">{{g.label}}</span>
+            <button class="step" aria-label="Menos {{g.label}}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+            <span class="num" style="min-width:64px;text-align:center;font-size:16px;font-weight:600">{{g.value}}</span>
+            <button class="step" aria-label="Más {{g.label}}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-label="Recordatorios">
+      <h2 class="gl">Recordatorios</h2>
+      <div class="card">
+        <sc-for list="{{reminders}}" as="r" hint-placeholder-count="3">
+          <div class="row" style="border-bottom:{{r.border}}">
+            <span style="flex:1;font-size:16px;color:{{r.fg}}">{{r.label}}</span>
+            <button class="num" aria-label="Hora de {{r.label}}: {{r.time}}" style="min-height:36px;padding:0 12px;border-radius:10px;background:#F2F4F7;font-size:15px;font-weight:600;color:{{r.fg}}">{{r.time}}</button>
+            <span role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" style="width:50px;height:30px;border-radius:15px;background:{{r.track}};position:relative;display:inline-block;flex-shrink:0"><span style="position:absolute;left:{{r.knob}};top:2px;width:26px;height:26px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin:8px 4px 0;font-size:13px;line-height:18px;color:#6B7380">Solo te avisamos si aún no has cumplido ese objetivo.</p>
+    </section>
+
+    <section aria-label="Claude">
+      <h2 class="gl">Claude</h2>
+      <div class="card">
+        <div class="row sep" style="min-height:68px">
+          <span style="width:36px;height:36px;border-radius:12px;background:#E8EDFF;color:#2448D8;display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></span>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:16px;font-weight:600">Conector de Claude</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#4A5260"><span style="width:8px;height:8px;border-radius:4px;background:#1B8A55"></span>Conectado · último uso hace 2 h</span>
+          </div>
+        </div>
+        <button class="row sep" style="width:100%;background:transparent;text-align:left;font-size:16px;color:#2448D8;font-weight:500">Crear enlace nuevo</button>
+        <button class="row" style="width:100%;background:transparent;text-align:left;font-size:16px;color:#B4291F;font-weight:500">Desconectar</button>
+      </div>
+    </section>
+
+    <p class="num" style="margin:4px 0 0;text-align:center;font-size:13px;color:#9AA2AE">Lifepp 1.0.0</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const goalDefs = [
+      { label: 'Agua', value: '2,0 L', color: '#1A5FCC', soft: '#E6F0FE', icon: 'M12 2.7s-6 6.4-6 11.3a6 6 0 0 0 12 0c0-4.9-6-11.3-6-11.3Z' },
+      { label: 'Calorías', value: '2.000', color: '#1B8A55', soft: '#E3F4EB', icon: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.3 1.6 1.2 2.8 2.5 2.8Z' },
+      { label: 'Sueño', value: '7 h', color: '#4B4FC4', soft: '#ECECFA', icon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' },
+    ];
+    const goals = goalDefs.map((g, i) => ({ ...g, border: i === goalDefs.length - 1 ? '0' : '1px solid #EEF1F4' }));
+    const remDefs = [
+      { label: 'Agua', time: '17:00', on: true },
+      { label: 'Hábitos', time: '21:30', on: true },
+      { label: 'Tareas', time: '09:00', on: false },
+    ];
+    const reminders = remDefs.map((r, i) => ({
+      ...r,
+      on: r.on ? 'true' : 'false',
+      track: r.on ? '#1B8A55' : '#D5DAE1',
+      knob: r.on ? '22px' : '2px',
+      fg: r.on ? '#101318' : '#9AA2AE',
+      border: i === remDefs.length - 1 ? '0' : '1px solid #EEF1F4',
+    }));
+    return { goals, reminders };
+  }
+}
+</script>
+</body>
+</html>

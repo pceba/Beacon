@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Patrones</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2448D8}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(16,19,24,.04),0 6px 16px rgba(16,19,24,.04)}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button{font-family:inherit;border:0;cursor:pointer}
+.h{margin:0;font-size:13px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#6B7380}
+.why{margin:0;font-size:14px;line-height:20px;color:#4A5260}
+.stage{border-radius:16px;background:#F2F4F7;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.sk{border-radius:8px;background:linear-gradient(90deg,#E6E9EE 0%,#F1F3F6 50%,#E6E9EE 100%)}
+</style>
+</helmet>
+<div style="width:880px;height:1180px;box-sizing:border-box;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;padding:40px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+  <header style="display:flex;align-items:baseline;justify-content:space-between">
+    <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-.6px">Patrones de interacción</h1>
+    <span style="font-size:14px;color:#6B7380">Adiós a los Alert.alert</span>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Toast con deshacer</h2>
+      <div class="stage" style="min-height:190px;justify-content:flex-end">
+        <div style="border-radius:14px;background:#101318;color:#FFFFFF;padding:12px 8px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(16,19,24,.28)">
+          <span style="width:22px;height:22px;border-radius:11px;background:#1B8A55;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:13px;height:13px;stroke-width:3"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span style="flex:1;font-size:15px">Hábito eliminado</span>
+          <button style="min-height:36px;padding:0 10px;border-radius:10px;background:transparent;color:#8FA8FF;font-size:15px;font-weight:600">Deshacer</button>
+        </div>
+      </div>
+      <p class="why">Abajo, encima de la barra. 4 s, se apilan como máximo 1. Toda acción destructiva se hace al momento y se puede deshacer.</p>
+    </section>
+
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Estado vacío</h2>
+      <div class="stage" style="min-height:190px;align-items:center;justify-content:center;text-align:center;gap:8px">
+        <span style="width:52px;height:52px;border-radius:26px;background:#E8EDFF;color:#2448D8;display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:24px;height:24px"><path d="M4 5h16v14H4zM9 12l2 2 4-4"/></svg></span>
+        <span style="font-size:17px;font-weight:600">Nada pendiente hoy</span>
+        <span style="font-size:14px;color:#6B7380;max-width:200px">Añade una tarea o díselo a Claude.</span>
+        <button style="margin-top:4px;min-height:40px;padding:0 16px;border-radius:12px;background:#101318;color:#FFFFFF;font-size:14px;font-weight:600">Añadir tarea</button>
+      </div>
+      <p class="why">Icono, una frase y una acción. Nunca «No hay datos». Habla en segunda persona y propone el siguiente paso.</p>
+    </section>
+
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Cargando</h2>
+      <div class="stage" style="min-height:190px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div style="border-radius:14px;background:#FFFFFF;padding:12px;display:flex;flex-direction:column;gap:8px"><span class="sk" style="height:10px;width:50%"></span><span class="sk" style="height:22px;width:70%"></span><span class="sk" style="height:6px;width:100%"></span></div>
+          <div style="border-radius:14px;background:#FFFFFF;padding:12px;display:flex;flex-direction:column;gap:8px"><span class="sk" style="height:10px;width:40%"></span><span class="sk" style="height:22px;width:60%"></span><span class="sk" style="height:6px;width:100%"></span></div>
+        </div>
+        <div style="border-radius:14px;background:#FFFFFF;padding:12px;display:flex;flex-direction:column;gap:10px"><span class="sk" style="height:12px;width:80%"></span><span class="sk" style="height:12px;width:60%"></span></div>
+      </div>
+      <p class="why">Esqueleto con la forma real de la pantalla, brillo de 1,2 s. Nunca un spinner a pantalla completa. Si tarda menos de 300 ms, no se muestra.</p>
+    </section>
+
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Error en línea</h2>
+      <div class="stage" style="min-height:190px;justify-content:center">
+        <div style="border-radius:14px;background:#FFFFFF;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="width:28px;height:28px;border-radius:14px;background:#FDECEA;color:#B4291F;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0M12 8v4M12 16h.01"/></svg></span>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:15px;font-weight:600">Sin conexión</span>
+              <span style="font-size:13px;line-height:18px;color:#4A5260">Lo guardamos en el móvil y lo subimos cuando vuelva la red.</span>
+            </div>
+          </div>
+          <button style="align-self:flex-start;min-height:36px;padding:0 12px;border-radius:10px;background:#F2F4F7;color:#101318;font-size:14px;font-weight:600">Reintentar</button>
+        </div>
+      </div>
+      <p class="why">El error aparece donde ocurrió, dice qué pasa y qué hacemos por ti. Nada de códigos ni textos técnicos.</p>
+    </section>
+
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Confirmación en hoja</h2>
+      <div class="stage" style="min-height:190px;padding:0;justify-content:flex-end;background:rgba(16,19,24,.38)">
+        <div style="background:#FFFFFF;border-radius:22px 22px 0 0;padding:10px 14px 14px;display:flex;flex-direction:column;gap:10px">
+          <span style="align-self:center;width:32px;height:4px;border-radius:2px;background:#D5DAE1"></span>
+          <span style="font-size:16px;font-weight:600">¿Desconectar Claude?</span>
+          <span style="font-size:13px;line-height:18px;color:#4A5260">El enlace dejará de funcionar. Podrás crear otro cuando quieras.</span>
+          <button style="min-height:44px;border-radius:12px;background:#FDECEA;color:#B4291F;font-size:15px;font-weight:600">Desconectar</button>
+          <button style="min-height:40px;border-radius:12px;background:transparent;color:#101318;font-size:15px;font-weight:600">Cancelar</button>
+        </div>
+      </div>
+      <p class="why">Solo para lo que no se puede deshacer. El botón dice el verbo exacto, nunca «Aceptar».</p>
+    </section>
+
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Deslizar para borrar</h2>
+      <div class="stage" style="min-height:190px;justify-content:center">
+        <div style="position:relative;border-radius:14px;overflow:hidden;height:56px">
+          <div style="position:absolute;inset:0;background:#B4291F;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;color:#FFFFFF;font-size:14px;font-weight:600;gap:6px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Borrar</div>
+          <div style="position:absolute;top:0;bottom:0;left:-96px;right:96px;background:#FFFFFF;display:flex;align-items:center;gap:12px;padding:0 14px">
+            <span style="width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1.5px #9AA2AE"></span>
+            <span style="font-size:15px">Comprar creatina</span>
+          </div>
+        </div>
+        <div style="border-radius:14px;background:#FFFFFF;height:56px;display:flex;align-items:center;gap:12px;padding:0 14px">
+          <span style="width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1.5px #9AA2AE"></span>
+          <span style="font-size:15px">Llamar al dentista</span>
+          <span style="margin-left:auto;color:#9AA2AE"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+        </div>
+      </div>
+      <p class="why">Sustituye la pulsación larga escondida. Siempre hay alternativa visible (menú ⋯) y lector de pantalla.</p>
+    </section>
+  </div>
+
+  <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+    <h2 class="h">Mapa de hápticos y voz</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 28px">
+      <sc-for list="{{haptics}}" as="x" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:center;min-height:36px;border-bottom:1px solid #EEF1F4">
+          <span style="font-size:15px">{{x.when}}</span>
+          <span style="font-size:13px;font-weight:600;color:{{x.color}}">{{x.what}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p class="why" style="margin-top:6px">Tono de la app: cercano, en tú, frases cortas, sin exclamaciones ni emojis en la interfaz. Números con formato español (1.240 · 2,0 L). Fechas relativas cuando ayudan: «hoy», «mañana», «hace 2 h».</p>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = '#2448D8', light = '#1B8A55', ok = '#14693F', warn = '#B4291F';
+    const haptics = [
+      { when: 'Cambiar segmento, día o paso', what: 'selection', color: sel },
+      { when: 'Sumar agua o marcar hábito', what: 'impact light', color: light },
+      { when: 'Completar tarea', what: 'impact medium', color: light },
+      { when: 'Llegar a un objetivo del día', what: 'notification success', color: ok },
+      { when: 'Abrir la hoja Añadir', what: 'impact soft', color: light },
+      { when: 'Borrar o desconectar', what: 'notification warning', color: warn },
+      { when: 'Error al guardar', what: 'notification error', color: warn },
+      { when: 'Desplazar o leer', what: 'ninguno', color: '#9AA2AE' },
+    ];
+    return { haptics };
+  }
+}
+</script>
+</body>
+</html>

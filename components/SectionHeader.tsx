@@ -17,7 +17,7 @@ export const SectionHeader = ({ title, action }: Props) => (
         accessibilityRole="button"
         hitSlop={8}
         onPress={action.onPress}
-        style={({ pressed }) => [pressed ? styles.pressed : null]}
+        style={({ pressed }) => [styles.hit, pressed ? styles.pressed : null]}
       >
         <Text style={styles.action}>{action.label}</Text>
       </Pressable>
@@ -31,16 +31,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: Spacing.md,
-    minHeight: 28,
+    minHeight: 44,
     marginBottom: 4,
   },
   title: {
     flex: 1,
     minWidth: 0,
-    color: Colors.textPrimary,
+    color: Colors.ink,
     fontFamily: Typography.fontBold,
     fontSize: Typography.md,
   },
-  action: { color: Colors.gold, fontFamily: Typography.fontBold, fontSize: Typography.sm },
+  hit: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  action: { color: Colors.accent, fontFamily: Typography.fontBold, fontSize: Typography.sm },
   pressed: { opacity: 0.7 },
 });

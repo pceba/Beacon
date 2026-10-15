@@ -32,5 +32,5 @@ Dispositivos: Android (Xiaomi/HyperOS) y web. Prioriza rendimiento y una interfa
 
 # Código
 - Componentes funcionales y pequeños. Evita animaciones pesadas en Android.
-- `async/await` para los datos. Errores con `console.error` y `Alert.alert`.
+- `async/await` para los datos. Errores con `console.error` y un toast (`lib/toast.ts`). Las acciones irreversibles usan `ConfirmSheet`.
 - No metas claves privadas, `service_role` ni API keys en el código ni en el repo.

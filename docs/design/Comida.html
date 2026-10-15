@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Anotar comida</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2448D8}a:hover{color:#1A36A8}
+.num{font-variant-numeric:tabular-nums}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button,input{font-family:inherit}
+button{border:0;cursor:pointer}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;position:relative;background:#FFFFFF;font-family:'Outfit',sans-serif;color:#101318;display:flex;flex-direction:column">
+  <header style="padding:16px 12px 8px;display:grid;grid-template-columns:96px 1fr 96px;align-items:center">
+    <a href="Registrar.dc.html" style="min-height:44px;display:flex;align-items:center;padding:0 8px;font-size:16px;text-decoration:none;color:#4A5260">Cancelar</a>
+    <h1 style="margin:0;text-align:center;font-size:17px;font-weight:600">Comida</h1>
+    <span></span>
+  </header>
+
+  <div style="flex:1;padding:8px 20px 0;display:flex;flex-direction:column;gap:22px">
+    <label style="display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:13px;font-weight:600;color:#6B7380">Qué has comido</span>
+      <input value="Pollo con arroz" style="border:0;outline:0;border-bottom:2px solid #2448D8;padding:6px 0 10px;font-size:24px;font-weight:600;letter-spacing:-.3px;color:#101318;background:transparent">
+    </label>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:13px;font-weight:600;color:#6B7380">Recientes</span>
+      <div style="display:flex;gap:8px;overflow:hidden">
+        <sc-for list="{{recents}}" as="r" hint-placeholder-count="3">
+          <button style="flex-shrink:0;min-height:40px;padding:0 14px;border-radius:999px;background:{{r.bg}};color:{{r.fg}};font-size:14px;font-weight:500;white-space:nowrap">{{r.label}} <span class="num" style="opacity:.7">· {{r.kcal}}</span></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0">
+      <div class="num" style="display:flex;align-items:baseline;gap:6px"><span style="font-size:56px;line-height:60px;font-weight:600;letter-spacing:-1.5px">600</span><span style="font-size:17px;font-weight:500;color:#6B7380">kcal</span></div>
+      <span style="font-size:13px;color:#6B7380">Llevas 1.240 de 2.000 hoy</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+      <sc-for list="{{macros}}" as="m" hint-placeholder-count="3">
+        <label style="border-radius:16px;background:#F6F7F9;padding:12px;display:flex;flex-direction:column;gap:4px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#4A5260"><span style="width:8px;height:8px;border-radius:4px;background:{{m.color}}"></span>{{m.label}}</span>
+          <span class="num"><span style="font-size:22px;font-weight:600">{{m.value}}</span><span style="font-size:13px;color:#6B7380"> g</span></span>
+        </label>
+      </sc-for>
+    </div>
+
+    <div role="radiogroup" aria-label="Tipo de comida" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:#F2F4F7;border-radius:14px;padding:4px">
+      <sc-for list="{{types}}" as="t" hint-placeholder-count="4">
+        <button role="radio" aria-checked="{{t.on}}" style="min-height:40px;border-radius:10px;background:{{t.bg}};box-shadow:{{t.shadow}};color:{{t.fg}};font-size:14px;font-weight:600">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;flex-direction:column">
+      <button style="min-height:52px;display:flex;align-items:center;justify-content:space-between;background:transparent;border-bottom:1px solid #EEF1F4;padding:0;font-size:16px;color:#101318">Hora <span class="num" style="display:flex;align-items:center;gap:6px;color:#4A5260">13:30 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color:#9AA2AE"><path d="m9 18 6-6-6-6"/></svg></span></button>
+      <label style="min-height:52px;display:flex;align-items:center;justify-content:space-between;font-size:16px">Guardar en recientes
+        <span role="switch" aria-checked="true" style="width:50px;height:30px;border-radius:15px;background:#1B8A55;position:relative;display:inline-block"><span style="position:absolute;right:2px;top:2px;width:26px;height:26px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span>
+      </label>
+    </div>
+  </div>
+
+  <div style="padding:12px 20px 34px">
+    <button style="width:100%;min-height:56px;border-radius:16px;background:#101318;color:#FFFFFF;font-size:17px;font-weight:600">Guardar comida</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const recents = [
+      { label: 'Pollo con arroz', kcal: 600, on: true },
+      { label: 'Yogur y avena', kcal: 350, on: false },
+      { label: 'Tortilla', kcal: 420, on: false },
+    ].map((r) => ({ ...r, bg: r.on ? '#E3F4EB' : '#F2F4F7', fg: r.on ? '#14693F' : '#4A5260' }));
+    const macros = [
+      { label: 'Proteína', value: 45, color: '#2448D8' },
+      { label: 'Carbos', value: 70, color: '#D2A11A' },
+      { label: 'Grasa', value: 12, color: '#D2551A' },
+    ];
+    const types = ['Desayuno', 'Comida', 'Cena', 'Snack'].map((label, i) => ({
+      label,
+      on: i === 1 ? 'true' : 'false',
+      bg: i === 1 ? '#FFFFFF' : 'transparent',
+      shadow: i === 1 ? '0 1px 3px rgba(16,19,24,.12)' : 'none',
+      fg: i === 1 ? '#101318' : '#6B7380',
+    }));
+    return { recents, macros, types };
+  }
+}
+</script>
+</body>
+</html>

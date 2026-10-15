@@ -34,7 +34,7 @@ export const Segmented = <T extends string>({ value, options, onChange }: Props<
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.fill,
     borderRadius: Radius.full,
     padding: 4,
     gap: 4,
@@ -49,6 +49,6 @@ const styles = StyleSheet.create({
   },
   selected: { backgroundColor: Colors.surface },
   pressed: { opacity: 0.72 },
-  label: { fontFamily: Typography.fontMedium, fontSize: Typography.sm, color: Colors.textSecondary },
-  labelOn: { color: Colors.textPrimary, fontFamily: Typography.fontBold },
+  label: { fontFamily: Typography.fontMedium, fontSize: Typography.sm, color: Colors.text2 },
+  labelOn: { color: Colors.ink, fontFamily: Typography.fontBold },
 });

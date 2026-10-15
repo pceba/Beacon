@@ -30,7 +30,7 @@ export const Input = ({
   error,
 }: Props) => {
   const [focused, setFocused] = useState(false);
-  const borderColor = useMemo(() => (error ? Colors.danger : focused ? Colors.gold : Colors.border), [error, focused]);
+  const borderColor = useMemo(() => (error ? Colors.danger : focused ? Colors.accent : Colors.border), [error, focused]);
 
   return (
     <View style={styles.wrapper}>
@@ -40,7 +40,7 @@ export const Input = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.textMuted}
+        placeholderTextColor={Colors.text3}
         multiline={multiline}
         numberOfLines={numberOfLines}
         keyboardType={keyboardType}
@@ -49,7 +49,7 @@ export const Input = ({
         autoCorrect={autoCapitalize === 'none' ? false : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        selectionColor={Colors.gold}
+        selectionColor={Colors.accent}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -59,7 +59,7 @@ export const Input = ({
 const styles = StyleSheet.create({
   wrapper: { gap: Spacing.xs },
   label: {
-    color: Colors.textSecondary,
+    color: Colors.text2,
     fontSize: Typography.sm,
     fontFamily: Typography.fontMedium,
   },
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderRadius: Radius.md,
-    color: Colors.textPrimary,
+    color: Colors.ink,
     fontFamily: Typography.fontRegular,
     fontSize: 16,
     minHeight: 52,

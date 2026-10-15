@@ -4,9 +4,10 @@ import { StatusBar } from 'expo-status-bar';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useFonts, Lora_400Regular, Lora_700Bold } from '@expo-google-fonts/lora';
-import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
+import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Colors } from './constants/colors';
+import { ToastProvider } from './components/ui/Toast';
 import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
 import { bindReminderOpen, syncReminders } from './services/reminders';
@@ -15,17 +16,17 @@ import './services/localSync';
 
 const styles = StyleSheet.create({
   stage: { flex: 1, backgroundColor: '#E4E8EE', alignItems: 'center' },
-  column: { flex: 1, width: '100%', maxWidth: 480, backgroundColor: Colors.background },
+  column: { flex: 1, width: '100%', maxWidth: 480, backgroundColor: Colors.bg },
 });
 
 const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: Colors.brownPrimary,
-    background: Colors.background,
+    primary: Colors.ink,
+    background: Colors.bg,
     card: Colors.surface,
-    text: Colors.textPrimary,
+    text: Colors.ink,
     border: Colors.border,
   },
 };
@@ -40,9 +41,9 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
   render() {
     if (this.state.error) {
       return (
-        <ScrollView style={{ flex: 1, backgroundColor: Colors.background }} contentContainerStyle={{ padding: 24, gap: 12 }}>
-          <Text style={{ color: Colors.textPrimary, fontSize: 22 }}>Algo ha fallado</Text>
-          <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>{this.state.error.message}</Text>
+        <ScrollView style={{ flex: 1, backgroundColor: Colors.bg }} contentContainerStyle={{ padding: 24, gap: 12 }}>
+          <Text style={{ color: Colors.ink, fontSize: 22 }}>Algo ha fallado</Text>
+          <Text style={{ color: Colors.text2, fontSize: 16 }}>{this.state.error.message}</Text>
         </ScrollView>
       );
     }
@@ -52,8 +53,6 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Lora_400Regular,
-    Lora_700Bold,
     Outfit_400Regular,
     Outfit_500Medium,
     Outfit_600SemiBold,
@@ -66,8 +65,8 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Colors.brownPrimary} />
+      <View style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={Colors.ink} />
       </View>
     );
   }
@@ -76,10 +75,14 @@ export default function App() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={styles.stage}>
         <SafeAreaProvider style={styles.column}>
-          <NavigationContainer ref={navigationRef} theme={navTheme}>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </NavigationContainer>
+          <BottomSheetModalProvider>
+            <ToastProvider>
+              <NavigationContainer ref={navigationRef} theme={navTheme}>
+                <StatusBar style="dark" />
+                <RootNavigator />
+              </NavigationContainer>
+            </ToastProvider>
+          </BottomSheetModalProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

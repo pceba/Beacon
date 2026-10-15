@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Card } from '../../components/Card';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
@@ -39,7 +40,7 @@ export const LogWorkoutScreen = () => {
       navigation.navigate('WorkoutDetailScreen', { workoutId: workout.id, fromToday: route.params?.fromToday });
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha creado el entreno');
+      toast.show({ message: 'No se ha creado el entreno', kind: 'error' });
     }
   };
 
@@ -50,14 +51,13 @@ export const LogWorkoutScreen = () => {
       navigation.navigate('WorkoutDetailScreen', { workoutId: workout.id, fromToday: route.params?.fromToday });
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha creado el entreno');
+      toast.show({ message: 'No se ha creado el entreno', kind: 'error' });
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <FormScreen title="Entreno" saveLabel="Empezar entreno" onSave={() => void startBlank()}>
       <Input label="Nombre" value={name} onChangeText={setName} placeholder="Piernas, torso…" />
-      <Button title="Empezar" onPress={startBlank} />
       <Text style={styles.header}>Plantillas</Text>
       {templates.map((template) => (
         <Card key={template.id} onPress={() => useTemplate(template.id)}>
@@ -65,14 +65,14 @@ export const LogWorkoutScreen = () => {
           {template.description ? <Text style={styles.subtitle}>{template.description}</Text> : null}
         </Card>
       ))}
-    </ScrollView>
+    </FormScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  header: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.md },
-  title: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.lg },
-  subtitle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.md },
+  header: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.md },
+  title: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.lg },
+  subtitle: { color: Colors.text2, fontFamily: Typography.fontRegular, fontSize: Typography.md },
 });

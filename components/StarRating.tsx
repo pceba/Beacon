@@ -14,10 +14,10 @@ export const StarRating = ({ value, onChange, readonly }: Props) => (
   <View style={styles.row}>
     {[1, 2, 3, 4, 5].map((star) => {
       const filled = star <= value;
-      const icon = <Star size={22} color={filled ? Colors.gold : Colors.border} fill={filled ? Colors.gold : 'transparent'} />;
+      const icon = <Star size={22} color={filled ? Colors.accent : Colors.border} fill={filled ? Colors.accent : 'transparent'} />;
       if (readonly || !onChange) return <View key={star}>{icon}</View>;
       return (
-        <Pressable key={star} onPress={() => onChange(star)}>
+        <Pressable key={star} accessibilityRole="button" accessibilityLabel={`${star} de 5`} hitSlop={11} onPress={() => onChange(star)}>
           {icon}
         </Pressable>
       );

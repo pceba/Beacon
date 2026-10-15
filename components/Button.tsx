@@ -29,7 +29,7 @@ export const Button = ({ title, onPress, variant = 'primary', style, fill, loadi
       style={[styles.base, styles[variant], style, disabled || loading ? styles.disabled : null]}
     >
       {loading ? (
-        <ActivityIndicator color={onDark ? Colors.textOnDark : Colors.brownPrimary} />
+        <ActivityIndicator color={onDark ? Colors.surface : Colors.ink} />
       ) : (
         <Text style={[styles.text, onDark ? styles.textOnDark : styles.textOnLight]}>{title}</Text>
       )}
@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 12,
   },
-  primary: { backgroundColor: Colors.brownPrimary },
+  primary: { backgroundColor: Colors.ink },
   secondary: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
   danger: { backgroundColor: Colors.danger },
   ghost: { backgroundColor: 'transparent' },
   text: { fontFamily: Typography.fontBold, fontSize: Typography.md },
-  textOnDark: { color: Colors.textOnDark },
-  textOnLight: { color: Colors.brownPrimary },
+  textOnDark: { color: Colors.surface },
+  textOnLight: { color: Colors.ink },
   disabled: { opacity: 0.55 },
 });

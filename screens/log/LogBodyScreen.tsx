@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Card } from '../../components/Card';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
@@ -54,34 +55,31 @@ export const LogBodyScreen = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <FormScreen title="Peso" saveLabel="Guardar peso" onSave={() => void onSubmit()}>
         <Input label="Fecha" value={date} onChangeText={setDate} />
         <Input label="Peso (kg)" value={weight} onChangeText={setWeight} keyboardType="numeric" />
         <Input label="Grasa (%)" value={bodyFat} onChangeText={setBodyFat} keyboardType="numeric" />
         <Input label="Notas" value={notes} onChangeText={setNotes} multiline numberOfLines={4} />
-        <Button title={route.params?.metricId ? 'Actualizar' : 'Guardar'} onPress={onSubmit} />
-        <Text style={styles.header}>Recent entries</Text>
+        <Text style={styles.header}>Últimos registros</Text>
         {history.map((item) => (
           <Card key={item.id}>
             <Text style={styles.item}>
-              {item.date} - {item.weight_kg ?? '-'} kg / {item.body_fat_pct ?? '-'}%
+              {item.date} · {item.weight_kg ?? '—'} kg
             </Text>
           </Card>
         ))}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  header: { color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.md },
-  item: { color: Colors.textPrimary, fontFamily: Typography.fontRegular, fontSize: Typography.md },
+  header: { color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.md },
+  item: { color: Colors.ink, fontFamily: Typography.fontRegular, fontSize: Typography.md },
 });

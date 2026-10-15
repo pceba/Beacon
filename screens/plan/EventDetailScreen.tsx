@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { warning } from '../../lib/haptics';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
+import { Button } from '../../components/ui/Button';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { createEvent, deleteEvent, getEvents, updateEvent } from '../../services/eventService';
@@ -49,38 +52,59 @@ export const EventDetailScreen = () => {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     }
   };
 
   const onDelete = async () => {
     if (!route.params?.eventId) return;
+    const snapshot = {
+      title,
+      description: description || null,
+      event_date: eventDate,
+      event_time: eventTime || null,
+      location: location || null,
+    };
     try {
       const userId = await getCurrentUserId();
       await deleteEvent(userId, route.params.eventId);
+      warning();
       navigation.goBack();
+      toast.show({
+        message: 'Evento eliminado',
+        action: {
+          label: 'Deshacer',
+          onPress: () => {
+            void createEvent(userId, snapshot).catch((error) => {
+              console.error(error);
+              toast.show({ message: 'No se ha podido recuperar el evento.', kind: 'error' });
+            });
+          },
+        },
+      });
     } catch (error) {
       console.error(error);
-      Alert.alert('No se ha podido eliminar');
+      toast.show({ message: 'No se ha podido eliminar.', kind: 'error' });
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <FormScreen
+      title="Evento"
+      saveLabel={route.params?.eventId ? 'Guardar evento' : 'Guardar evento'}
+      onSave={() => void onSave()}
+      footer={route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={() => void onDelete()} /> : null}
+    >
         <Input label="Título" value={title} onChangeText={setTitle} />
         <Input label="Descripción" value={description} onChangeText={setDescription} multiline numberOfLines={4} />
         <Input label="Fecha" value={eventDate} onChangeText={setEventDate} />
         <Input label="Hora" value={eventTime} onChangeText={setEventTime} />
         <Input label="Lugar" value={location} onChangeText={setLocation} />
-        <Button title={route.params?.eventId ? 'Actualizar' : 'Guardar'} onPress={onSave} />
-        {route.params?.eventId ? <Button title="Eliminar" variant="danger" onPress={onDelete} /> : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
 });

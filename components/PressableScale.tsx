@@ -53,6 +53,6 @@ const styles = StyleSheet.create({
     outlineWidth: 2,
     outlineStyle: 'solid',
     outlineOffset: 3,
-    outlineColor: Colors.gold,
+    outlineColor: Colors.accent,
   },
 });

@@ -26,11 +26,11 @@ const typeIcon = {
 const typeColor: Record<TimelineEntry['type'], string> = {
   sleep: Colors.sleep,
   workout: Colors.workout,
-  nutrition: Colors.nutrition,
-  habit: Colors.habit,
-  journal: Colors.journal,
-  task: Colors.task,
-  note: Colors.brownMedium,
+  nutrition: Colors.food,
+  habit: Colors.accent,
+  journal: Colors.mood,
+  task: Colors.danger,
+  note: Colors.text2,
 };
 
 export const TimelineItem = ({ entry, onEdit, onDelete }: Props) => {
@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
   icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   body: { flex: 1, minWidth: 0, gap: 2 },
   top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  time: { color: Colors.textMuted, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
-  title: { flex: 1, minWidth: 0, color: Colors.textPrimary, fontFamily: Typography.fontBold, fontSize: Typography.md },
-  subtitle: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20 },
+  time: { color: Colors.text3, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
+  title: { flex: 1, minWidth: 0, color: Colors.ink, fontFamily: Typography.fontBold, fontSize: Typography.md },
+  subtitle: { color: Colors.text3, fontFamily: Typography.fontRegular, fontSize: Typography.sm, lineHeight: 20 },
   actions: { marginTop: Spacing.xs, flexDirection: 'row', gap: Spacing.lg },
-  action: { color: Colors.gold, fontFamily: Typography.fontBold, fontSize: Typography.sm },
+  action: { color: Colors.accent, fontFamily: Typography.fontBold, fontSize: Typography.sm },
   pressed: { opacity: 0.7 },
 });

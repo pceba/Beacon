@@ -7,6 +7,10 @@ const asDate = (value: string | Date) => {
   return new Date(`${value.slice(0, 10)}T12:00:00`);
 };
 
+export const weekdayName = (date: Date) => WEEKDAYS[date.getDay()];
+
+export const monthDay = (date: Date) => `${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+
 export const weekdayHeading = (date: Date) =>
   `${WEEKDAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
 

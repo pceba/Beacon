@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { toast } from '../../lib/toast';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { Button } from '../../components/Button';
+import { FormScreen } from '../../components/ui/FormScreen';
 import { Input } from '../../components/Input';
 import { Segmented } from '../../components/Segmented';
 import { Colors } from '../../constants/colors';
@@ -42,15 +43,14 @@ export const AddTaskModal = () => {
       navigation.goBack();
     } catch (saveError) {
       console.error(saveError);
-      Alert.alert('No se ha guardado');
+      toast.show({ message: 'No se ha guardado', kind: 'error' });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <FormScreen title="Tarea" saveLabel="Guardar tarea" onSave={() => void onSave()} loading={saving}>
         <Input label="Tarea" value={title} onChangeText={setTitle} placeholder="Llamar, comprar…" error={error} />
         <Input label="Notas" value={notes} onChangeText={setNotes} placeholder="Opcional" multiline />
         <Text style={styles.label}>Prioridad</Text>
@@ -63,18 +63,16 @@ export const AddTaskModal = () => {
             { value: 'high', label: 'Alta' },
           ]}
         />
-        <Button title="Guardar" onPress={onSave} loading={saving} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   label: {
     fontFamily: Typography.fontMedium,
     fontSize: Typography.sm,
-    color: Colors.textSecondary,
+    color: Colors.text2,
   },
 });
