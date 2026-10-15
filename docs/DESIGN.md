@@ -2,6 +2,8 @@
 
 Fuente de verdad visual: los mockups de `docs/design/*.html` (son HTML de referencia, con datos de ejemplo en un bloque `renderVals()`; no se ejecutan en la app). Este documento manda si hay contradicción.
 
+**Versión 1.2** (revisión en `docs/DESIGN_REVIEW.md`): Hoy pasa a `docs/design/Hoy.html` v1.2, el formulario de sueño a `docs/design/Sueno.html` y el movimiento y los estados vacíos a `docs/design/Movimiento.html`. Las secciones marcadas «v1.2» sustituyen a lo anterior.
+
 Principios:
 1. **Un vistazo basta.** Hoy responde «¿qué me falta?» en una frase, sin desplazarse.
 2. **Registrar en 2 toques.** Todo se añade desde el botón central +.
@@ -28,7 +30,7 @@ Renombrar las claves heredadas (`brown*`, `gold*`) a nombres semánticos y actua
 | `fill` | `#F6F7F9` | Relleno de campos y tiles |
 | `track` | `#E6E9EE` | Fondo de segmentado, pistas |
 | `surface` | `#FFFFFF` | Tarjetas y hojas |
-| `accent` | `#2448D8` | Acento único (links, selección, hábitos) |
+| `accent` | `#2448D8` | Acento único: enlaces de acción y foco. Máximo ~3 apariciones por pantalla (v1.2). Selección de ánimo, día del plan y progreso del día van en `ink`. |
 | `accentSoft` | `#E8EDFF` | Fondo de botón secundario |
 | `water` / `waterSoft` | `#1A5FCC` / `#E6F0FE` | |
 | `food` / `foodSoft` | `#1B8A55` / `#E3F4EB` | También «hecho» y switches activos |
@@ -54,6 +56,13 @@ Renombrar las claves heredadas (`brown*`, `gold*`) a nombres semánticos y actua
 | `overline` | 13/18 | 600 | 0.8, mayúsculas (fecha sobre el título) |
 
 Todas las cifras con `fontVariant: ['tabular-nums']`. Formato es-ES: `1.240`, `2,0 L`, `7,5 h` (crear `utils/format.ts` con `formatNumber`, `formatLiters`, `formatHours`, `formatRelative`).
+
+**Números (v1.2)** — regla de oro: ninguna cifra rara.
+- Agrupar miles siempre con punto, también con 4 cifras (`2.000`). `Intl`/`toLocaleString('es-ES')` no lo hace: prohibidos en la UI, usar `formatNumber` propio.
+- Agua: < 1 L en ml (`250 ml`, `te faltan 750 ml`); ≥ 1 L en litros con hasta 2 decimales sin ceros sobrantes (`1,25 L`, `2 L`). La frase del día y la tarjeta usan la misma función.
+- Horas: `7 h`, `7,5 h`; en el formulario de sueño `7 h 45 min`.
+- Sin dato: `—` en `text4` + frase corta. Nunca `0,0`.
+- Medias: sobre días con registro. Deltas: 0 o sin periodo anterior → pastilla neutra «igual» o nada; nunca verde con `+0`.
 
 ### Espacio y forma — `constants/spacing.ts`
 - Escala: 4, 8, 12, 16, 20, 24, 32.
@@ -111,14 +120,14 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 
 ## 4. Pantallas
 
-### Hoy (`docs/design/Hoy.html`)
-- Cabecera: overline con el día de la semana en accent («JUEVES»), título «15 de octubre», a la derecha círculo 40 con la inicial → Ajustes.
-- **Resumen en una frase** (utils/dayBrief): «Te falta 0,8 L de agua y quedan 2 hábitos. «Entregar TFG» vence hoy.» Las cifras en peso 600.
-- **Barra de progreso del día**: 9 segmentos (agua, sueño, movimiento, comida, hábitos…), rellenos en accent, texto «5 de 9».
-- Rejilla 2×2 de tarjetas métricas: Agua (1,2 / 2 L + barra), Sueño (7,5 h), Movimiento («Pendiente · Toca para marcar»), Comida (1.240 / 2.000 kcal). Tocar abre el registro correspondiente; mantener en Agua suma 250 ml.
-- **Hábitos** «2 de 4» + «Añadir»: filas con CheckCircle del color del hábito, nombre, «12 días» de racha si ≥ 2, y mini semana de 7 puntos (hoy con anillo).
-- **¿Cómo estás hoy?**: 5 caras (Mal, Regular, Normal, Bien, Genial) → `mood_score` 1–5. Seleccionada en accent.
-- **Tareas** «3 hoy» + «Ver plan»: CheckBox + título + etiqueta «ALTA» en danger si prioridad alta.
+### Hoy v1.2 (`docs/design/Hoy.html`)
+- Cabecera: overline del día en `text3` versalitas 13 («JUEVES»), título 34/38 −0,9, a la derecha botón 44 blanco con borde y la inicial → Ajustes.
+- **Frase del día** 17/25 en `text2`, cifras y «hábitos» en `ink` 600. Se calcula con `useMemo` a partir del estado actual (nunca se guarda en el `load`), así cambia al instante al sumar agua o marcar un hábito. Tareas de hoy: «es para hoy»; vencidas: «está vencida».
+- **Barra del día**: N segmentos (uno por cosa medible del día), rellenos **de izquierda a derecha** en `ink` según cuántas están hechas; texto «4 de 7».
+- **Libro del día**: UNA tarjeta 2×2 con separadores de 1 px `line` (sin tarjetas sueltas). Cada celda: etiqueta versalitas 11 con punto de 6 px del color de la categoría, valor 30/32 600 −0,8 con unidad 13 `text3`, línea de progreso de 3 px abajo. Agua lleva botón «+250» (36 alto, waterSoft). Sueño vacío: «Sin registrar» + «Toca para añadir». Movimiento: «Sin marcar · Toca si te has movido» / «Hecho · Registrado hoy». Comida: `1.240 / 2.000`.
+- **Hábitos** «2 de 4» + «Añadir»: CheckCircle 30 del color del hábito, nombre en `ink` (no se agrisa al completarlo), debajo «Racha de 12 días» u «Hoy pendiente» en `text3`, mini semana de 7 puntos de 7 px (hoy con anillo). Orden: creación ascendente, igual en Datos.
+- **¿Cómo estás?**: a la derecha el último registro («Bien · hace 2 h»). 5 caras SVG propias (no lucide) → `mood_score` 1–5. Seleccionada en `ink` con texto blanco; el resto sin fondo.
+- **Tareas** con contador + «Ver plan»: primera fila «Añadir tarea para hoy»; cada tarea con meta opcional: «Vencida · ayer» en danger, «Hoy · Alta» en `text2`. Completar → animación de Movimiento y toast «Tarea hecha · Deshacer».
 
 ### Plan (`docs/design/Plan.html`)
 - Overline del mes («OCTUBRE 2026»), título «Plan», botón pastilla «Hoy» que vuelve al día actual.
@@ -132,6 +141,7 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 - Sueño: barras propias con `react-native-svg` (no gifted-charts), valor encima de cada barra, línea discontinua del objetivo, barras `sleep` si ≥ objetivo y `#BFC1EC` si no.
 - Hábitos: mapa de calor hábitos × días con celdas de 22 de alto, radio 6, color del hábito o `#EBEEF2`; cabecera con «78 % cumplidos».
 - Peso: valor grande, delta 30 días y sparkline SVG.
+- v1.2: estados sin datos como en `docs/design/Movimiento.html` (KPI con «—» y frase; gráfica vacía con línea de objetivo, frase y acción «Registrar sueño»). Nada de barras fantasma.
 
 ### Formulario Comida (`docs/design/Comida.html`) — patrón para todos los formularios
 - Cabecera: «Cancelar» a la izquierda (44 de alto), título centrado.
@@ -143,6 +153,13 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 - Fila «Hora» con TimePill; switch «Guardar en recientes».
 - Botón primario fijo abajo «Guardar comida». Tras guardar: cerrar + toast con Deshacer + háptico.
 - Entreno, Sueño, Cuerpo, Tarea, Hábito, Evento, Nota y Reflexión siguen esta misma estructura.
+- v1.2: todo campo numérico vacío muestra placeholder `0` en `text4` y tiene `accessibilityLabel`; «Cancelar» en `text2`; «Guardar en recientes» activado por defecto; nunca se escriben fechas a mano (siempre `TimePill`/selector).
+
+### Sueño v1.2 (`docs/design/Sueno.html`)
+- Duración protagonista `display` («7 h 45 min») + caption «Tu objetivo son 7 h · cumplido» (cumplido en success).
+- Dos filas de 60: «Me acosté · Anoche» y «Me levanté · Hoy», cada una con icono en cuadrado 32 y `TimePill` a la derecha. Si la hora de levantarse es anterior a la de acostarse, se asume día siguiente.
+- «¿Qué tal has dormido?»: segmentado de 5 (Fatal, Mal, Normal, Bien, Genial) → `quality_rating` 1–5. Sin estrellas.
+- «Añadir una nota» como botón de texto que despliega un campo multilínea.
 
 ### Ajustes (`docs/design/Ajustes.html`)
 - Título «Ajustes» + «Listo».
@@ -151,6 +168,23 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 - Pie «Lifepp x.y.z» con la versión real de la app.
 
 ---
+
+## 4b. Movimiento v1.2 (`docs/design/Movimiento.html`)
+Todo con Reanimated 4 + Gesture Handler + react-native-svg; sin dependencias nuevas. Con «Reducir movimiento» todo pasa a fundido de 120 ms y los números cambian sin contar.
+
+| Momento | Animación | Tiempo | Háptico |
+|---|---|---|---|
+| Pulsar cualquier cosa | escala 0,97, vuelta con muelle, sin opacidad | in 90 ms · spring damping 18 / stiffness 300 | — |
+| Marcar hábito | relleno del círculo escala 0→1 + trazo de la marca (`strokeDashoffset`) | spring 14/260 · trazo 180 ms | light |
+| Completar tarea | check, tachado del título, a los 600 ms la fila se pliega (`LinearTransition`) | 180 + 600 + 220 ms | medium |
+| Totales (agua, kcal) | `AnimatedNumber` cuenta del valor anterior al nuevo; la barra crece a la vez | 320 ms `Easing.out(cubic)` | light al sumar |
+| Objetivo del día cumplido | segmento se rellena y late 1→1,04→1, solo la primera vez del día | 200 ms | success |
+| Hoja Añadir | muelle; fondo al 38 % | spring 22/220 · fondo 200 ms | soft |
+| Toast | entra 16 px desde abajo + fundido; sustituye al anterior; deslizar para cerrar; 52 de alto, radio 14 | in 200 · out 160 · 4 s (6 s con acción) | — |
+| Primera carga de Hoy | secciones escalonadas 12 px hacia arriba, una vez por arranque | 220 ms · 40 ms de escalón | — |
+| Borrar (deslizar) | fondo danger revelado, fila se pliega, toast con Deshacer | 220 ms | warning |
+
+Posición del toast: por encima de la barra de pestañas en las pestañas y por encima del botón fijo en `FormScreen` (offset que registra la pantalla al enfocarse). Al cambiar de pantalla, el toast sin acción se descarta.
 
 ## 5. Voz y textos
 - Tú, cercano, frases cortas. Sin exclamaciones ni emojis en la interfaz.
