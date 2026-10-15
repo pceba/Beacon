@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Movimiento</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(16,19,24,.04),0 6px 16px rgba(16,19,24,.04)}
+.h{margin:0;font-size:13px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#6B7380}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#4A5260}
+</style>
+</helmet>
+<div style="width:880px;height:1180px;box-sizing:border-box;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;padding:40px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+  <header style="display:flex;align-items:baseline;justify-content:space-between">
+    <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-.6px">Movimiento y estados</h1>
+    <span style="font-size:14px;color:#6B7380">v1.2 · todo con Reanimated, sin dependencias nuevas</span>
+  </header>
+
+  <section class="card" style="padding:8px 20px">
+    <div style="display:grid;grid-template-columns:170px 1fr 170px 130px;gap:16px;padding:12px 0;border-bottom:1px solid #EEF1F4">
+      <span class="h">Momento</span><span class="h">Qué se mueve</span><span class="h">Tiempo</span><span class="h">Háptico</span>
+    </div>
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+      <div style="display:grid;grid-template-columns:170px 1fr 170px 130px;gap:16px;padding:12px 0;border-bottom:{{r.border}};align-items:start">
+        <span style="font-size:15px;font-weight:600">{{r.when}}</span>
+        <span style="font-size:14px;line-height:20px;color:#4A5260">{{r.what}}</span>
+        <span class="mono">{{r.time}}</span>
+        <span style="font-size:13px;font-weight:600;color:{{r.hc}}">{{r.hap}}</span>
+      </div>
+    </sc-for>
+  </section>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Sin datos: KPI</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border-radius:14px;background:#F6F7F9;padding:12px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#4A5260">Sueño medio</span>
+          <span style="font-size:26px;font-weight:600;color:#9AA2AE">—</span>
+          <span style="font-size:12px;color:#6B7380">Sin registros esta semana</span>
+        </div>
+        <div style="border-radius:14px;background:#F6F7F9;padding:12px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#4A5260">Agua al día</span>
+          <span class="num"><span style="font-size:26px;font-weight:600">1,4</span><span style="font-size:13px;color:#6B7380"> L</span></span>
+          <span style="align-self:flex-start;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F4;color:#4A5260">igual</span>
+        </div>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:20px;color:#4A5260">Medias sobre días con registro. Sin datos: guion y frase, nunca «0,0». Delta 0 o sin periodo previo: pastilla neutra «igual» o nada.</p>
+    </section>
+    <section class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Sin datos: gráfica</h2>
+      <div style="position:relative;height:120px;border-radius:14px;background:#F6F7F9;display:flex;align-items:center;justify-content:center">
+        <div style="position:absolute;left:14px;right:14px;top:40px;border-top:1.5px dashed #C4CAD3"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;background:#F6F7F9;padding:6px 10px">
+          <span style="font-size:15px;font-weight:600">Aún no hay noches registradas</span>
+          <span style="font-size:14px;font-weight:600;color:#2448D8">Registrar sueño</span>
+        </div>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:20px;color:#4A5260">Nada de barras fantasma a altura mínima. Una frase y la acción que lo arregla.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = '#2448D8', light = '#1B8A55', ok = '#14693F', warn = '#B4291F', none = '#9AA2AE';
+    const defs = [
+      { when: 'Pulsar', what: 'Escala a 0,97. Al soltar vuelve con muelle. Sin cambio de opacidad.', time: 'in 90 ms · spring 18/300', hap: 'ninguno', hc: none },
+      { when: 'Marcar hábito', what: 'El círculo se rellena desde el centro (escala 0→1) y la marca se dibuja. Sumar a la racha: el texto cambia con fundido.', time: 'spring 14/260 · trazo 180 ms', hap: 'light', hc: light },
+      { when: 'Completar tarea', what: 'Check se rellena, el título se tacha, y a los 600 ms la fila se pliega con LinearTransition. Toast «Tarea hecha · Deshacer».', time: '180 ms + 600 ms + 220 ms', hap: 'medium', hc: light },
+      { when: 'Totales (agua, kcal)', what: 'El número cuenta del valor anterior al nuevo; la barra crece a la vez. Nunca rebota.', time: '320 ms ease-out cubic', hap: 'light al sumar', hc: light },
+      { when: 'Objetivo cumplido', what: 'El segmento del día se rellena y late una vez (1→1,04→1). Solo la primera vez del día.', time: '200 ms', hap: 'success', hc: ok },
+      { when: 'Hoja Añadir', what: 'Sube con muelle, el fondo oscurece a 38 %. Cierra arrastrando o tocando fuera.', time: 'spring 22/220 · fondo 200 ms', hap: 'soft al abrir', hc: light },
+      { when: 'Toast', what: 'Entra 16 px desde abajo con fundido. Sustituye al anterior, no se apilan. Se descarta deslizando hacia abajo. Siempre por encima del botón fijo de los formularios.', time: 'in 200 · out 160 · 4 s (6 s con acción)', hap: 'ninguno', hc: none },
+      { when: 'Primera carga de Hoy', what: 'Secciones aparecen escalonadas 12 px hacia arriba. Solo una vez por arranque.', time: '220 ms · 40 ms de escalón', hap: 'ninguno', hc: none },
+      { when: 'Borrar', what: 'Deslizar revela el rojo; al soltar la fila se pliega. Toast con Deshacer.', time: '220 ms', hap: 'warning', hc: warn },
+      { when: 'Reducir movimiento', what: 'Todo lo anterior pasa a fundido de 120 ms. Los números cambian sin contar.', time: '120 ms', hap: 'igual', hc: none },
+    ];
+    const rows = defs.map((r, i) => ({ ...r, border: i === defs.length - 1 ? '0' : '1px solid #EEF1F4' }));
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>
