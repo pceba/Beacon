@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { TriangleAlert } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmailCodeFlow } from '../../components/auth/EmailCodeFlow';
@@ -106,14 +107,17 @@ export const SettingsScreen = () => {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
         {!email ? (
           <View style={styles.banner}>
-            <Text style={styles.bannerTitle}>Vincula tu email</Text>
-            <Text style={styles.bannerText}>Así no pierdes los datos si cambias de móvil. El código no se puede enviar ahora; todo sigue guardado en este móvil.</Text>
+            <TriangleAlert color={Colors.warning} size={18} />
+            <View style={styles.bannerCopy}>
+              <Text style={styles.bannerTitle}>Vincula tu email</Text>
+              <Text style={styles.bannerText}>Así no pierdes los datos si cambias de móvil. El código no se puede enviar ahora; todo sigue guardado en este móvil.</Text>
+            </View>
           </View>
         ) : null}
 
         <Text style={styles.group}>Cuenta</Text>
         <View style={styles.groupCard}>
-          <ListRow title="Email" value={email ?? 'Vincular'} chevron onPress={() => setLinkOpen(true)} last />
+          <ListRow title="Email" value={email ?? 'Vincular'} valueColor={email ? Colors.text3 : Colors.accent} chevron onPress={() => setLinkOpen(true)} last />
         </View>
 
         {prefs ? (
@@ -186,7 +190,7 @@ export const SettingsScreen = () => {
             <Text style={styles.goalLabel}>
               {connectorActive
                 ? `Conectado · último uso ${lastUsed ? formatRelative(lastUsed) : 'todavía no'}`
-                : 'Sin conectar. Claude puede leer tu día. No borra nada.'}
+                : 'Sin conectar · Crea un enlace y pégalo en Claude'}
             </Text>
           </View>
           {connectorLink ? (
@@ -273,7 +277,8 @@ const styles = StyleSheet.create({
   done: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   doneText: { ...Type.bodyStrong, color: Colors.accent },
   content: { paddingHorizontal: Spacing.lg, gap: 8 },
-  banner: { backgroundColor: Colors.warningSoft, borderRadius: 18, padding: 16, gap: 4, marginBottom: 8 },
+  banner: { backgroundColor: Colors.warningSoft, borderRadius: 18, padding: 16, gap: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start' },
+  bannerCopy: { flex: 1, gap: 4 },
   bannerTitle: { ...Type.bodyStrong, color: Colors.ink },
   bannerText: { ...Type.body, color: Colors.text2 },
   group: { ...Type.label, color: Colors.text3, marginTop: 12, marginBottom: 6 },

@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { Card } from '../components/ui/Card';
@@ -19,6 +20,7 @@ import { getPreferences } from '../services/preferencesService';
 import { getSleepLogs } from '../services/sleepService';
 import { getWaterLogs } from '../services/waterService';
 import { getWorkouts } from '../services/workoutService';
+import { RootStackParamList } from '../types/navigation';
 import { formatFlexible, formatHours, formatNumber, formatWater } from '../utils/format';
 
 type Period = '7' | '30' | '90';
@@ -59,6 +61,7 @@ const inRange = (key: string, start: string, end: string) => key >= start && key
 
 export const DatosScreen = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [period, setPeriod] = useState<Period>('7');
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -150,7 +153,7 @@ export const DatosScreen = () => {
           deltaLabel: `${formatFlexible(Math.abs(sleepDelta), 1)} h`,
           comparable: previousSleep.length > 0,
           empty: currentSleep.length === 0,
-          emptyNote: 'Ninguna noche',
+          emptyNote: 'Sin registros esta semana',
         },
         {
           label: 'Agua al día',
@@ -160,7 +163,7 @@ export const DatosScreen = () => {
           deltaLabel: formatWater(Math.abs(waterDelta)),
           comparable: waterPrevDays.length > 0,
           empty: waterNowDays.length === 0,
-          emptyNote: 'Ningún día con agua',
+          emptyNote: 'Sin registros esta semana',
         },
         {
           label: 'Entrenos',
@@ -180,7 +183,7 @@ export const DatosScreen = () => {
           deltaLabel: formatNumber(Math.abs(Math.round(calorieDelta))),
           comparable: caloriePrevDays.length > 0,
           empty: calorieDays.length === 0,
-          emptyNote: 'Ningún día con comidas',
+          emptyNote: 'Sin registros esta semana',
         },
       ]);
 
@@ -329,16 +332,12 @@ export const DatosScreen = () => {
             })}
           </Svg>
         ) : (
-          <View>
-            <Svg width="100%" height={150} viewBox="0 0 280 150">
-              <Line x1="0" x2="280" y1="36" y2="36" stroke={Colors.text4} strokeDasharray="4 4" strokeWidth="1.5" />
-              {Array.from({ length: 7 }, (_, index) => {
-                const slot = 280 / 7;
-                const x = index * slot + slot * 0.25;
-                return <Line key={index} x1={x} x2={x + slot * 0.5} y1={140} y2={140} stroke={Colors.track} strokeWidth={Math.max(8, slot * 0.45)} strokeLinecap="round" />;
-              })}
-            </Svg>
-            <Text style={styles.empty}>Sin sueño en este periodo</Text>
+          <View style={styles.emptyChart}>
+            <View style={styles.goalLine} />
+            <Text style={styles.emptyTitle}>Aún no hay noches registradas</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Registrar sueño" onPress={() => navigation.navigate('LogSleepScreen', { fromToday: false })}>
+              <Text style={styles.emptyLink}>Registrar sueño</Text>
+            </Pressable>
           </View>
         )}
         {hasSleep ? (
@@ -419,6 +418,10 @@ const styles = StyleSheet.create({
   barLabels: { flexDirection: 'row', marginTop: 6 },
   barLabel: { flex: 1, textAlign: 'center', ...Type.caption, ...tabular, fontSize: 11, color: Colors.text2 },
   empty: { ...Type.body, color: Colors.text3 },
+  emptyChart: { height: 140, borderRadius: 14, backgroundColor: Colors.fill, alignItems: 'center', justifyContent: 'center', gap: 8, overflow: 'hidden' },
+  goalLine: { position: 'absolute', left: 14, right: 14, top: 48, borderTopWidth: 1.5, borderStyle: 'dashed', borderColor: Colors.text4 },
+  emptyTitle: { ...Type.bodyStrong, color: Colors.ink, backgroundColor: Colors.fill, paddingHorizontal: 8 },
+  emptyLink: { ...Type.bodyStrong, color: Colors.accent, backgroundColor: Colors.fill, paddingHorizontal: 8 },
   note: { ...Type.caption, color: Colors.text3 },
   habit: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   habitName: { width: 110, ...Type.caption, color: Colors.ink, fontSize: 14 },

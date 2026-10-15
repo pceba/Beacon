@@ -15,9 +15,10 @@ type Props = {
   chevron?: boolean;
   onPress?: () => void;
   last?: boolean;
+  valueColor?: string;
 };
 
-export const ListRow = ({ title, value, icon: Icon, iconColor = Colors.accent, iconSoft = Colors.accentSoft, chevron, onPress, last }: Props) => {
+export const ListRow = ({ title, value, icon: Icon, iconColor = Colors.accent, iconSoft = Colors.accentSoft, chevron, onPress, last, valueColor }: Props) => {
   const body = (
     <>
       {Icon ? (
@@ -29,7 +30,7 @@ export const ListRow = ({ title, value, icon: Icon, iconColor = Colors.accent, i
         {title}
       </Text>
       {value ? (
-        <Text numberOfLines={1} style={styles.value}>
+        <Text numberOfLines={1} style={[styles.value, valueColor ? { color: valueColor } : null]}>
           {value}
         </Text>
       ) : null}

@@ -30,7 +30,11 @@ export const dayBrief = (input: BriefInput): string => {
   if (nothingLogged) return 'Empieza el día: apunta agua, sueño o una comida.';
 
   const clauses: string[] = [];
-  if (waterLeft > 0 && input.waterGoalMl > 0) clauses.push(`te falta ${formatWater(waterLeft)} de agua`);
+  if (waterLeft > 0 && input.waterGoalMl > 0) {
+    const amount = formatWater(waterLeft);
+    const verb = waterLeft < 1000 ? 'te faltan' : 'te falta';
+    clauses.push(`${verb} ${amount} de agua`);
+  }
   if (habitLeft > 0) clauses.push(habitLeft === 1 ? 'queda 1 hábito' : `quedan ${habitLeft} hábitos`);
 
   let sentence = '';

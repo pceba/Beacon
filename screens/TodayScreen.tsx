@@ -4,7 +4,7 @@ import { light, medium, selection, success } from '../lib/haptics';
 import { getStored, setStored } from '../lib/storage';
 import { onDayRefresh } from '../lib/refresh';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -388,7 +388,7 @@ export const TodayScreen = () => {
   const doneCount = checks.filter(Boolean).length;
   const barPulse = useSharedValue(1);
   const barStyle = useAnimatedStyle(() => ({ transform: [{ scale: barPulse.value }] }));
-  const enter = (index: number) => (reduce || hoyEntered ? FadeIn.duration(120) : FadeIn.duration(220).delay(index * 50));
+  const enter = (index: number) => (reduce || hoyEntered ? FadeInDown.duration(120) : FadeInDown.duration(220).delay(index * 40));
   const leave = reduce ? FadeOut.duration(120) : FadeOut.duration(160);
   const layout = reduce ? undefined : LinearTransition.duration(220);
   useEffect(() => {
@@ -464,8 +464,9 @@ export const TodayScreen = () => {
           </View>
           <View style={styles.metricValueRow}>
             <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-              {summary.sleep > 0 ? formatHours(summary.sleep) : '—'}
+              {summary.sleep > 0 ? formatHours(summary.sleep) : 'Sin registrar'}
             </Text>
+            {summary.sleep > 0 ? null : <Text style={styles.metricHint}>Toca para añadir</Text>}
             {sleepDone ? (
               <View style={styles.doneMark}>
                 <Check color={Colors.surface} size={14} strokeWidth={2.6} />
@@ -482,7 +483,7 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.workout }]} />
             <Text style={styles.metricName}>Movimiento</Text>
           </View>
-          <Text style={styles.pending}>{summary.workout ? 'Hecho' : 'Sin marcar'}</Text>
+          <Text style={styles.pending}>{summary.workout ? 'Hecho · Registrado hoy' : 'Sin marcar · Toca si te has movido'}</Text>
           <View style={styles.track}>
             <View style={[styles.fill, { width: summary.workout ? '100%' : '0%', backgroundColor: Colors.workout }]} />
           </View>
@@ -527,12 +528,11 @@ export const TodayScreen = () => {
                 <View style={[styles.habit, index === habits.length - 1 ? styles.habitLast : null]}>
                   <CheckCircle done={done} color={habit.color || Colors.accent} label={habit.name} onPress={() => onToggleHabit(habit)} />
                   <View style={styles.habitCopy}>
-                    <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
+                    <Text numberOfLines={1} style={styles.habitName}>
                       {habit.name}
                     </Text>
                     <Text style={styles.habitMeta}>
-                      {done ? 'Hecho' : 'Sin marcar'}
-                      {streak >= 2 ? ` · ${formatNumber(streak)} días` : ''}
+                      {streak >= 2 ? `Racha de ${formatNumber(streak)} días` : done ? 'Hecho hoy' : 'Hoy pendiente'}
                     </Text>
                   </View>
                   <View style={styles.week}>
@@ -664,14 +664,14 @@ const styles = StyleSheet.create({
   catDot: { width: 8, height: 8, borderRadius: 4 },
   metricName: { ...Type.label, color: Colors.text2 },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 },
-  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 22, lineHeight: 28, letterSpacing: -0.5, color: Colors.ink, padding: 0, flexShrink: 1 },
+  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: Colors.ink, padding: 0, flexShrink: 1 },
   metricUnit: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
   metricHint: { ...Type.caption, color: Colors.text3, marginTop: -6 },
   pending: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: Colors.ink },
   plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center' },
   doneMark: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.sleep, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 8, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 99 },
+  track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden' },
+  fill: { height: 3, borderRadius: 99 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   section: { ...Type.section, color: Colors.ink },
   sectionMeta: { ...Type.caption, color: Colors.text3 },

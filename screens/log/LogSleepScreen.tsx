@@ -13,7 +13,6 @@ import { createSleepLog, getSleepLogs, updateSleepLog } from '../../services/sle
 import { LogStackParamList } from '../../types/navigation';
 import { formatDuration } from '../../utils/format';
 import { finishLog, useReturnToToday } from '../../utils/finishLog';
-import { MOODS } from '../../utils/mood';
 
 type Route = RouteProp<LogStackParamList, 'LogSleepScreen'>;
 type Quality = '1' | '2' | '3' | '4' | '5';
@@ -98,39 +97,46 @@ export const LogSleepScreen = () => {
   return (
     <FormScreen title="Sueño" saveLabel="Guardar sueño" onSave={() => void onSubmit()} loading={saving}>
       <Text style={styles.duration}>{formatDuration(hours)}</Text>
-      <Text style={styles.hint}>Si te levantas más tarde del reloj de acostarte, cuenta como el día siguiente.</Text>
-      <ViewRow label="Acostarse">
-        <TimePill label="Acostarse" value={bed} onChange={setBed} />
-      </ViewRow>
-      <ViewRow label="Levantarse">
-        <TimePill label="Levantarse" value={wake} onChange={setWake} />
-      </ViewRow>
-      <Text style={styles.caption}>Calidad</Text>
+      <Text style={styles.hint}>{hours >= 7 ? 'Tu objetivo son 7 h · cumplido' : 'Tu objetivo son 7 h'}</Text>
+      <View style={styles.row}>
+        <View>
+          <Text style={styles.rowLabel}>Me acosté</Text>
+          <Text style={styles.hint}>Anoche</Text>
+        </View>
+        <TimePill label="Hora de acostarse" value={bed} onChange={setBed} />
+      </View>
+      <View style={styles.row}>
+        <View>
+          <Text style={styles.rowLabel}>Me levanté</Text>
+          <Text style={styles.hint}>Hoy</Text>
+        </View>
+        <TimePill label="Hora de levantarse" value={wake} onChange={setWake} />
+      </View>
+      <Text style={styles.caption}>¿Qué tal has dormido?</Text>
       <Segmented
         value={quality}
         onChange={setQuality}
-        options={MOODS.map((mood) => ({ value: String(mood.score) as Quality, label: mood.label }))}
+        options={[
+          { value: '1', label: 'Fatal' },
+          { value: '2', label: 'Mal' },
+          { value: '3', label: 'Normal' },
+          { value: '4', label: 'Bien' },
+          { value: '5', label: 'Genial' },
+        ]}
       />
-      <Pressable accessibilityRole="button" accessibilityLabel={noteOpen ? 'Ocultar nota' : 'Añadir nota'} onPress={() => setNoteOpen((open) => !open)}>
-        <Text style={styles.link}>{noteOpen ? 'Ocultar nota' : 'Añadir nota'}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={noteOpen ? 'Ocultar nota' : 'Añadir una nota'} onPress={() => setNoteOpen((open) => !open)}>
+        <Text style={styles.noteLink}>{noteOpen ? 'Ocultar nota' : 'Añadir una nota'}</Text>
       </Pressable>
       {noteOpen ? <TextField label="Nota" value={notes} onChangeText={setNotes} placeholder="Opcional" multiline /> : null}
     </FormScreen>
   );
 };
 
-const ViewRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <View style={styles.row}>
-    <Text style={styles.rowLabel}>{label}</Text>
-    {children}
-  </View>
-);
-
 const styles = StyleSheet.create({
-  duration: { ...Type.headline, color: Colors.ink },
-  hint: { ...Type.caption, color: Colors.text3, marginTop: -4 },
-  caption: { ...Type.caption, color: Colors.text3 },
-  row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  duration: { ...Type.display, fontSize: 40, lineHeight: 46, color: Colors.ink },
+  hint: { ...Type.caption, color: Colors.text3 },
+  caption: { ...Type.label, color: Colors.text3 },
+  row: { minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.line },
   rowLabel: { ...Type.body, color: Colors.ink },
-  link: { ...Type.bodyStrong, color: Colors.accent, minHeight: 44 },
+  noteLink: { ...Type.body, color: Colors.text2, minHeight: 44 },
 });

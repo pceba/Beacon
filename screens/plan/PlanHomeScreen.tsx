@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { SwipeRow } from '../../components/ui/SwipeRow';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,7 +55,7 @@ export const PlanHomeScreen = () => {
   const [taskDraft, setTaskDraft] = useState('');
   const swipeLock = useRef(false);
   const reduce = useReduceMotion();
-  const rowEnter = reduce ? FadeIn.duration(120) : FadeIn.duration(220);
+  const rowEnter = reduce ? FadeInDown.duration(120) : FadeInDown.duration(220);
   const rowLeave = reduce ? FadeOut.duration(120) : FadeOut.duration(160);
   const rowLayout = reduce ? undefined : LinearTransition.duration(220);
 

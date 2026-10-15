@@ -133,7 +133,7 @@ export const LogMealScreen = () => {
       success();
       finishLog(navigation, route.params?.fromToday);
       toast.show({
-        message: 'Comida guardada',
+        message: calories.trim() ? 'Comida guardada' : 'Comida guardada sin calorías',
         kind: 'success',
         action: {
           label: 'Deshacer',
