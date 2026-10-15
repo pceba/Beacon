@@ -15,7 +15,7 @@ export type ReminderSettings = {
 };
 
 const COPY = {
-  water: { id: 'lifepp-water', title: 'Bebe agua 💧' },
+  water: { id: 'lifepp-water', title: 'Bebe agua' },
   habits: { id: 'lifepp-habits', title: 'Te quedan hábitos por marcar' },
   tasks: { id: 'lifepp-tasks', title: 'Mira tus tareas de hoy' },
 } as const;
