@@ -1,25 +1,21 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BarChart2, BookOpen, CalendarDays, PenLine, Sun } from 'lucide-react-native';
-import { MainTabParamList, LogStackParamList, PlanStackParamList } from '../types/navigation';
+import { BarChart2, BookOpen, CalendarDays, Plus, Sun } from 'lucide-react-native';
+import { MainTabParamList, PlanStackParamList } from '../types/navigation';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { soft } from '../lib/haptics';
 import { TodayScreen } from '../screens/TodayScreen';
-import { LogHomeScreen } from '../screens/log/LogHomeScreen';
-import { LogMealScreen } from '../screens/log/LogMealScreen';
-import { LogWorkoutScreen } from '../screens/log/LogWorkoutScreen';
-import { WorkoutDetailScreen } from '../screens/log/WorkoutDetailScreen';
-import { LogSleepScreen } from '../screens/log/LogSleepScreen';
-import { LogBodyScreen } from '../screens/log/LogBodyScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { PlanHomeScreen } from '../screens/plan/PlanHomeScreen';
 import { EventDetailScreen } from '../screens/plan/EventDetailScreen';
 import { StatsScreen } from '../screens/StatsScreen';
+import { AddSheet } from '../components/add/AddSheet';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const LogStack = createNativeStackNavigator<LogStackParamList>();
 const PlanStack = createNativeStackNavigator<PlanStackParamList>();
 
 const stackOptions = {
@@ -35,17 +31,6 @@ const stackOptions = {
   contentStyle: { backgroundColor: Colors.bg },
 };
 
-const LogNavigator = () => (
-  <LogStack.Navigator screenOptions={stackOptions}>
-    <LogStack.Screen name="LogHomeScreen" component={LogHomeScreen} options={{ headerShown: false }} />
-    <LogStack.Screen name="LogMealScreen" component={LogMealScreen} options={{ title: 'Comida' }} />
-    <LogStack.Screen name="LogWorkoutScreen" component={LogWorkoutScreen} options={{ title: 'Entreno' }} />
-    <LogStack.Screen name="WorkoutDetailScreen" component={WorkoutDetailScreen} options={{ title: 'Sesión' }} />
-    <LogStack.Screen name="LogSleepScreen" component={LogSleepScreen} options={{ title: 'Sueño' }} />
-    <LogStack.Screen name="LogBodyScreen" component={LogBodyScreen} options={{ title: 'Cuerpo' }} />
-  </LogStack.Navigator>
-);
-
 const PlanNavigator = () => (
   <PlanStack.Navigator screenOptions={stackOptions}>
     <PlanStack.Screen name="PlanHomeScreen" component={PlanHomeScreen} options={{ headerShown: false }} />
@@ -53,46 +38,105 @@ const PlanNavigator = () => (
   </PlanStack.Navigator>
 );
 
-const icons = {
-  Today: Sun,
-  Log: PenLine,
-  Journal: BookOpen,
-  Plan: CalendarDays,
-  Stats: BarChart2,
-} as const;
+const slots = [
+  { name: 'Today' as const, label: 'Hoy', icon: Sun },
+  { name: 'Plan' as const, label: 'Plan', icon: CalendarDays },
+  { name: 'Journal' as const, label: 'Diario', icon: BookOpen },
+  { name: 'Stats' as const, label: 'Datos', icon: BarChart2 },
+];
 
-export const MainTabs = () => {
+const LifeppTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd: () => void }) => {
   const insets = useSafeAreaInsets();
+  const left = slots.slice(0, 2);
+  const right = slots.slice(2);
+
+  const tab = (item: (typeof slots)[number]) => {
+    const route = state.routes.find((entry) => entry.name === item.name);
+    const focused = state.routes[state.index]?.name === item.name;
+    const Icon = item.icon;
+    return (
+      <Pressable
+        key={item.name}
+        accessibilityRole="tab"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: focused }}
+        onPress={() => {
+          if (!route) return;
+          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+        }}
+        style={styles.tab}
+      >
+        <Icon color={focused ? Colors.ink : Colors.text3} size={22} />
+        <Text style={[styles.label, focused ? styles.labelOn : null]}>{item.label}</Text>
+      </Pressable>
+    );
+  };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: Colors.border,
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom,
-          elevation: 0,
-        },
-        tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColor: Colors.text3,
-        tabBarLabelStyle: {
-          fontFamily: Typography.fontMedium,
-          fontSize: 11,
-        },
-        tabBarIcon: ({ color }) => {
-          const Icon = icons[route.name];
-          return <Icon color={color} size={20} />;
-        },
-      })}
-    >
-      <Tab.Screen name="Today" component={TodayScreen} options={{ tabBarLabel: 'Hoy' }} />
-      <Tab.Screen name="Log" component={LogNavigator} options={{ tabBarLabel: 'Registro' }} />
-      <Tab.Screen name="Journal" component={JournalScreen} options={{ tabBarLabel: 'Diario' }} />
-      <Tab.Screen name="Plan" component={PlanNavigator} options={{ tabBarLabel: 'Plan' }} />
-      <Tab.Screen name="Stats" component={StatsScreen} options={{ tabBarLabel: 'Datos' }} />
-    </Tab.Navigator>
+    <View style={[styles.bar, { paddingBottom: insets.bottom, height: 58 + insets.bottom }]}>
+      {left.map(tab)}
+      <View style={styles.fabSlot}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Añadir"
+          onPress={() => {
+            soft();
+            onAdd();
+          }}
+          style={styles.fab}
+        >
+          <Plus color={Colors.surface} size={26} />
+        </Pressable>
+      </View>
+      {right.map(tab)}
+    </View>
   );
 };
+
+export const MainTabs = () => {
+  const [addOpen, setAddOpen] = useState(false);
+
+  return (
+    <>
+      <Tab.Navigator
+        screenOptions={{ headerShown: false }}
+        tabBar={(props) => <LifeppTabBar {...props} onAdd={() => setAddOpen(true)} />}
+      >
+        <Tab.Screen name="Today" component={TodayScreen} />
+        <Tab.Screen name="Plan" component={PlanNavigator} />
+        <Tab.Screen name="Journal" component={JournalScreen} />
+        <Tab.Screen name="Stats" component={StatsScreen} />
+      </Tab.Navigator>
+      <AddSheet visible={addOpen} onClose={() => setAddOpen(false)} />
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderTopWidth: 1,
+    borderTopColor: '#E4E8EE',
+  },
+  tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2, paddingBottom: 6 },
+  label: { fontFamily: Typography.fontMedium, fontSize: 11, color: Colors.text3 },
+  labelOn: { fontFamily: Typography.fontBold, color: Colors.ink },
+  fabSlot: { width: 76, alignItems: 'center' },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -18,
+    shadowColor: '#101318',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+});

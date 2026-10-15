@@ -1,6 +1,7 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '../lib/toast';
 import { warning } from '../lib/haptics';
+import { onDayRefresh } from '../lib/refresh';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -139,6 +140,8 @@ export const TodayScreen = () => {
     }, [load]),
   );
 
+  useEffect(() => onDayRefresh(() => void load()), [load]);
+
   const goals = prefs ?? { displayName: '', waterMl: 2000, calories: 2000, sleepHours: 7 };
   const todayKey = format(new Date(), 'yyyy-MM-dd');
   const completedHabitIds = useMemo(
@@ -187,9 +190,9 @@ export const TodayScreen = () => {
     }
   };
 
-  const openSleep = () => navigation.navigate('Log', { screen: 'LogSleepScreen', params: { sleepId: sleepId ?? undefined, fromToday: true } });
-  const openWorkout = () => navigation.navigate('Log', { screen: 'LogWorkoutScreen', params: { fromToday: true } });
-  const openMeal = () => navigation.navigate('Log', { screen: 'LogMealScreen', params: { fromToday: true } });
+  const openSleep = () => navigation.navigate('LogSleepScreen', { sleepId: sleepId ?? undefined, fromToday: true });
+  const openWorkout = () => navigation.navigate('LogWorkoutScreen', { fromToday: true });
+  const openMeal = () => navigation.navigate('LogMealScreen', { fromToday: true });
 
   const changeSleep = async (direction: 1 | -1) => {
     if (sleepLock.current) return;

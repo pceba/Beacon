@@ -9,6 +9,11 @@ import { AddReflectionModal } from '../screens/modals/AddReflectionModal';
 import { AddNoteModal } from '../screens/modals/AddNoteModal';
 import { AddTaskModal } from '../screens/modals/AddTaskModal';
 import { SettingsScreen } from '../screens/modals/SettingsScreen';
+import { LogMealScreen } from '../screens/log/LogMealScreen';
+import { LogWorkoutScreen } from '../screens/log/LogWorkoutScreen';
+import { WorkoutDetailScreen } from '../screens/log/WorkoutDetailScreen';
+import { LogSleepScreen } from '../screens/log/LogSleepScreen';
+import { LogBodyScreen } from '../screens/log/LogBodyScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,6 +41,11 @@ export const RootNavigator = () => {
       <Stack.Screen name="AddNoteModal" component={AddNoteModal} options={{ ...modalOptions, title: 'Nota' }} />
       <Stack.Screen name="AddTaskModal" component={AddTaskModal} options={{ ...modalOptions, title: 'Tarea' }} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} options={{ ...modalOptions, title: 'Ajustes' }} />
+      <Stack.Screen name="LogMealScreen" component={LogMealScreen} options={{ ...modalOptions, title: 'Comida' }} />
+      <Stack.Screen name="LogWorkoutScreen" component={LogWorkoutScreen} options={{ ...modalOptions, title: 'Entreno' }} />
+      <Stack.Screen name="WorkoutDetailScreen" component={WorkoutDetailScreen} options={{ ...modalOptions, title: 'Sesión' }} />
+      <Stack.Screen name="LogSleepScreen" component={LogSleepScreen} options={{ ...modalOptions, title: 'Sueño' }} />
+      <Stack.Screen name="LogBodyScreen" component={LogBodyScreen} options={{ ...modalOptions, title: 'Cuerpo' }} />
     </Stack.Navigator>
   );
 };
