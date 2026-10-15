@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BottomSheetBackdrop, BottomSheetBackdropProps, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { Colors } from '../../constants/colors';
 import { Radius, Spacing } from '../../constants/spacing';
 
@@ -17,6 +18,7 @@ const Handle = () => (
 );
 
 export const Sheet = ({ visible, onClose, children }: Props) => {
+  const reduce = useReduceMotion();
   const ref = useRef<BottomSheetModal>(null);
 
   useEffect(() => {
@@ -36,6 +38,8 @@ export const Sheet = ({ visible, onClose, children }: Props) => {
       ref={ref}
       enableDynamicSizing
       enablePanDownToClose
+      animateOnMount={!reduce}
+      animationConfigs={reduce ? { duration: 1 } : { damping: 22, stiffness: 220 }}
       onDismiss={onClose}
       backdropComponent={backdrop}
       handleComponent={Handle}
