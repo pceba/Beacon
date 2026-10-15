@@ -158,7 +158,7 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 ### Sueño v1.2 (`docs/design/Sueno.html`)
 - Duración protagonista `display` («7 h 45 min») + caption «Tu objetivo son 7 h · cumplido» (cumplido en success).
 - Dos filas de 60: «Me acosté · Anoche» y «Me levanté · Hoy», cada una con icono en cuadrado 32 y `TimePill` a la derecha. Si la hora de levantarse es anterior a la de acostarse, se asume día siguiente.
-- «¿Qué tal has dormido?»: segmentado de 5 (Fatal, Mal, Normal, Bien, Genial) → `quality` 1–5. Sin estrellas.
+- «¿Qué tal has dormido?»: segmentado de 5 (Fatal, Mal, Normal, Bien, Genial) → `quality_rating` 1–5. Sin estrellas.
 - «Añadir una nota» como botón de texto que despliega un campo multilínea.
 
 ### Ajustes (`docs/design/Ajustes.html`)
