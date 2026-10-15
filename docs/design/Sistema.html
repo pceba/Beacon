@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Sistema</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(16,19,24,.04),0 6px 16px rgba(16,19,24,.04)}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button,input{font-family:inherit}
+button{border:0;cursor:pointer}
+.h{margin:0;font-size:13px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#6B7380}
+.tok{font-size:12px;color:#6B7380;font-family:ui-monospace,Menlo,monospace}
+</style>
+</helmet>
+<div style="width:880px;height:1180px;box-sizing:border-box;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;padding:40px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+  <header style="display:flex;align-items:baseline;justify-content:space-between">
+    <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-.6px">Sistema de diseño</h1>
+    <span style="font-size:14px;color:#6B7380">Claro · tinta + azul · Outfit</span>
+  </header>
+
+  <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+    <h2 class="h">Color</h2>
+    <div style="display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px">
+      <sc-for list="{{colors}}" as="c" hint-placeholder-count="16">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="height:48px;border-radius:12px;background:{{c.hex}};box-shadow:inset 0 0 0 1px rgba(16,19,24,.08)"></span>
+          <span style="font-size:13px;font-weight:600">{{c.name}}</span>
+          <span class="tok">{{c.hex}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:22px">
+    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <h2 class="h">Tipografía · Outfit</h2>
+      <sc-for list="{{type}}" as="t" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:1fr 132px;align-items:baseline;gap:10px;border-bottom:1px solid #EEF1F4;padding-bottom:8px">
+          <span style="font-size:{{t.size}};line-height:{{t.lh}};font-weight:{{t.w}};letter-spacing:{{t.ls}}">{{t.sample}}</span>
+          <span class="tok">{{t.name}} · {{t.spec}}</span>
+        </div>
+      </sc-for>
+      <span style="font-size:13px;color:#6B7380">Cifras siempre con <span class="tok">tabular-nums</span>. Coma decimal y punto de millar (es-ES).</span>
+    </section>
+
+    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <h2 class="h">Espacio y forma</h2>
+      <div style="display:flex;align-items:flex-end;gap:10px">
+        <sc-for list="{{space}}" as="s" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="width:{{s.px}};height:{{s.px}};border-radius:4px;background:#2448D8;opacity:.85"></span>
+            <span class="tok">{{s.v}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+        <sc-for list="{{radii}}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="width:52px;height:52px;border-radius:{{r.v}};background:#FFFFFF;box-shadow:inset 0 0 0 1.5px #9AA2AE"></span>
+            <span class="tok">{{r.name}} {{r.v}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:13px;color:#4A5260">
+        <div style="border-radius:14px;background:#F6F7F9;padding:12px">Margen de pantalla <b class="num">20</b><br>Hueco entre tarjetas <b class="num">12</b><br>Entre secciones <b class="num">20–24</b></div>
+        <div style="border-radius:14px;background:#F6F7F9;padding:12px">Objetivo táctil <b class="num">≥ 44 × 44</b><br>Fila de lista <b class="num">56</b><br>Botón principal <b class="num">56</b></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:16px">
+    <h2 class="h">Componentes</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+      <button style="min-height:52px;padding:0 22px;border-radius:16px;background:#101318;color:#FFFFFF;font-size:16px;font-weight:600">Guardar</button>
+      <button style="min-height:52px;padding:0 22px;border-radius:16px;background:#E8EDFF;color:#2448D8;font-size:16px;font-weight:600">Secundario</button>
+      <button style="min-height:52px;padding:0 22px;border-radius:16px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #DDE2E9;color:#101318;font-size:16px;font-weight:600">Contorno</button>
+      <button style="min-height:52px;padding:0 18px;border-radius:16px;background:transparent;color:#B4291F;font-size:16px;font-weight:600">Eliminar</button>
+      <button disabled style="min-height:52px;padding:0 22px;border-radius:16px;background:#E6E9EE;color:#9AA2AE;font-size:16px;font-weight:600;cursor:default">Desactivado</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:18px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#6B7380">Campo</span>
+          <input value="Comprar creatina" style="min-height:48px;border:0;outline:0;border-radius:12px;background:#F6F7F9;box-shadow:inset 0 0 0 1.5px #2448D8;padding:0 14px;font-size:16px;color:#101318">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#6B7380">Con error</span>
+          <input value="25:90" style="min-height:48px;border:0;outline:0;border-radius:12px;background:#FDF3F2;box-shadow:inset 0 0 0 1.5px #B4291F;padding:0 14px;font-size:16px;color:#101318">
+          <span style="font-size:13px;color:#B4291F">Escribe una hora válida, por ejemplo 21:30.</span>
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="min-height:36px;padding:0 14px;border-radius:999px;background:#101318;color:#FFFFFF;font-size:14px;font-weight:600;display:inline-flex;align-items:center">Alta</span>
+          <span style="min-height:36px;padding:0 14px;border-radius:999px;background:#F2F4F7;color:#4A5260;font-size:14px;font-weight:600;display:inline-flex;align-items:center">Media</span>
+          <span style="min-height:36px;padding:0 14px;border-radius:999px;background:#F2F4F7;color:#4A5260;font-size:14px;font-weight:600;display:inline-flex;align-items:center">Baja</span>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <span role="switch" aria-checked="true" style="width:50px;height:30px;border-radius:15px;background:#1B8A55;position:relative;display:inline-block"><span style="position:absolute;left:22px;top:2px;width:26px;height:26px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span>
+          <span role="switch" aria-checked="false" style="width:50px;height:30px;border-radius:15px;background:#D5DAE1;position:relative;display:inline-block"><span style="position:absolute;left:2px;top:2px;width:26px;height:26px;border-radius:13px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span>
+          <span style="width:28px;height:28px;border-radius:14px;box-shadow:inset 0 0 0 2px #9AA2AE"></span>
+          <span style="width:28px;height:28px;border-radius:14px;background:#1B8A55;color:#FFFFFF;display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;stroke-width:3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button aria-label="Menos" style="width:44px;height:44px;border-radius:22px;background:#F2F4F7;display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <span class="num" style="min-width:60px;text-align:center;font-size:18px;font-weight:600">250 ml</span>
+          <button aria-label="Más" style="width:44px;height:44px;border-radius:22px;background:#F2F4F7;display:flex;align-items:center;justify-content:center"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#E6E9EE;border-radius:14px;padding:4px">
+          <span style="min-height:36px;border-radius:10px;background:#FFFFFF;box-shadow:0 1px 3px rgba(16,19,24,.12);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">Día</span>
+          <span style="min-height:36px;font-size:14px;font-weight:600;color:#6B7380;display:flex;align-items:center;justify-content:center">Semana</span>
+          <span style="min-height:36px;font-size:14px;font-weight:600;color:#6B7380;display:flex;align-items:center;justify-content:center">Mes</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#4A5260"><span>Agua</span><span class="num">1,2 / 2,0 L</span></div>
+          <div style="height:8px;border-radius:4px;background:#E6F0FE;overflow:hidden"><div style="width:60%;height:100%;border-radius:4px;background:#1A5FCC"></div></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#E3F4EB;color:#14693F">+0,4 h</span>
+          <span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#FDECEA;color:#B4291F">−120</span>
+          <span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#EEF1F4;color:#4A5260">igual</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="padding:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+    <sc-for list="{{motion}}" as="m" hint-placeholder-count="3">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 class="h">{{m.title}}</h2>
+        <span style="font-size:14px;line-height:20px;color:#4A5260">{{m.body}}</span>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const colors = [
+      { name: 'Tinta', hex: '#101318' },
+      { name: 'Texto 2', hex: '#4A5260' },
+      { name: 'Texto 3', hex: '#6B7380' },
+      { name: 'Borde', hex: '#DDE2E9' },
+      { name: 'Línea', hex: '#EEF1F4' },
+      { name: 'Fondo', hex: '#F2F4F7' },
+      { name: 'Superficie', hex: '#FFFFFF' },
+      { name: 'Acento', hex: '#2448D8' },
+      { name: 'Agua', hex: '#1A5FCC' },
+      { name: 'Comida', hex: '#1B8A55' },
+      { name: 'Entreno', hex: '#D2551A' },
+      { name: 'Sueño', hex: '#4B4FC4' },
+      { name: 'Ánimo', hex: '#8B4FD1' },
+      { name: 'Aviso', hex: '#D2A11A' },
+      { name: 'Error', hex: '#B4291F' },
+      { name: 'Éxito', hex: '#14693F' },
+    ];
+    const type = [
+      { name: 'display', spec: '56/60 600', size: '44px', lh: '48px', w: 600, ls: '-1.2px', sample: '1.240 kcal' },
+      { name: 'title', spec: '32/36 600', size: '32px', lh: '36px', w: 600, ls: '-.6px', sample: 'Buenos días' },
+      { name: 'headline', spec: '22/28 600', size: '22px', lh: '28px', w: 600, ls: '-.3px', sample: 'Añadir' },
+      { name: 'section', spec: '17/22 600', size: '17px', lh: '22px', w: 600, ls: '0', sample: 'Tareas de hoy' },
+      { name: 'body', spec: '16/22 400', size: '16px', lh: '22px', w: 400, ls: '0', sample: 'Llamar al dentista' },
+      { name: 'caption', spec: '13/18 500', size: '13px', lh: '18px', w: 500, ls: '0', sample: 'Vence hoy · Alta' },
+      { name: 'label', spec: '11/14 600', size: '11px', lh: '14px', w: 600, ls: '.6px', sample: 'HOY' },
+    ];
+    const space = [4, 8, 12, 16, 20, 24, 32].map((v) => ({ v, px: (v + 6) + 'px' }));
+    const radii = [
+      { name: 'sm', v: '10px' }, { name: 'md', v: '14px' }, { name: 'lg', v: '18px' }, { name: 'sheet', v: '28px' },
+    ];
+    const motion = [
+      { title: 'Movimiento', body: 'Entrar 220 ms ease-out, salir 160 ms. Hojas con muelle (damping 22). Respeta «Reducir movimiento»: solo fundidos.' },
+      { title: 'Hápticos', body: 'Selección al cambiar segmento o paso. Impacto ligero al marcar. Éxito al completar un objetivo. Aviso al borrar.' },
+      { title: 'Sombra', body: 'Una sola: 0 1 2 / 4 % + 0 6 16 / 4 %. En Android, elevation 2. Nada de bordes y sombra a la vez.' },
+    ];
+    return { colors, type, space, radii, motion };
+  }
+}
+</script>
+</body>
+</html>

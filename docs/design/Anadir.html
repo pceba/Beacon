@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lifepp · Añadir</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2448D8}a:hover{color:#1A36A8}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button{font-family:inherit;border:0;cursor:pointer}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318">
+  <div aria-hidden="true" style="padding:58px 20px;display:flex;flex-direction:column;gap:16px;opacity:.9">
+    <div style="font-size:13px;font-weight:600;letter-spacing:.8px;color:#2448D8">JUEVES</div>
+    <div style="font-size:32px;font-weight:600;letter-spacing:-.6px">15 de octubre</div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+      <div style="height:118px;border-radius:18px;background:#FFFFFF"></div>
+      <div style="height:118px;border-radius:18px;background:#FFFFFF"></div>
+      <div style="height:118px;border-radius:18px;background:#FFFFFF"></div>
+      <div style="height:118px;border-radius:18px;background:#FFFFFF"></div>
+    </div>
+  </div>
+  <div aria-hidden="true" style="position:absolute;inset:0;background:rgba(16,19,24,.38)"></div>
+
+  <section role="dialog" aria-label="Añadir" style="position:absolute;left:0;right:0;bottom:0;background:#FFFFFF;border-radius:28px 28px 0 0;padding:10px 20px 34px;display:flex;flex-direction:column;gap:18px;box-shadow:0 -8px 30px rgba(16,19,24,.12)">
+    <div aria-hidden="true" style="align-self:center;width:36px;height:5px;border-radius:3px;background:#D5DAE1"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.3px">Añadir</h2>
+      <a href="Main.dc.html" aria-label="Cerrar" style="width:36px;height:36px;border-radius:18px;background:#F2F4F7;display:flex;align-items:center;justify-content:center;color:#4A5260"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:13px;font-weight:600;color:#6B7380">Agua rápida</span>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+        <button style="min-height:48px;border-radius:14px;background:#E6F0FE;color:#1A5FCC;font-size:16px;font-weight:600">+250 ml</button>
+        <button style="min-height:48px;border-radius:14px;background:#E6F0FE;color:#1A5FCC;font-size:16px;font-weight:600">+500 ml</button>
+        <button style="min-height:48px;border-radius:14px;background:#E6F0FE;color:#1A5FCC;font-size:16px;font-weight:600">+1 L</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="9">
+        <a href="{{it.href}}" style="min-height:96px;border-radius:18px;background:#F6F7F9;text-decoration:none;color:#101318;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+          <span style="width:44px;height:44px;border-radius:22px;background:{{it.soft}};color:{{it.color}};display:flex;align-items:center;justify-content:center">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="{{it.icon}}"/></svg>
+          </span>
+          <span style="font-size:14px;font-weight:600">{{it.label}}</span>
+        </a>
+      </sc-for>
+    </div>
+
+    <p style="margin:0;display:flex;align-items:center;gap:8px;font-size:13px;line-height:18px;color:#6B7380">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0;color:#2448D8"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+      También puedes pedírselo a Claude: «apunta 500 ml y una ensalada».
+    </p>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const items = [
+      { label: 'Comida', color: '#1B8A55', soft: '#E3F4EB', href: 'Comida.dc.html', icon: 'M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7' },
+      { label: 'Entreno', color: '#D2551A', soft: '#FCEDE4', href: '#', icon: 'm6.5 6.5 11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7' },
+      { label: 'Sueño', color: '#4B4FC4', soft: '#ECECFA', href: '#', icon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' },
+      { label: 'Tarea', color: '#101318', soft: '#ECEEF1', href: '#', icon: 'M4 5h16v14H4zM9 12l2 2 4-4' },
+      { label: 'Hábito', color: '#2448D8', soft: '#E8EDFF', href: '#', icon: 'M20 6 9 17l-5-5' },
+      { label: 'Evento', color: '#2448D8', soft: '#E8EDFF', href: '#', icon: 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 2v4M8 2v4M3 10h18' },
+      { label: 'Peso', color: '#4A5260', soft: '#ECEEF1', href: '#', icon: 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6.5 8a2 2 0 0 0-1.9 1.5L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.5A2 2 0 0 0 17.5 8Z' },
+      { label: 'Nota', color: '#8B4FD1', soft: '#F3ECFB', href: '#', icon: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' },
+      { label: 'Reflexión', color: '#8B4FD1', soft: '#F3ECFB', href: '#', icon: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z' },
+    ];
+    return { items };
+  }
+}
+</script>
+</body>
+</html>
