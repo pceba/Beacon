@@ -2,6 +2,12 @@ import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { WaterLog } from '../types/database';
 
+export const getWaterLogs = async (userId: string): Promise<WaterLog[]> => {
+  const { data, error } = await supabase.from('water_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as WaterLog[];
+};
+
 export const getWaterLog = async (userId: string, date: Date): Promise<WaterLog | null> => {
   const logDate = format(date, 'yyyy-MM-dd');
   const { data, error } = await supabase.from('water_logs').select('*').eq('user_id', userId).eq('log_date', logDate).maybeSingle();

@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { cardShadow, Radius } from '../../constants/spacing';
 
 type Props = {
   children: React.ReactNode;
   inset?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 export const Card = ({ children, inset, style }: Props) => (

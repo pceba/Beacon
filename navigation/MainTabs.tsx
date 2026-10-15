@@ -12,7 +12,7 @@ import { TodayScreen } from '../screens/TodayScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { PlanHomeScreen } from '../screens/plan/PlanHomeScreen';
 import { EventDetailScreen } from '../screens/plan/EventDetailScreen';
-import { StatsScreen } from '../screens/StatsScreen';
+import { DatosScreen } from '../screens/DatosScreen';
 import { AddSheet } from '../components/add/AddSheet';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -106,7 +106,7 @@ export const MainTabs = () => {
         <Tab.Screen name="Today" component={TodayScreen} />
         <Tab.Screen name="Plan" component={PlanNavigator} />
         <Tab.Screen name="Journal" component={JournalScreen} />
-        <Tab.Screen name="Stats" component={StatsScreen} />
+        <Tab.Screen name="Stats" component={DatosScreen} />
       </Tab.Navigator>
       <AddSheet visible={addOpen} onClose={() => setAddOpen(false)} />
     </>
