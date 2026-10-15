@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
+import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../../constants/colors';
-import { Motion } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { medium } from '../../lib/haptics';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const CHECK = 24;
+const SPRING = { damping: 18, stiffness: 300 };
 
 type Props = {
   done: boolean;
@@ -18,10 +21,17 @@ export const CheckBox = ({ done, label, onPress }: Props) => {
   const fill = useSharedValue(done ? 1 : 0);
 
   useEffect(() => {
-    fill.value = reduce ? (done ? 1 : 0) : withTiming(done ? 1 : 0, { duration: Motion.enter, easing: Motion.easeOut });
+    if (reduce) {
+      fill.value = done ? 1 : 0;
+      return;
+    }
+    fill.value = withSpring(done ? 1 : 0, SPRING);
   }, [done, fill, reduce]);
 
-  const animated = useAnimatedStyle(() => ({ opacity: fill.value }));
+  const fillStyle = useAnimatedStyle(() => ({ opacity: fill.value }));
+  const checkProps = useAnimatedProps(() => ({
+    strokeDashoffset: CHECK * (1 - fill.value),
+  }));
 
   return (
     <Pressable
@@ -35,8 +45,19 @@ export const CheckBox = ({ done, label, onPress }: Props) => {
       }}
       style={[styles.box, done ? styles.boxOn : null]}
     >
-      <Animated.View style={animated}>
-        <Check color={Colors.surface} size={14} strokeWidth={2.8} />
+      <Animated.View style={fillStyle}>
+        <Svg width={14} height={14} viewBox="0 0 24 24">
+          <AnimatedPath
+            d="M20 6 9 17l-5-5"
+            stroke={Colors.surface}
+            strokeWidth={2.8}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={CHECK}
+            animatedProps={checkProps}
+          />
+        </Svg>
       </Animated.View>
     </Pressable>
   );

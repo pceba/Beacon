@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '../lib/toast';
-import { light, medium, selection, warning } from '../lib/haptics';
+import { light, medium, selection, success } from '../lib/haptics';
+import { getStored, setStored } from '../lib/storage';
 import { onDayRefresh } from '../lib/refresh';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, isToday, subDays } from 'date-fns';
 import { Check, Plus } from 'lucide-react-native';
 import { MoodFace } from '../components/ui/MoodFace';
+import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { CheckBox } from '../components/ui/CheckBox';
 import { CheckCircle } from '../components/ui/CheckCircle';
 import { Card } from '../components/ui/Card';
@@ -32,7 +35,11 @@ import { dayBrief } from '../utils/dayBrief';
 import { formatHours, formatNumber, formatWater } from '../utils/format';
 import { taskTiming } from '../utils/taskMeta';
 import { monthDay, weekdayName } from '../utils/labels';
+import { SwipeRow } from '../components/ui/SwipeRow';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { habitStreak } from '../utils/streak';
+
+let hoyEntered = false;
 
 type TodayNav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Today'>,
@@ -62,6 +69,7 @@ export const TodayScreen = () => {
   const [hasSession, setHasSession] = useState(false);
   const sleepLock = useRef(false);
   const moveLock = useRef(false);
+  const taskTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [taskDraft, setTaskDraft] = useState('');
   const [sourceTasks, setSourceTasks] = useState<Task[]>([]);
 
@@ -273,19 +281,47 @@ export const TodayScreen = () => {
     }
   };
 
-  const onToggleTask = async (task: Task) => {
-    setTasks((current) => current.filter((item) => item.id !== task.id));
-    setSourceTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: true } : item)));
-    try {
-      light();
-      const userId = await getCurrentUserId();
-      await toggleTaskCompleted(userId, task);
-    } catch (error) {
-      console.error(error);
-      setTasks((current) => [task, ...current]);
-      setSourceTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
-      toast.show({ message: 'No se ha actualizado la tarea', kind: 'error' });
+  const onToggleTask = (task: Task) => {
+    const pending = taskTimers.current[task.id];
+    if (pending) {
+      clearTimeout(pending);
+      delete taskTimers.current[task.id];
+      setTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: false } : item)));
+      setSourceTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: false } : item)));
+      return;
     }
+    setTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: true } : item)));
+    setSourceTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: true } : item)));
+    taskTimers.current[task.id] = setTimeout(() => {
+      delete taskTimers.current[task.id];
+      setTasks((current) => current.filter((item) => item.id !== task.id));
+      void (async () => {
+        try {
+          const userId = await getCurrentUserId();
+          await toggleTaskCompleted(userId, task);
+          toast.show({
+            message: 'Tarea hecha',
+            action: {
+              label: 'Deshacer',
+              onPress: () => {
+                const undone = { ...task, completed: false };
+                setTasks((current) => [undone, ...current].slice(0, 5));
+                setSourceTasks((current) => current.map((item) => (item.id === task.id ? undone : item)));
+                void toggleTaskCompleted(userId, { ...task, completed: true }).catch((undoError) => {
+                  console.error(undoError);
+                  toast.show({ message: 'No se ha podido deshacer', kind: 'error' });
+                });
+              },
+            },
+          });
+        } catch (error) {
+          console.error(error);
+          setTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
+          setSourceTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
+          toast.show({ message: 'No se ha actualizado la tarea', kind: 'error' });
+        }
+      })();
+    }, 600);
   };
 
   const onDeleteHabit = async (habit: Habit) => {
@@ -294,7 +330,6 @@ export const TodayScreen = () => {
     try {
       const userId = await getCurrentUserId();
       await deleteHabit(userId, habit.id);
-      warning();
       toast.show({
         message: 'Hábito eliminado',
         action: {
@@ -347,9 +382,32 @@ export const TodayScreen = () => {
   };
 
   const today = new Date();
+  const reduce = useReduceMotion();
   const initial = (prefs?.displayName || 'L').trim().charAt(0).toUpperCase() || 'L';
   const checks = [waterDone, sleepDone, summary.workout, summary.calories > 0, ...habits.map((habit) => completedHabitIds.has(habit.id))];
   const doneCount = checks.filter(Boolean).length;
+  const barPulse = useSharedValue(1);
+  const barStyle = useAnimatedStyle(() => ({ transform: [{ scale: barPulse.value }] }));
+  const enter = (index: number) => (reduce || hoyEntered ? FadeIn.duration(120) : FadeIn.duration(220).delay(index * 50));
+  const leave = reduce ? FadeOut.duration(120) : FadeOut.duration(160);
+  const layout = reduce ? undefined : LinearTransition.duration(220);
+  useEffect(() => {
+    hoyEntered = true;
+  }, []);
+  useEffect(() => {
+    if (checks.length === 0 || doneCount < checks.length) return;
+    let alive = true;
+    void (async () => {
+      const flag = await getStored('lifepp_goal_pulse');
+      if (!alive || flag === todayKey) return;
+      await setStored('lifepp_goal_pulse', todayKey);
+      success();
+      if (!reduce) barPulse.value = withSequence(withTiming(1.06, { duration: 180 }), withTiming(1, { duration: 220 }));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [barPulse, checks.length, doneCount, reduce, todayKey]);
 
   return (
     <ScrollView
@@ -357,7 +415,7 @@ export const TodayScreen = () => {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: tabClearance(insets.bottom) + 24 }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.ink} />}
     >
-      <View style={styles.header}>
+      <Animated.View entering={enter(0)} style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.overline}>{weekdayName(today)}</Text>
           <Text style={styles.title}>{monthDay(today)}</Text>
@@ -365,10 +423,12 @@ export const TodayScreen = () => {
         <Pressable accessibilityRole="button" accessibilityLabel="Ajustes y cuenta" onPress={() => navigation.navigate('SettingsScreen')} style={styles.avatar}>
           <Text style={styles.avatarText}>{initial}</Text>
         </Pressable>
-      </View>
+      </Animated.View>
 
-      <BriefLine text={brief} />
-      <View style={styles.segments}>
+      <Animated.View entering={enter(1)}>
+        <BriefLine text={brief} />
+      </Animated.View>
+      <Animated.View entering={enter(2)} style={[styles.segments, barStyle]}>
         <View style={styles.segmentRow}>
           {checks.map((_, index) => (
             <View key={index} style={[styles.segment, index < doneCount ? styles.segmentOn : null]} />
@@ -377,19 +437,17 @@ export const TodayScreen = () => {
         <Text style={styles.segmentCount}>
           {formatNumber(doneCount)} de {formatNumber(checks.length)}
         </Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.board}>
+      <Animated.View entering={enter(3)} style={styles.board}>
         <Pressable accessibilityRole="button" accessibilityLabel="Agua" onPress={() => void changeWater(250)} onLongPress={() => void changeWater(250)} style={styles.cell}>
           <View style={styles.metricLabel}>
             <View style={[styles.catDot, { backgroundColor: Colors.water }]} />
             <Text style={styles.metricName}>Agua</Text>
           </View>
           <View style={styles.metricValueRow}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-              {formatWater(summary.waterMl)}
-              <Text style={styles.metricUnit}> / {formatWater(goals.waterMl)}</Text>
-            </Text>
+            <AnimatedNumber value={summary.waterMl} kind="water" style={styles.metricValue} />
+            <Text style={styles.metricUnit}> / {formatWater(goals.waterMl)}</Text>
             <View style={styles.plus}>
               <Plus color={Colors.water} size={18} />
             </View>
@@ -435,24 +493,24 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.food }]} />
             <Text style={styles.metricName}>Comida</Text>
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-            {formatNumber(summary.calories)}
-            <Text style={styles.metricUnit}> / {formatNumber(goals.calories)} kcal</Text>
-          </Text>
+          <View style={styles.metricValueRow}>
+            <AnimatedNumber value={summary.calories} kind="kcal" style={styles.metricValue} />
+            <Text style={styles.metricUnit}>/ {formatNumber(goals.calories)} kcal</Text>
+          </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.calories / Math.max(goals.calories, 1)) * 100))}%`, backgroundColor: Colors.food }]} />
           </View>
         </Pressable>
-      </View>
+      </Animated.View>
 
-      <View style={styles.sectionHead}>
+      <Animated.View entering={enter(4)} style={styles.sectionHead}>
         <Text style={styles.section}>
           Hábitos <Text style={styles.sectionMeta}>{formatNumber(habits.length - habitsLeft)} de {formatNumber(habits.length)}</Text>
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Añadir hábito" hitSlop={8} onPress={() => navigation.navigate('AddHabitModal')} style={styles.linkHit}>
           <Text style={styles.link}>Añadir</Text>
         </Pressable>
-      </View>
+      </Animated.View>
       <Card inset>
         {habits.length === 0 ? <Text style={styles.empty}>Aún no hay hábitos. Añade el primero.</Text> : null}
         {habits.map((habit, index) => {
@@ -464,28 +522,34 @@ export const TodayScreen = () => {
             return habitLogs.some((log) => log.habit_id === habit.id && log.completed && log.log_date.slice(0, 10) === key);
           });
           return (
-            <View key={habit.id} style={[styles.habit, index === habits.length - 1 ? styles.habitLast : null]}>
-              <CheckCircle done={done} color={habit.color || Colors.accent} label={habit.name} onPress={() => onToggleHabit(habit)} />
-              <Pressable accessibilityRole="button" accessibilityLabel={`Quitar ${habit.name}`} onLongPress={() => onDeleteHabit(habit)} style={styles.habitCopy}>
-                <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
-                  {habit.name}
-                </Text>
-                <Text style={styles.habitMeta}>
-                  {done ? 'Hecho' : 'Sin marcar'}
-                  {streak >= 2 ? ` · ${formatNumber(streak)} días` : ''}
-                </Text>
-              </Pressable>
-              <View style={styles.week}>
-                {marks.map((on, markIndex) => (
-                  <View key={markIndex} style={[styles.dot, on ? { backgroundColor: habit.color || Colors.accent } : styles.dotOff, markIndex === 6 ? styles.dotToday : null]} />
-                ))}
-              </View>
-            </View>
+            <Animated.View key={habit.id} entering={enter(5)} exiting={leave} layout={layout}>
+              <SwipeRow label={`Eliminar ${habit.name}`} onDelete={() => void onDeleteHabit(habit)}>
+                <View style={[styles.habit, index === habits.length - 1 ? styles.habitLast : null]}>
+                  <CheckCircle done={done} color={habit.color || Colors.accent} label={habit.name} onPress={() => onToggleHabit(habit)} />
+                  <View style={styles.habitCopy}>
+                    <Text numberOfLines={1} style={[styles.habitName, done ? styles.habitDone : null]}>
+                      {habit.name}
+                    </Text>
+                    <Text style={styles.habitMeta}>
+                      {done ? 'Hecho' : 'Sin marcar'}
+                      {streak >= 2 ? ` · ${formatNumber(streak)} días` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.week}>
+                    {marks.map((on, markIndex) => (
+                      <View key={markIndex} style={[styles.dot, on ? { backgroundColor: habit.color || Colors.accent } : styles.dotOff, markIndex === 6 ? styles.dotToday : null]} />
+                    ))}
+                  </View>
+                </View>
+              </SwipeRow>
+            </Animated.View>
           );
         })}
       </Card>
 
-      <Text style={styles.section}>¿Cómo estás hoy?</Text>
+      <Animated.View entering={enter(6)}>
+        <Text style={styles.section}>¿Cómo estás hoy?</Text>
+      </Animated.View>
       <Card>
         <View style={styles.moods}>
           {MOODS.map(({ score, label }, index) => {
@@ -507,14 +571,14 @@ export const TodayScreen = () => {
         </View>
       </Card>
 
-      <View style={styles.sectionHead}>
+      <Animated.View entering={enter(7)} style={styles.sectionHead}>
         <Text style={styles.section}>
           Tareas <Text style={styles.sectionMeta}>{formatNumber(tasks.length)} hoy</Text>
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Ver plan" hitSlop={8} onPress={() => navigation.navigate('Plan')} style={styles.linkHit}>
           <Text style={styles.link}>Ver plan</Text>
         </Pressable>
-      </View>
+      </Animated.View>
       <Card inset>
         <View style={styles.taskDraft}>
           <Plus color={Colors.text3} size={14} />
@@ -533,15 +597,15 @@ export const TodayScreen = () => {
         {tasks.map((task) => {
           const timing = taskTiming(task.deadline, todayKey, task.priority);
           return (
-            <View key={task.id} style={styles.task}>
+            <Animated.View key={task.id} entering={enter(8)} exiting={leave} layout={layout} style={styles.task}>
               <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
               <View style={styles.taskCopy}>
-                <Text numberOfLines={2} style={styles.taskTitle}>
+                <Text numberOfLines={2} style={[styles.taskTitle, task.completed ? styles.taskDone : null]}>
                   {task.title}
                 </Text>
                 {timing ? <Text style={timing.overdue ? styles.overdue : styles.when}>{timing.text}</Text> : null}
               </View>
-            </View>
+            </Animated.View>
           );
         })}
       </Card>
@@ -600,7 +664,7 @@ const styles = StyleSheet.create({
   catDot: { width: 8, height: 8, borderRadius: 4 },
   metricName: { ...Type.label, color: Colors.text2 },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 },
-  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: Colors.ink },
+  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 22, lineHeight: 28, letterSpacing: -0.5, color: Colors.ink, padding: 0, flexShrink: 1 },
   metricUnit: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
   metricHint: { ...Type.caption, color: Colors.text3, marginTop: -6 },
   pending: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: Colors.ink },
@@ -634,6 +698,7 @@ const styles = StyleSheet.create({
   task: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
   taskCopy: { flex: 1, gap: 2 },
   taskTitle: { ...Type.body, color: Colors.ink },
+  taskDone: { color: Colors.text4, textDecorationLine: 'line-through' },
   when: { ...Type.caption, color: Colors.text2 },
   overdue: { ...Type.caption, color: Colors.danger },
 });

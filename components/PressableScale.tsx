@@ -1,8 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { Colors } from '../constants/colors';
-import { Motion } from '../constants/motion';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 
 type Props = {
@@ -19,7 +18,12 @@ type Props = {
 export const PressableScale = ({ children, onPress, onLongPress, disabled, style, layoutStyle, accessibilityLabel, hitSlop }: Props) => {
   const reduce = useReduceMotion();
   const scale = useSharedValue(1);
-  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const opacity = useSharedValue(1);
+  const animated = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+  const press = { damping: 18, stiffness: 300 };
 
   return (
     <Pressable
@@ -31,11 +35,19 @@ export const PressableScale = ({ children, onPress, onLongPress, disabled, style
       onPress={onPress}
       onLongPress={onLongPress}
       onPressIn={() => {
-        if (reduce || disabled) return;
-        scale.value = withTiming(0.97, { duration: Motion.pressIn, easing: Motion.easeOut });
+        if (disabled) return;
+        if (reduce) {
+          opacity.value = withTiming(0.72, { duration: 120 });
+          return;
+        }
+        scale.value = withSpring(0.97, press);
       }}
       onPressOut={() => {
-        scale.value = withTiming(1, { duration: Motion.pressOut, easing: Motion.easeOut });
+        if (reduce) {
+          opacity.value = withTiming(1, { duration: 120 });
+          return;
+        }
+        scale.value = withSpring(1, press);
       }}
       style={(state) => {
         const focused = 'focused' in state && Boolean((state as { focused?: boolean }).focused);

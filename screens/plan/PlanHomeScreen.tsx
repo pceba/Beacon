@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { SwipeRow } from '../../components/ui/SwipeRow';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
@@ -11,7 +12,8 @@ import { Sheet } from '../../components/ui/Sheet';
 import { Colors } from '../../constants/colors';
 import { Spacing, tabClearance } from '../../constants/spacing';
 import { Type, tabular } from '../../constants/typography';
-import { selection, warning } from '../../lib/haptics';
+import { selection } from '../../lib/haptics';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { toast } from '../../lib/toast';
 import { getCurrentUserId } from '../../services/authService';
 import { getEvents } from '../../services/eventService';
@@ -52,6 +54,10 @@ export const PlanHomeScreen = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [taskDraft, setTaskDraft] = useState('');
   const swipeLock = useRef(false);
+  const reduce = useReduceMotion();
+  const rowEnter = reduce ? FadeIn.duration(120) : FadeIn.duration(220);
+  const rowLeave = reduce ? FadeOut.duration(120) : FadeOut.duration(160);
+  const rowLayout = reduce ? undefined : LinearTransition.duration(220);
 
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -131,6 +137,21 @@ export const PlanHomeScreen = () => {
     try {
       const userId = await getCurrentUserId();
       await toggleTaskCompleted(userId, task);
+      if (!task.completed) {
+        toast.show({
+          message: 'Tarea hecha',
+          action: {
+            label: 'Deshacer',
+            onPress: () => {
+              setTasks((current) => current.map((item) => (item.id === task.id ? { ...item, completed: false } : item)));
+              void toggleTaskCompleted(userId, { ...task, completed: true }).catch((undoError) => {
+                console.error(undoError);
+                toast.show({ message: 'No se ha podido deshacer', kind: 'error' });
+              });
+            },
+          },
+        });
+      }
     } catch (error) {
       console.error(error);
       setTasks((current) => current.map((item) => (item.id === task.id ? task : item)));
@@ -160,7 +181,6 @@ export const PlanHomeScreen = () => {
   };
 
   const removeTask = async (task: Task) => {
-    warning();
     setTasks((current) => current.filter((item) => item.id !== task.id));
     try {
       const userId = await getCurrentUserId();
@@ -302,28 +322,23 @@ export const PlanHomeScreen = () => {
           </View>
           {dayTasks.length === 0 ? <Text style={styles.empty}>Sin tareas este día.</Text> : null}
           {dayTasks.map((task) => (
-            <Swipeable
-              key={task.id}
-              renderRightActions={() => (
-                <Pressable accessibilityRole="button" accessibilityLabel={`Eliminar ${task.title}`} onPress={() => void removeTask(task)} style={styles.swipe}>
-                  <Text style={styles.swipeText}>Eliminar</Text>
-                </Pressable>
-              )}
-            >
-              <View style={styles.task}>
-                <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
-                <View style={styles.taskCopy}>
-                  <Text style={[styles.taskTitle, task.completed ? styles.taskDone : null]}>{task.title}</Text>
-                  {(() => {
-                    const timing = !task.completed ? taskTiming(task.deadline, todayKey, task.priority) : null;
-                    return timing ? <Text style={timing.overdue ? styles.due : styles.when}>{timing.text}</Text> : null;
-                  })()}
+            <Animated.View key={task.id} entering={rowEnter} exiting={rowLeave} layout={rowLayout}>
+              <SwipeRow label={`Eliminar ${task.title}`} onDelete={() => void removeTask(task)}>
+                <View style={styles.task}>
+                  <CheckBox done={task.completed} label={task.title} onPress={() => onToggleTask(task)} />
+                  <View style={styles.taskCopy}>
+                    <Text style={[styles.taskTitle, task.completed ? styles.taskDone : null]}>{task.title}</Text>
+                    {(() => {
+                      const timing = !task.completed ? taskTiming(task.deadline, todayKey, task.priority) : null;
+                      return timing ? <Text style={timing.overdue ? styles.due : styles.when}>{timing.text}</Text> : null;
+                    })()}
+                  </View>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Opciones de ${task.title}`} hitSlop={10} onPress={() => void removeTask(task)} style={styles.more}>
+                    <MoreHorizontal color={Colors.text3} size={18} />
+                  </Pressable>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Opciones de ${task.title}`} hitSlop={10} onPress={() => void removeTask(task)} style={styles.more}>
-                  <MoreHorizontal color={Colors.text3} size={18} />
-                </Pressable>
-              </View>
-            </Swipeable>
+              </SwipeRow>
+            </Animated.View>
           ))}
         </Card>
       </ScrollView>

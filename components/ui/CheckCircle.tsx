@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../../constants/colors';
-import { Motion } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { light } from '../../lib/haptics';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const CHECK = 24;
+const SPRING = { damping: 18, stiffness: 300 };
 
 type Props = {
   done: boolean;
@@ -19,12 +22,19 @@ export const CheckCircle = ({ done, color, label, onPress }: Props) => {
   const fill = useSharedValue(done ? 1 : 0);
 
   useEffect(() => {
-    fill.value = reduce ? (done ? 1 : 0) : withTiming(done ? 1 : 0, { duration: Motion.enter, easing: Motion.easeOut });
+    if (reduce) {
+      fill.value = done ? 1 : 0;
+      return;
+    }
+    fill.value = withSpring(done ? 1 : 0, SPRING);
   }, [done, fill, reduce]);
 
-  const animated = useAnimatedStyle(() => ({
+  const fillStyle = useAnimatedStyle(() => ({
     opacity: fill.value,
-    transform: [{ scale: 0.8 + fill.value * 0.2 }],
+    transform: [{ scale: 0.86 + fill.value * 0.14 }],
+  }));
+  const checkProps = useAnimatedProps(() => ({
+    strokeDashoffset: CHECK * (1 - fill.value),
   }));
 
   return (
@@ -39,8 +49,19 @@ export const CheckCircle = ({ done, color, label, onPress }: Props) => {
       }}
       style={[styles.ring, { borderColor: done ? color : Colors.border }]}
     >
-      <Animated.View style={[styles.fill, { backgroundColor: color }, animated]}>
-        <Check color={Colors.surface} size={16} strokeWidth={2.6} />
+      <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]}>
+        <Svg width={16} height={16} viewBox="0 0 24 24">
+          <AnimatedPath
+            d="M20 6 9 17l-5-5"
+            stroke={Colors.surface}
+            strokeWidth={2.6}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={CHECK}
+            animatedProps={checkProps}
+          />
+        </Svg>
       </Animated.View>
     </Pressable>
   );
