@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   reminderLabel: { flex: 1, fontFamily: Typography.fontMedium, fontSize: Typography.md, color: Colors.textPrimary },
   time: {
     width: 72,
-    minHeight: 40,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 8,

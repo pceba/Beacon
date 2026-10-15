@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   colorRow: { flexDirection: 'row', gap: Spacing.sm },
-  swatch: { width: 36, height: 36, borderRadius: 18 },
+  swatch: { width: 44, height: 44, borderRadius: 22 },
   swatchOn: { borderWidth: 3, borderColor: Colors.white, outlineWidth: 2, outlineColor: Colors.ink, outlineOffset: 1 },
   pressed: { opacity: 0.75 },
 });

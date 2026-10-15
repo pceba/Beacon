@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Segmented } from '../../components/Segmented';
@@ -10,6 +10,7 @@ import { Typography } from '../../constants/typography';
 import { createMealTemplate, createNutritionLog, getMealTemplates, getNutritionLogs, updateNutritionLog } from '../../services/nutritionService';
 import { getCurrentUserId } from '../../services/authService';
 import { LogStackParamList } from '../../types/navigation';
+import { MealTemplate } from '../../types/database';
 import { finishLog, useReturnToToday } from '../../utils/finishLog';
 
 type Route = RouteProp<LogStackParamList, 'LogMealScreen'>;
@@ -32,6 +33,7 @@ export const LogMealScreen = () => {
     return 'dinner';
   });
   const [saveTemplate, setSaveTemplate] = useState(false);
+  const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -56,23 +58,27 @@ export const LogMealScreen = () => {
     loadEdit();
   }, [route.params?.logId]);
 
-  const onPickTemplate = async () => {
-    try {
-      const userId = await getCurrentUserId();
-      const templates = await getMealTemplates(userId);
-      const top = templates[0];
-      if (!top) return;
-      setName(top.name);
-      setCalories(String(top.calories));
-      setProtein(String(top.protein_g));
-      setCarbs(String(top.carbs_g));
-      setFat(String(top.fat_g));
-      setMealType(top.meal_type);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('No se han cargado las comidas guardadas');
-    }
+  const applyTemplate = (template: MealTemplate) => {
+    setName(template.name);
+    setCalories(String(template.calories));
+    setProtein(String(template.protein_g));
+    setCarbs(String(template.carbs_g));
+    setFat(String(template.fat_g));
+    setMealType(template.meal_type);
   };
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const userId = await getCurrentUserId();
+        setTemplates(await getMealTemplates(userId));
+      } catch (loadError) {
+        console.error(loadError);
+        Alert.alert('No se han cargado las comidas guardadas');
+      }
+    };
+    loadTemplates();
+  }, []);
 
   const onSubmit = async () => {
     const trimmed = name.trim();
@@ -122,10 +128,26 @@ export const LogMealScreen = () => {
           ]}
         />
         <Input label="Notas" value={notes} onChangeText={setNotes} multiline numberOfLines={6} />
-        <Text onPress={() => setSaveTemplate((prev) => !prev)} style={styles.toggle}>
-          {saveTemplate ? 'Guardada como plantilla' : 'Guardar como plantilla'}
-        </Text>
-        <Button title="Usar una comida guardada" variant="secondary" onPress={onPickTemplate} />
+        <Pressable accessibilityRole="button" onPress={() => setSaveTemplate((prev) => !prev)} style={styles.toggleHit}>
+          <Text style={styles.toggle}>{saveTemplate ? 'Guardada como plantilla' : 'Guardar como plantilla'}</Text>
+        </Pressable>
+        {templates.length > 0 ? (
+          <View style={styles.saved}>
+            <Text style={styles.savedLabel}>Comidas guardadas</Text>
+            {templates.map((template) => (
+              <Pressable
+                key={template.id}
+                accessibilityRole="button"
+                accessibilityLabel={template.name}
+                onPress={() => applyTemplate(template)}
+                style={styles.savedRow}
+              >
+                <Text style={styles.savedName}>{template.name}</Text>
+                <Text style={styles.savedMeta}>{template.calories} kcal</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <Button title={route.params?.logId ? 'Actualizar' : 'Guardar'} onPress={onSubmit} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -135,6 +157,21 @@ export const LogMealScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  toggleHit: { minHeight: 44, justifyContent: 'center' },
   toggle: { color: Colors.textSecondary, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
+  saved: { gap: 8 },
+  savedLabel: { color: Colors.textMuted, fontFamily: Typography.fontMedium, fontSize: Typography.sm },
+  savedRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+  },
+  savedName: { flex: 1, color: Colors.textPrimary, fontFamily: Typography.fontMedium, fontSize: Typography.md },
+  savedMeta: { color: Colors.textMuted, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
   error: { color: Colors.danger, fontFamily: Typography.fontRegular, fontSize: Typography.sm },
 });

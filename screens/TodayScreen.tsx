@@ -19,7 +19,8 @@ import { Radius, Spacing, tabClearance } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { getCurrentUserId } from '../services/authService';
 import { deleteHabit, getHabitLogs, getHabits, toggleHabit } from '../services/habitService';
-import { getMoodLog, upsertMoodLog } from '../services/moodService';
+import { getMoodLog, migrateMoodScores, upsertMoodLog } from '../services/moodService';
+import { MOODS, moodScale } from '../utils/mood';
 import { getNutritionLogs } from '../services/nutritionService';
 import { getPreferences, Preferences } from '../services/preferencesService';
 import { createSleepLog, deleteSleepLog, getSleepLogs, updateSleepLog } from '../services/sleepService';
@@ -86,7 +87,9 @@ export const TodayScreen = () => {
       const quick = todayWorkouts.find((workout) => workout.notes === 'rapido');
 
       setPrefs(preferences);
-      setMood(moodLog?.mood_score ?? null);
+      await migrateMoodScores(userId);
+      const scaledMood = moodScale(moodLog?.mood_score);
+      setMood(scaledMood);
       setHabits([...habitRows].reverse());
       setHabitLogs(logs);
       setTasks(
@@ -472,14 +475,8 @@ export const TodayScreen = () => {
       <Card>
         <SectionHeader title="Ánimo" />
         <View style={styles.moodRow}>
-          {([
-            [2, 'Mal'],
-            [4, 'Regular'],
-            [6, 'Bien'],
-            [8, 'Muy bien'],
-            [10, 'Genial'],
-          ] as const).map(([score, label]) => {
-            const selected = mood != null && Math.abs(mood - score) <= 1;
+          {MOODS.map(({ score, label }) => {
+            const selected = mood === score;
             return (
               <Pressable
                 key={score}
@@ -529,7 +526,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
   stepper: { flexDirection: 'row', gap: 6 },
-  step: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
+  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
   stepOn: { backgroundColor: Colors.workout },
   taskInput: {
     minHeight: 44,
@@ -544,7 +541,7 @@ const styles = StyleSheet.create({
   moodRow: { flexDirection: 'row', gap: 4 },
   moodChip: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

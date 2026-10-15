@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
-import { StarRating } from '../../components/StarRating';
 import { Colors } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
+import { Typography } from '../../constants/typography';
 import { createJournalEntry } from '../../services/journalService';
 import { getCurrentUserId } from '../../services/authService';
+import { MOODS } from '../../utils/mood';
 
 export const AddReflectionModal = () => {
   const navigation = useNavigation();
@@ -37,7 +38,23 @@ export const AddReflectionModal = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <Input label="Título" value={title} onChangeText={setTitle} placeholder="Opcional" />
         <Input label="Texto" value={content} onChangeText={setContent} multiline numberOfLines={8} />
-        <StarRating value={mood} onChange={setMood} />
+        <View style={styles.moodRow}>
+          {MOODS.map(({ score, label }) => {
+            const selected = mood === score;
+            return (
+              <Pressable
+                key={score}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                accessibilityState={{ selected }}
+                onPress={() => setMood(score)}
+                style={[styles.moodChip, selected ? styles.moodChipOn : null]}
+              >
+                <Text style={[styles.moodLabel, selected ? styles.moodLabelOn : null]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
         <Input label="Etiquetas" value={tags} onChangeText={setTags} placeholder="separadas por comas" />
         <Button title="Guardar" onPress={onSave} />
       </ScrollView>
@@ -48,4 +65,17 @@ export const AddReflectionModal = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Spacing.lg, gap: Spacing.md },
+  moodRow: { flexDirection: 'row', gap: 4 },
+  moodChip: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surfaceAlt,
+    paddingHorizontal: 2,
+  },
+  moodChipOn: { backgroundColor: Colors.gold },
+  moodLabel: { fontFamily: Typography.fontMedium, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
+  moodLabelOn: { color: Colors.white },
 });
