@@ -49,6 +49,7 @@ lib/                     cliente de Supabase con respaldo local, almacenamiento 
 utils/                   formato de números, frase del día, rachas
 supabase/
   schema.sql             esquema inicial (solo para un proyecto vacío)
+  seed/                  datos de demostración y su limpieza
   migrations/            RLS, conector MCP y registros (ya aplicadas)
   functions/lifepp-mcp/  servidor MCP para claude.ai
 docs/
@@ -69,6 +70,8 @@ npx tsc --noEmit          # comprobación de tipos
 ```
 
 Sin variables de entorno, la app funciona igual con almacenamiento local.
+
+**Datos de demostración:** `supabase/seed/demo.sql` crea unas 6 semanas de datos realistas (agua, sueño, comidas, entrenos con series, hábitos, peso, diario, tareas y eventos) en la cuenta con el conector activo. Se ejecuta en el SQL Editor de Supabase y se borra con `supabase/seed/demo-clean.sql`; los ids de la demo empiezan por `dec0de00-`, así que tus datos reales no se tocan.
 
 ## Publicar en el móvil
 
