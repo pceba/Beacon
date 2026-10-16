@@ -13,6 +13,7 @@ import { format, isToday, subDays } from 'date-fns';
 import { Plus } from 'lucide-react-native';
 import { MoodFace } from '../components/ui/MoodFace';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
+import { BeaconMark } from '../components/ui/BeaconMark';
 import { DelayedSkeleton, SkeletonBlock } from '../components/ui/Skeleton';
 import { CheckBox } from '../components/ui/CheckBox';
 import { CheckCircle } from '../components/ui/CheckCircle';
@@ -420,7 +421,7 @@ export const TodayScreen = () => {
 
   const today = new Date();
   const reduce = useReduceMotion();
-  const initial = (prefs?.displayName || 'L').trim().charAt(0).toUpperCase() || 'L';
+  const initial = (prefs?.displayName ?? '').trim().charAt(0).toUpperCase();
   const checks = [waterDone, sleepDone, summary.workout, summary.calories > 0, ...habits.map((habit) => completedHabitIds.has(habit.id))];
   const doneCount = checks.filter(Boolean).length;
   const barPulse = useSharedValue(1);
@@ -479,7 +480,7 @@ export const TodayScreen = () => {
           <Text style={styles.title}>{monthDay(today)}</Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Ajustes y cuenta" onPress={() => navigation.navigate('SettingsScreen')} style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
+          {initial ? <Text style={styles.avatarText}>{initial}</Text> : <BeaconMark size={26} />}
         </Pressable>
       </Animated.View>
 
@@ -502,6 +503,9 @@ export const TodayScreen = () => {
           <View style={styles.metricLabel}>
             <View style={[styles.catDot, { backgroundColor: Colors.water }]} />
             <Text style={styles.metricName}>Agua</Text>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>+250</Text>
+            </View>
           </View>
           <View style={styles.valueRow}>
             <AnimatedNumber value={summary.waterMl} kind="water" style={styles.figure} />
@@ -509,9 +513,6 @@ export const TodayScreen = () => {
               {' / '}
               {formatWater(goals.waterMl)}
             </Text>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>+250</Text>
-            </View>
           </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.waterMl / Math.max(goals.waterMl, 1)) * 100))}%`, backgroundColor: Colors.water }]} />
@@ -748,14 +749,14 @@ const styles = StyleSheet.create({
   metricLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   catDot: { width: 6, height: 6, borderRadius: 3 },
   metricName: { ...Type.label, color: Colors.text2 },
-  valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap', gap: 8 },
-  valueLine: { minWidth: 0, flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
+  valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap', gap: 4 },
+  valueLine: { minWidth: 0, flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap', gap: 4 },
   figure: { ...tabular, flexShrink: 1, minWidth: 0, fontFamily: 'Outfit_600SemiBold', fontSize: 30, lineHeight: 32, letterSpacing: -0.8, color: Colors.ink },
   unit: { flexShrink: 0, fontFamily: 'Outfit_500Medium', fontSize: 13, lineHeight: 18, color: Colors.text3 },
   copy: { gap: 4 },
   stateTitle: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: Colors.ink },
   caption: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
-  pill: { marginLeft: 'auto', alignSelf: 'center', height: 36, minWidth: 44, paddingHorizontal: 10, borderRadius: 18, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  pill: { marginLeft: 'auto', alignSelf: 'center', height: 24, minWidth: 40, paddingHorizontal: 8, marginVertical: -4, borderRadius: 12, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   pillText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: Colors.water },
   track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden', marginTop: 'auto' },
   fill: { height: 3, borderRadius: 99 },

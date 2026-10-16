@@ -1,4 +1,4 @@
-# Lifepp — Sistema de diseño y especificación del rediseño
+# Beacon — Sistema de diseño y especificación del rediseño
 
 Fuente de verdad visual: los mockups de `docs/design/*.html` (son HTML de referencia, con datos de ejemplo en un bloque `renderVals()`; no se ejecutan en la app). Este documento manda si hay contradicción.
 
@@ -165,7 +165,7 @@ Barra inferior de 5 posiciones: **Hoy · Plan · [+] · Diario · Datos**.
 - Título «Ajustes» + «Listo».
 - Aviso warningSoft si la cuenta es anónima: «Vincula tu email para no perder tus datos».
 - Grupos con etiqueta en mayúsculas: **Cuenta** (Email · Vincular / email verificado), **Objetivos** (Steppers: Agua 2,0 L paso 0,25; Calorías paso 50; Sueño paso 0,5 h), **Recordatorios** (Agua, Hábitos, Tareas: TimePill + Switch; nota «Solo te avisamos si aún no has cumplido ese objetivo.»), **Claude** (estado con punto verde y «último uso hace 2 h», «Crear enlace nuevo», «Desconectar» con ConfirmSheet).
-- Pie «Lifepp x.y.z» con la versión real de la app.
+- Pie «Beacon x.y.z» con la versión real de la app.
 
 ---
 

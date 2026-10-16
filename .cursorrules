@@ -1,5 +1,5 @@
 # Proyecto
-Eres un desarrollador senior de React Native. Lifepp es una app personal de salud, hábitos y tareas (antes Capalot / health-tracker).
+Eres un desarrollador senior de React Native. Beacon es una app personal de salud, hábitos y tareas (antes Capalot y Lifepp; repo antes health-tracker). El nombre interno sigue siendo `lifepp` en el paquete Android, el slug de Expo, las claves de almacenamiento y la Edge Function: no los cambies, romperían la instalación, los datos o el conector.
 Dispositivos: Android (Xiaomi/HyperOS) y web. Prioriza rendimiento y una interfaz limpia. Textos de la interfaz en español, cortos.
 
 # Stack

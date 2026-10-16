@@ -1,3 +1,4 @@
+export { BeaconMark } from './BeaconMark';
 export { Button } from './Button';
 export { Card } from './Card';
 export { CheckBox } from './CheckBox';

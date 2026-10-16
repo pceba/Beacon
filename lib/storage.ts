@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Almacenamiento del dispositivo con las claves de Lifepp. La app se llamaba Capalot:
-// la primera vez que arranca, mueve cada clave capalot_* a su nombre lifepp_* para no
+// Almacenamiento del dispositivo. La app se llamó Capalot y luego Lifepp; las claves
+// siguen siendo lifepp_* a propósito para no perder datos al cambiar de nombre (Beacon).
+// La primera vez que arranca, mueve cada clave capalot_* a su nombre lifepp_* para no
 // perder la base local, el usuario ni las preferencias.
 
 const RENAMES: Record<string, string> = {

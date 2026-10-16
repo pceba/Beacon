@@ -8,7 +8,7 @@ import { onAccountReady } from './authService';
 
 type Row = Record<string, unknown>;
 
-// Columnas reales de cada tabla (lifepp-setup.sql). El almacén local añade
+// Columnas reales de cada tabla (supabase/schema.sql). El almacén local añade
 // created_at en tablas que no lo tienen, así que se filtra.
 const COLUMNS: Record<string, string[]> = {
   profiles: ['id', 'user_id', 'display_name', 'created_at'],

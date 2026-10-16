@@ -1,4 +1,4 @@
-# Lifepp — Revisión de diseño v1.1.0 → v1.2
+# Beacon — Revisión de diseño v1.1.0 → v1.2
 
 Auditoría hecha sobre la app real (main @ c5146dd) compilada para web y recorrida a 390×844, con datos creados desde la propia interfaz (3 hábitos, 2 tareas, agua, comida, ánimo). Capturas en `docs/review/*.png`. Mockups nuevos: `docs/design/Hoy.html` (v1.2), `docs/design/Sueno.html`, `docs/design/Movimiento.html`.
 

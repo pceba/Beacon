@@ -1,6 +1,6 @@
 // Edge Function: lifepp-mcp
 // Servidor MCP remoto (transporte Streamable HTTP, respuestas JSON, sin sesión) para
-// conectar Lifepp a claude.ai como conector personalizado. Claude razona con tu plan;
+// conectar Beacon a claude.ai como conector personalizado. Claude razona con tu plan;
 // aquí no hay API key de Anthropic.
 //
 // Autenticación: token personal que genera la app (Ajustes → Conectar con Claude).
@@ -9,13 +9,13 @@
 // El token se valida en Postgres (funciones mcp_*), que solo tocan las filas de su dueño.
 // Usa la clave pública del proyecto (SUPABASE_ANON_KEY, la inyecta Supabase).
 
-const SERVER_INFO = { name: 'lifepp', title: 'Lifepp', version: '1.0.0' };
+const SERVER_INFO = { name: 'beacon', title: 'Beacon', version: '1.1.0' };
 const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
 const TOKEN = /(lpp_[0-9a-f]{64})/;
 const MAX_BODY_BYTES = 64_000;
 
 const INSTRUCTIONS = [
-  'Lifepp es la app de salud, hábitos y tareas de esta persona.',
+  'Beacon es la app de salud, hábitos y tareas de esta persona.',
   'Usa get_today para ver el día y get_week para los últimos 7 días.',
   'Para registrar lo que dice que ha hecho: log_water, log_habit, log_meal, log_workout y log_mood.',
   'log_habit solo marca un hábito que ya existe; si no está, no lo crees.',
@@ -44,7 +44,7 @@ const TOOLS = [
     name: 'get_today',
     title: 'Ver el día',
     description:
-      'Resumen de un día en Lifepp: agua (ml), ánimo y energía (1-5), comidas y calorías, horas de sueño, entrenos, hábitos hechos o pendientes, tareas abiertas y eventos. Por defecto, hoy.',
+      'Resumen de un día en Beacon: agua (ml), ánimo y energía (1-5), comidas y calorías, horas de sueño, entrenos, hábitos hechos o pendientes, tareas abiertas y eventos. Por defecto, hoy.',
     inputSchema: {
       type: 'object',
       properties: { date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' } },
@@ -55,7 +55,7 @@ const TOOLS = [
   {
     name: 'list_tasks',
     title: 'Listar tareas',
-    description: 'Tareas de Lifepp con id, título, prioridad, fecha límite y estado. Por defecto solo las abiertas.',
+    description: 'Tareas de Beacon con id, título, prioridad, fecha límite y estado. Por defecto solo las abiertas.',
     inputSchema: {
       type: 'object',
       properties: { include_completed: { type: 'boolean', description: 'Incluir también las completadas' } },
@@ -67,7 +67,7 @@ const TOOLS = [
     name: 'add_tasks',
     title: 'Añadir tareas',
     description:
-      'Crea hasta 20 tareas en Lifepp. Las que ya existen abiertas con el mismo título se saltan. Devuelve las creadas y las saltadas.',
+      'Crea hasta 20 tareas en Beacon. Las que ya existen abiertas con el mismo título se saltan. Devuelve las creadas y las saltadas.',
     inputSchema: {
       type: 'object',
       properties: { tasks: { type: 'array', items: TASK_SCHEMA, minItems: 1, maxItems: 20 } },
@@ -410,7 +410,7 @@ Deno.serve(async (request) => {
   }
 
   const token = extractToken(request);
-  if (!token) return httpJson(401, rpcError(null, -32001, 'Falta el token de Lifepp'));
+  if (!token) return httpJson(401, rpcError(null, -32001, 'Falta el token de Beacon'));
 
   const raw = await request.text();
   if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) {

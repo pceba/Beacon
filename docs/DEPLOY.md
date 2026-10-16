@@ -1,10 +1,10 @@
-# Despliegue de Lifepp
+# Despliegue de Beacon
 
 Sin API key de Anthropic. Claude trabaja desde claude.ai (web o app del móvil) con tu
 plan, a través de un conector MCP. La app calcula sola el resumen de Hoy.
 
 ```
-Lifepp (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + RLS)
+Beacon (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + RLS)
                                                    ▲
 claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (funciones mcp_* en Postgres)
 ```
@@ -13,7 +13,7 @@ claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (fun
 
 1. **Authentication → Sign In / Providers → Allow anonymous sign-ins**: activado.
 2. **SQL Editor**, en orden:
-   - `lifepp-setup.sql` (solo en un proyecto vacío: borra y recrea las tablas).
+   - `supabase/schema.sql` (solo en un proyecto vacío: borra y recrea las tablas).
    - `supabase/migrations/20261013120000_auth_rls.sql`: RLS por usuario.
    - `supabase/migrations/20261013140000_mcp_connector.sql`: tokens del conector y funciones `mcp_*`.
    - `supabase/migrations/20261014120000_mcp_logs.sql`: agua, hábitos, comidas, entrenos, ánimo y la semana.
@@ -21,7 +21,7 @@ claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (fun
 3. **Edge Functions → Deploy a new function → Via editor**: nombre `lifepp-mcp`, pegar
    `supabase/functions/lifepp-mcp/index.ts`, desplegar y, en su pestaña Settings,
    **desactivar "Verify JWT"** (Claude no manda un JWT de Supabase; la autorización es el
-   token de Lifepp). Con la CLI: `npx supabase functions deploy lifepp-mcp --no-verify-jwt`.
+   token de Beacon). Con la CLI: `npx supabase functions deploy lifepp-mcp --no-verify-jwt`.
 
 No hace falta ningún secret.
 
@@ -30,7 +30,7 @@ No hace falta ningún secret.
 1. En la app: **Ajustes → Conectar con Claude → Crear enlace** y copiarlo.
 2. En claude.ai: **Personalizar → Conectores → Añadir conector personalizado**.
    URL = el enlace; autenticación **Sin inicio de sesión**.
-3. En un chat: "+" → Conectores → activar Lifepp. Por ejemplo: "Mira mi día en Lifepp y
+3. En un chat: "+" → Conectores → activar Beacon. Por ejemplo: "Mira mi día en Beacon y
    apúntame las tareas de esta semana".
 
 El enlace lleva el token dentro y funciona como una contraseña. "Crear enlace nuevo" invalida el

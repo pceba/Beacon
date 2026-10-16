@@ -1,6 +1,6 @@
 project_id = "lifepp"
 
 # Claude no envía un JWT de Supabase: la autorización es el token personal de
-# Lifepp (en la URL o en Authorization), que la función valida en Postgres.
+# Beacon (en la URL o en Authorization), que la función valida en Postgres.
 [functions.lifepp-mcp]
 verify_jwt = false

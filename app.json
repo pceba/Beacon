@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Lifepp",
+    "name": "Beacon",
     "slug": "lifepp",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -16,7 +16,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#EEF1F4"
+      "backgroundColor": "#F2F4F7"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,7 +25,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#EEF1F4"
+        "monochromeImage": "./assets/adaptive-icon-mono.png",
+        "backgroundColor": "#2448D8"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -38,7 +39,8 @@
       [
         "expo-notifications",
         {
-          "color": "#2448D8"
+          "color": "#2448D8",
+          "icon": "./assets/notification-icon.png"
         }
       ],
       "@react-native-community/datetimepicker"

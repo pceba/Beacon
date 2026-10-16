@@ -45,7 +45,7 @@ const slots = [
   { name: 'Stats' as const, label: 'Datos', icon: BarChart2 },
 ];
 
-const LifeppTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd: () => void }) => {
+const BeaconTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd: () => void }) => {
   const insets = useSafeAreaInsets();
   const left = slots.slice(0, 2);
   const right = slots.slice(2);
@@ -101,7 +101,7 @@ export const MainTabs = () => {
     <>
       <Tab.Navigator
         screenOptions={{ headerShown: false }}
-        tabBar={(props) => <LifeppTabBar {...props} onAdd={() => setAddOpen(true)} />}
+        tabBar={(props) => <BeaconTabBar {...props} onAdd={() => setAddOpen(true)} />}
       >
         <Tab.Screen name="Today" component={TodayScreen} />
         <Tab.Screen name="Plan" component={PlanNavigator} />

@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmailCodeFlow } from '../../components/auth/EmailCodeFlow';
 import { ConfirmSheet } from '../../components/ui/ConfirmSheet';
+import { BeaconMark } from '../../components/ui/BeaconMark';
 import { ListRow } from '../../components/ui/ListRow';
 import { Stepper } from '../../components/ui/Stepper';
 import { Switch } from '../../components/ui/Switch';
@@ -71,7 +72,7 @@ export const SettingsScreen = () => {
       const saved = await applyReminders(next);
       if (!saved) {
         toast.show({
-          message: Platform.OS === 'web' ? 'Los recordatorios se programan en el móvil.' : 'Activa las notificaciones de Lifepp en los ajustes del sistema.',
+          message: Platform.OS === 'web' ? 'Los recordatorios se programan en el móvil.' : 'Activa las notificaciones de Beacon en los ajustes del sistema.',
           kind: 'error',
         });
         return;
@@ -218,7 +219,10 @@ export const SettingsScreen = () => {
           ) : null}
         </View>
 
-        <Text style={styles.version}>Lifepp {app.expo.version}</Text>
+        <View style={styles.brand}>
+          <BeaconMark size={18} color={Colors.text4} dimOpacity={0.4} />
+          <Text style={styles.version}>Beacon {app.expo.version}</Text>
+        </View>
       </ScrollView>
 
       <EmailCodeFlow
@@ -291,5 +295,6 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   linkBox: { minHeight: 44, justifyContent: 'center', marginBottom: 8 },
   link: { ...Type.caption, color: Colors.accent },
-  version: { ...Type.caption, color: Colors.text4, textAlign: 'center', marginTop: 24 },
+  brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 24 },
+  version: { ...Type.caption, color: Colors.text4, textAlign: 'center' },
 });

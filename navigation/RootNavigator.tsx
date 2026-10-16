@@ -61,7 +61,7 @@ export const RootNavigator = () => {
       <EmailCodeFlow
         visible={signInOpen}
         title="Entrar con mi email"
-        body="Usa el email que ya vinculaste en Lifepp. No crea una cuenta nueva."
+        body="Usa el email que ya vinculaste en Beacon. No crea una cuenta nueva."
         onClose={() => setSignInOpen(false)}
         onRequest={requestEmailSignIn}
         onConfirm={async (email, code) => {
