@@ -10,9 +10,10 @@ import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-n
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, isToday, subDays } from 'date-fns';
-import { Check, Plus } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { MoodFace } from '../components/ui/MoodFace';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
+import { DelayedSkeleton, SkeletonBlock } from '../components/ui/Skeleton';
 import { CheckBox } from '../components/ui/CheckBox';
 import { CheckCircle } from '../components/ui/CheckCircle';
 import { Card } from '../components/ui/Card';
@@ -32,7 +33,7 @@ import { createWorkout, deleteWorkout, getWorkouts } from '../services/workoutSe
 import { Habit, HabitLog, Task } from '../types/database';
 import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { dayBrief } from '../utils/dayBrief';
-import { formatHours, formatNumber, formatWater } from '../utils/format';
+import { formatFlexible, formatNumber, formatWater } from '../utils/format';
 import { taskTiming } from '../utils/taskMeta';
 import { monthDay, weekdayName } from '../utils/labels';
 import { SwipeRow } from '../components/ui/SwipeRow';
@@ -41,12 +42,27 @@ import { habitStreak } from '../utils/streak';
 
 let hoyEntered = false;
 
+type Summary = { calories: number; sleep: number; workout: boolean; waterMl: number };
+
+type TodayCache = {
+  mood: number | null;
+  tasks: Task[];
+  habits: Habit[];
+  habitLogs: HabitLog[];
+  prefs: Preferences | null;
+  summary: Summary;
+  sleepId: string | null;
+  quickWorkoutId: string | null;
+  hasSession: boolean;
+  sourceTasks: Task[];
+};
+
+let todayCache: TodayCache | null = null;
+
 type TodayNav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Today'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-type Summary = { calories: number; sleep: number; workout: boolean; waterMl: number };
 
 const sleepHours = (bed: string, wake: string) => {
   const hours = (new Date(wake).getTime() - new Date(bed).getTime()) / 3_600_000;
@@ -58,20 +74,21 @@ export const TodayScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<TodayNav>();
   const [refreshing, setRefreshing] = useState(false);
-  const [mood, setMood] = useState<number | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
-  const [prefs, setPrefs] = useState<Preferences | null>(null);
-  const [summary, setSummary] = useState<Summary>({ calories: 0, sleep: 0, workout: false, waterMl: 0 });
-  const [sleepId, setSleepId] = useState<string | null>(null);
-  const [quickWorkoutId, setQuickWorkoutId] = useState<string | null>(null);
-  const [hasSession, setHasSession] = useState(false);
+  const [ready, setReady] = useState(Boolean(todayCache));
+  const [mood, setMood] = useState<number | null>(todayCache?.mood ?? null);
+  const [tasks, setTasks] = useState<Task[]>(todayCache?.tasks ?? []);
+  const [habits, setHabits] = useState<Habit[]>(todayCache?.habits ?? []);
+  const [habitLogs, setHabitLogs] = useState<HabitLog[]>(todayCache?.habitLogs ?? []);
+  const [prefs, setPrefs] = useState<Preferences | null>(todayCache?.prefs ?? null);
+  const [summary, setSummary] = useState<Summary>(todayCache?.summary ?? { calories: 0, sleep: 0, workout: false, waterMl: 0 });
+  const [sleepId, setSleepId] = useState<string | null>(todayCache?.sleepId ?? null);
+  const [quickWorkoutId, setQuickWorkoutId] = useState<string | null>(todayCache?.quickWorkoutId ?? null);
+  const [hasSession, setHasSession] = useState(todayCache?.hasSession ?? false);
   const sleepLock = useRef(false);
   const moveLock = useRef(false);
   const taskTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [taskDraft, setTaskDraft] = useState('');
-  const [sourceTasks, setSourceTasks] = useState<Task[]>([]);
+  const [sourceTasks, setSourceTasks] = useState<Task[]>(todayCache?.sourceTasks ?? []);
 
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -100,23 +117,38 @@ export const TodayScreen = () => {
       setHabits(habitRows);
       setHabitLogs(logs);
       setSourceTasks(allTasks);
-      setTasks(
-        allTasks
-          .filter((task) => !task.completed && (!task.deadline || task.deadline.slice(0, 10) <= todayKey))
-          .slice(0, 5),
-      );
-      setSleepId(todaySleep?.id ?? null);
-      setQuickWorkoutId(quick?.id ?? null);
-      setHasSession(todayWorkouts.some((workout) => workout.id !== quick?.id));
-      setSummary({
+      const visibleTasks = allTasks
+        .filter((task) => !task.completed && (!task.deadline || task.deadline.slice(0, 10) <= todayKey))
+        .slice(0, 5);
+      const nextSummary = {
         calories: todayMeals.reduce((acc, meal) => acc + (meal.calories ?? 0), 0),
         sleep: todaySleep ? sleepHours(todaySleep.bed_time, todaySleep.wake_time) : 0,
         workout: todayWorkouts.length > 0,
         waterMl: waterLog?.amount_ml ?? 0,
-      });
+      };
+      const nextSession = todayWorkouts.some((workout) => workout.id !== quick?.id);
+      setSleepId(todaySleep?.id ?? null);
+      setQuickWorkoutId(quick?.id ?? null);
+      setHasSession(nextSession);
+      setTasks(visibleTasks);
+      setSummary(nextSummary);
+      todayCache = {
+        mood: scaledMood,
+        tasks: visibleTasks,
+        habits: habitRows,
+        habitLogs: logs,
+        prefs: preferences,
+        summary: nextSummary,
+        sleepId: todaySleep?.id ?? null,
+        quickWorkoutId: quick?.id ?? null,
+        hasSession: nextSession,
+        sourceTasks: allTasks,
+      };
+      setReady(true);
     } catch (error) {
       console.error(error);
       toast.show({ message: 'No se ha podido cargar. Tira hacia abajo para reintentar.', kind: 'error' });
+      setReady(true);
     } finally {
       setRefreshing(false);
     }
@@ -129,6 +161,11 @@ export const TodayScreen = () => {
   );
 
   useEffect(() => onDayRefresh(() => void load()), [load]);
+
+  useEffect(() => {
+    if (!ready || !todayCache) return;
+    todayCache = { ...todayCache, mood, tasks, habits, habitLogs, prefs, summary, sleepId, quickWorkoutId, hasSession, sourceTasks };
+  }, [habitLogs, habits, hasSession, mood, prefs, quickWorkoutId, ready, sleepId, sourceTasks, summary, tasks]);
 
   const goals = prefs ?? { displayName: '', waterMl: 2000, calories: 2000, sleepHours: 7 };
   const todayKey = format(new Date(), 'yyyy-MM-dd');
@@ -409,6 +446,27 @@ export const TodayScreen = () => {
     };
   }, [barPulse, checks.length, doneCount, reduce, todayKey]);
 
+  if (!ready) {
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top + Spacing.lg, paddingHorizontal: Spacing.lg }]}>
+        <DelayedSkeleton
+          loading
+          fallback={
+            <View style={styles.skeleton}>
+              <SkeletonBlock width="42%" height={14} />
+              <SkeletonBlock width="58%" height={32} />
+              <SkeletonBlock width="100%" height={48} />
+              <SkeletonBlock width="100%" height={224} />
+              <SkeletonBlock width="100%" height={160} />
+            </View>
+          }
+        >
+          {null}
+        </DelayedSkeleton>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.screen}
@@ -445,11 +503,16 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.water }]} />
             <Text style={styles.metricName}>Agua</Text>
           </View>
-          <View style={styles.metricValueRow}>
-            <AnimatedNumber value={summary.waterMl} kind="water" style={styles.metricValue} />
-            <Text style={styles.metricUnit}> / {formatWater(goals.waterMl)}</Text>
-            <View style={styles.plus}>
-              <Plus color={Colors.water} size={18} />
+          <View style={styles.valueRow}>
+            <View style={[styles.valueLine, styles.valueFill]}>
+              <AnimatedNumber value={summary.waterMl} kind="water" style={styles.figure} />
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.unit}>
+                {' / '}
+                {formatWater(goals.waterMl)}
+              </Text>
+            </View>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>+250</Text>
             </View>
           </View>
           <View style={styles.track}>
@@ -462,19 +525,33 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.sleep }]} />
             <Text style={styles.metricName}>Sueño</Text>
           </View>
-          <View style={styles.metricValueRow}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}>
-              {summary.sleep > 0 ? formatHours(summary.sleep) : 'Sin registrar'}
-            </Text>
-            {summary.sleep > 0 ? null : <Text style={styles.metricHint}>Toca para añadir</Text>}
-            {sleepDone ? (
-              <View style={styles.doneMark}>
-                <Check color={Colors.surface} size={14} strokeWidth={2.6} />
-              </View>
-            ) : null}
-          </View>
-          <View style={[styles.track, sleepDone ? { backgroundColor: Colors.sleep } : null]}>
-            {sleepDone ? null : <View style={[styles.fill, { width: summary.sleep > 0 ? '70%' : '0%', backgroundColor: Colors.sleepLow }]} />}
+          {summary.sleep > 0 ? (
+            <View style={styles.valueLine}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3} style={styles.figure}>
+                {formatFlexible(summary.sleep, 1)}
+              </Text>
+              <Text numberOfLines={1} style={styles.unit}>
+                {' h'}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
+                Sin registrar
+              </Text>
+              <Text style={styles.caption}>Toca para añadir</Text>
+            </View>
+          )}
+          <View style={styles.track}>
+            <View
+              style={[
+                styles.fill,
+                {
+                  width: `${Math.min(100, Math.round((summary.sleep / Math.max(goals.sleepHours, 1)) * 100))}%`,
+                  backgroundColor: sleepDone ? Colors.sleep : Colors.sleepLow,
+                },
+              ]}
+            />
           </View>
         </Pressable>
 
@@ -483,7 +560,10 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.workout }]} />
             <Text style={styles.metricName}>Movimiento</Text>
           </View>
-          <Text style={styles.pending}>{summary.workout ? 'Hecho · Registrado hoy' : 'Sin marcar · Toca si te has movido'}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
+            {summary.workout ? 'Hecho' : 'Sin marcar'}
+          </Text>
+          <Text style={styles.caption}>{summary.workout ? 'Registrado hoy' : 'Toca si te has movido'}</Text>
           <View style={styles.track}>
             <View style={[styles.fill, { width: summary.workout ? '100%' : '0%', backgroundColor: Colors.workout }]} />
           </View>
@@ -494,9 +574,12 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.food }]} />
             <Text style={styles.metricName}>Comida</Text>
           </View>
-          <View style={styles.metricValueRow}>
-            <AnimatedNumber value={summary.calories} kind="kcal" style={styles.metricValue} />
-            <Text style={styles.metricUnit}>/ {formatNumber(goals.calories)} kcal</Text>
+          <View style={styles.valueLine}>
+            <AnimatedNumber value={summary.calories} kind="kcal" style={styles.figure} />
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.unit}>
+              {' / '}
+              {formatNumber(goals.calories)} kcal
+            </Text>
           </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.min(100, Math.round((summary.calories / Math.max(goals.calories, 1)) * 100))}%`, backgroundColor: Colors.food }]} />
@@ -614,7 +697,7 @@ export const TodayScreen = () => {
 };
 
 const BriefLine = ({ text }: { text: string }) => {
-  const parts = text.split(/(«[^»]+»|\d{1,3}(?:\.\d{3})*(?:,\d+)?(?:\s(?:ml|L|h|kcal|min))?)/).filter((part) => part.length > 0);
+  const parts = text.split(/(«[^»]+»|\d{1,3}(?:\.\d{3})*(?:,\d+)?(?:\s(?:ml|L|h|kcal|min)\b(?![A-Za-zÁÉÍÓÚÜÑáéíóúüñ]))?)/).filter((part) => part.length > 0);
   return (
     <Text style={styles.brief}>
       {parts.map((part, index) =>
@@ -648,11 +731,13 @@ const styles = StyleSheet.create({
   segmentCount: { ...Type.caption, ...tabular, color: Colors.text2, fontFamily: 'Outfit_600SemiBold' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   board: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.surface, borderRadius: 18, overflow: 'hidden' },
+  skeleton: { gap: 16 },
   cell: {
     width: '50%',
-    padding: 14,
-    gap: 10,
-    minHeight: 118,
+    padding: 16,
+    gap: 8,
+    minHeight: 112,
+    justifyContent: 'flex-start',
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.line,
@@ -661,16 +746,18 @@ const styles = StyleSheet.create({
   cellBottom: { borderBottomWidth: 0 },
   metric: { width: '47%', flexGrow: 1, backgroundColor: Colors.surface, borderRadius: 18, padding: 14, gap: 10, minHeight: 118 },
   metricLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  catDot: { width: 8, height: 8, borderRadius: 4 },
+  catDot: { width: 6, height: 6, borderRadius: 3 },
   metricName: { ...Type.label, color: Colors.text2 },
-  metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 },
-  metricValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 28, lineHeight: 32, letterSpacing: -0.5, color: Colors.ink, padding: 0, flexShrink: 1 },
-  metricUnit: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
-  metricHint: { ...Type.caption, color: Colors.text3, marginTop: -6 },
-  pending: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 24, letterSpacing: -0.3, color: Colors.ink },
-  plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center' },
-  doneMark: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.sleep, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden' },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  valueLine: { minWidth: 0, flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
+  valueFill: { flex: 1 },
+  figure: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 30, lineHeight: 32, letterSpacing: -0.8, color: Colors.ink, padding: 0 },
+  unit: { flexShrink: 1, fontFamily: 'Outfit_500Medium', fontSize: 13, lineHeight: 18, color: Colors.text3 },
+  stateTitle: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: Colors.ink },
+  caption: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
+  pill: { height: 36, minWidth: 44, paddingHorizontal: 10, borderRadius: 18, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  pillText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: Colors.water },
+  track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden', marginTop: 'auto' },
   fill: { height: 3, borderRadius: 99 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   section: { ...Type.section, color: Colors.ink },

@@ -31,9 +31,7 @@ export const dayBrief = (input: BriefInput): string => {
 
   const clauses: string[] = [];
   if (waterLeft > 0 && input.waterGoalMl > 0) {
-    const amount = formatWater(waterLeft);
-    const verb = waterLeft < 1000 ? 'te faltan' : 'te falta';
-    clauses.push(`${verb} ${amount} de agua`);
+    clauses.push(`te faltan ${formatWater(waterLeft)} / ${formatWater(input.waterGoalMl)} de agua`);
   }
   if (habitLeft > 0) clauses.push(habitLeft === 1 ? 'queda 1 hábito' : `quedan ${habitLeft} hábitos`);
 
@@ -43,7 +41,7 @@ export const dayBrief = (input: BriefInput): string => {
     sentence = `${line.charAt(0).toUpperCase()}${line.slice(1)}.`;
   }
   const task = dueToday[0] ?? overdue[0];
-  if (task) sentence = `${sentence}${sentence ? ' ' : ''}«${task.title}» ${dueToday[0] ? 'vence hoy' : 'está vencida'}.`.trim();
+  if (task) sentence = `${sentence}${sentence ? ' ' : ''}«${task.title}» ${dueToday[0] ? 'es para hoy' : 'está vencida'}.`.trim();
   if (sentence) return sentence;
   return 'Hoy está cubierto.';
 };

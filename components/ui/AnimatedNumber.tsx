@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleProp, TextInput, TextStyle } from 'react-native';
+import { StyleProp, StyleSheet, TextInput, TextStyle } from 'react-native';
 import Animated, { Easing, useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 
@@ -59,15 +59,28 @@ export const AnimatedNumber = ({ value, kind, style }: Props) => {
   });
 
   const initial = kind === 'water' ? waterText(value) : kcalText(value);
+  const width = Math.ceil(initial.length * 17) + 2;
 
   return (
     <AnimatedInput
       editable={false}
       underlineColorAndroid="transparent"
+      numberOfLines={1}
       animatedProps={animatedProps}
       defaultValue={initial}
-      style={style}
+      style={[style, styles.field, { width }]}
       maxFontSizeMultiplier={1.3}
     />
   );
 };
+
+const styles = StyleSheet.create({
+  field: {
+    height: 32,
+    padding: 0,
+    margin: 0,
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+});
