@@ -31,7 +31,7 @@ export const dayBrief = (input: BriefInput): string => {
 
   const clauses: string[] = [];
   if (waterLeft > 0 && input.waterGoalMl > 0) {
-    clauses.push(`te faltan ${formatWater(waterLeft)} / ${formatWater(input.waterGoalMl)} de agua`);
+    clauses.push(`te faltan ${formatWater(waterLeft)} de agua`);
   }
   if (habitLeft > 0) clauses.push(habitLeft === 1 ? 'queda 1 hábito' : `quedan ${habitLeft} hábitos`);
 

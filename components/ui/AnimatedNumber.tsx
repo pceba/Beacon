@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
-import { StyleProp, StyleSheet, TextInput, TextStyle } from 'react-native';
-import Animated, { Easing, useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleProp, Text, TextStyle } from 'react-native';
+import { Easing, runOnJS, useAnimatedReaction, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
-
-const AnimatedInput = Animated.createAnimatedComponent(TextInput);
 
 const group = (value: number) => {
   'worklet';
@@ -34,6 +32,11 @@ const kcalText = (value: number) => {
   return group(value);
 };
 
+const labelFor = (value: number, kind: 'water' | 'kcal') => {
+  'worklet';
+  return kind === 'water' ? waterText(value) : kcalText(value);
+};
+
 type Props = {
   value: number;
   kind: 'water' | 'kcal';
@@ -43,44 +46,28 @@ type Props = {
 export const AnimatedNumber = ({ value, kind, style }: Props) => {
   const reduce = useReduceMotion();
   const progress = useSharedValue(value);
+  const [label, setLabel] = useState(() => labelFor(value, kind));
+  const publish = useCallback((next: string) => setLabel(next), []);
 
   useEffect(() => {
     if (reduce) {
       progress.value = value;
+      setLabel(labelFor(value, kind));
       return;
     }
     progress.value = withTiming(value, { duration: 320, easing: Easing.out(Easing.cubic) });
-  }, [progress, reduce, value]);
+  }, [kind, progress, reduce, value]);
 
-  const animatedProps = useAnimatedProps(() => {
-    const shown = progress.value;
-    const text = kind === 'water' ? waterText(shown) : kcalText(shown);
-    return { text, defaultValue: text };
-  });
-
-  const initial = kind === 'water' ? waterText(value) : kcalText(value);
-  const width = Math.ceil(initial.length * 17) + 2;
+  useAnimatedReaction(
+    () => labelFor(progress.value, kind),
+    (next, previous) => {
+      if (next !== previous) runOnJS(publish)(next);
+    },
+  );
 
   return (
-    <AnimatedInput
-      editable={false}
-      underlineColorAndroid="transparent"
-      numberOfLines={1}
-      animatedProps={animatedProps}
-      defaultValue={initial}
-      style={[style, styles.field, { width }]}
-      maxFontSizeMultiplier={1.3}
-    />
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={style} maxFontSizeMultiplier={1.3}>
+      {label}
+    </Text>
   );
 };
-
-const styles = StyleSheet.create({
-  field: {
-    height: 32,
-    padding: 0,
-    margin: 0,
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-});

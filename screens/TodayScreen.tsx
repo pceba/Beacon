@@ -504,13 +504,11 @@ export const TodayScreen = () => {
             <Text style={styles.metricName}>Agua</Text>
           </View>
           <View style={styles.valueRow}>
-            <View style={[styles.valueLine, styles.valueFill]}>
-              <AnimatedNumber value={summary.waterMl} kind="water" style={styles.figure} />
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.unit}>
-                {' / '}
-                {formatWater(goals.waterMl)}
-              </Text>
-            </View>
+            <AnimatedNumber value={summary.waterMl} kind="water" style={styles.figure} />
+            <Text numberOfLines={1} style={styles.unit}>
+              {' / '}
+              {formatWater(goals.waterMl)}
+            </Text>
             <View style={styles.pill}>
               <Text style={styles.pillText}>+250</Text>
             </View>
@@ -535,7 +533,7 @@ export const TodayScreen = () => {
               </Text>
             </View>
           ) : (
-            <View>
+            <View style={styles.copy}>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
                 Sin registrar
               </Text>
@@ -560,10 +558,12 @@ export const TodayScreen = () => {
             <View style={[styles.catDot, { backgroundColor: Colors.workout }]} />
             <Text style={styles.metricName}>Movimiento</Text>
           </View>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
-            {summary.workout ? 'Hecho' : 'Sin marcar'}
-          </Text>
-          <Text style={styles.caption}>{summary.workout ? 'Registrado hoy' : 'Toca si te has movido'}</Text>
+          <View style={styles.copy}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
+              {summary.workout ? 'Hecho' : 'Sin marcar'}
+            </Text>
+            <Text style={styles.caption}>{summary.workout ? 'Registrado hoy' : 'Toca si te has movido'}</Text>
+          </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: summary.workout ? '100%' : '0%', backgroundColor: Colors.workout }]} />
           </View>
@@ -576,7 +576,7 @@ export const TodayScreen = () => {
           </View>
           <View style={styles.valueLine}>
             <AnimatedNumber value={summary.calories} kind="kcal" style={styles.figure} />
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.unit}>
+            <Text numberOfLines={1} style={styles.unit}>
               {' / '}
               {formatNumber(goals.calories)} kcal
             </Text>
@@ -748,14 +748,14 @@ const styles = StyleSheet.create({
   metricLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   catDot: { width: 6, height: 6, borderRadius: 3 },
   metricName: { ...Type.label, color: Colors.text2 },
-  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap', gap: 8 },
   valueLine: { minWidth: 0, flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
-  valueFill: { flex: 1 },
-  figure: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 30, lineHeight: 32, letterSpacing: -0.8, color: Colors.ink, padding: 0 },
-  unit: { flexShrink: 1, fontFamily: 'Outfit_500Medium', fontSize: 13, lineHeight: 18, color: Colors.text3 },
+  figure: { ...tabular, flexShrink: 1, minWidth: 0, fontFamily: 'Outfit_600SemiBold', fontSize: 30, lineHeight: 32, letterSpacing: -0.8, color: Colors.ink },
+  unit: { flexShrink: 0, fontFamily: 'Outfit_500Medium', fontSize: 13, lineHeight: 18, color: Colors.text3 },
+  copy: { gap: 4 },
   stateTitle: { fontFamily: 'Outfit_600SemiBold', fontSize: 20, lineHeight: 26, letterSpacing: -0.3, color: Colors.ink },
   caption: { fontFamily: 'Outfit_400Regular', fontSize: 13, lineHeight: 18, color: Colors.text3 },
-  pill: { height: 36, minWidth: 44, paddingHorizontal: 10, borderRadius: 18, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  pill: { marginLeft: 'auto', alignSelf: 'center', height: 36, minWidth: 44, paddingHorizontal: 10, borderRadius: 18, backgroundColor: Colors.waterSoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   pillText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: Colors.water },
   track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden', marginTop: 'auto' },
   fill: { height: 3, borderRadius: 99 },
