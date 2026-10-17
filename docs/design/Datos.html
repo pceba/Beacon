@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Beacon · Datos</title>
+<title>Beacon · Datos v2</title>
 
 </head>
 <body>
@@ -11,121 +11,154 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>
 body{margin:0}
-a{color:#2448D8}a:hover{color:#1A36A8}
 .num{font-variant-numeric:tabular-nums}
 .card{background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(16,19,24,.04),0 6px 16px rgba(16,19,24,.04)}
-.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lab{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#6B7380}
+.cell{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.sh{display:flex;align-items:baseline;justify-content:space-between}
+.sh h2{margin:0;font-size:17px;font-weight:600}
+.meta{font-size:13px;color:#6B7380}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 button{font-family:inherit;border:0;cursor:pointer}
 </style>
 </helmet>
-<div style="width:390px;height:1180px;box-sizing:border-box;position:relative;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;overflow:hidden">
-  <div style="padding:58px 20px 120px;display:flex;flex-direction:column;gap:20px">
+<div style="width:390px;height:1560px;box-sizing:border-box;position:relative;background:#F2F4F7;font-family:'Outfit',sans-serif;color:#101318;overflow:hidden">
+  <div style="padding:58px 20px 120px;display:flex;flex-direction:column;gap:18px">
     <header style="display:flex;flex-direction:column;gap:14px">
-      <h1 style="margin:0;font-size:32px;line-height:36px;font-weight:600;letter-spacing:-.6px">Datos</h1>
-      <div role="tablist" aria-label="Periodo" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#E6E9EE;border-radius:14px;padding:4px">
-        <button role="tab" aria-selected="true" style="min-height:38px;border-radius:10px;background:#FFFFFF;box-shadow:0 1px 3px rgba(16,19,24,.12);font-size:14px;font-weight:600;color:#101318">Semana</button>
-        <button role="tab" aria-selected="false" style="min-height:38px;border-radius:10px;background:transparent;font-size:14px;font-weight:600;color:#6B7380">Mes</button>
-        <button role="tab" aria-selected="false" style="min-height:38px;border-radius:10px;background:transparent;font-size:14px;font-weight:600;color:#6B7380">3 meses</button>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span class="lab" style="font-size:13px">10 – 16 oct</span>
+        <h1 style="margin:0;font-size:34px;line-height:38px;font-weight:600;letter-spacing:-.9px">Datos</h1>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#E6E9EE;border-radius:14px;padding:4px">
+        <button style="min-height:38px;border-radius:10px;background:#FFFFFF;box-shadow:0 1px 3px rgba(16,19,24,.12);font-size:14px;font-weight:600;color:#101318">Semana</button>
+        <button style="min-height:38px;border-radius:10px;background:transparent;font-size:14px;font-weight:600;color:#6B7380">Mes</button>
+        <button style="min-height:38px;border-radius:10px;background:transparent;font-size:14px;font-weight:600;color:#6B7380">3 meses</button>
       </div>
     </header>
 
-    <section aria-label="Resumen" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+    <section class="card" style="display:grid;grid-template-columns:1fr 1fr;overflow:hidden">
       <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
-        <div class="card" style="padding:14px;display:flex;flex-direction:column;gap:6px">
-          <span style="font-size:13px;font-weight:600;color:#4A5260">{{k.label}}</span>
-          <span class="num"><span style="font-size:26px;font-weight:600;letter-spacing:-.4px">{{k.value}}</span><span style="font-size:13px;color:#6B7380"> {{k.unit}}</span></span>
-          <span class="num" style="align-self:flex-start;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{k.deltaBg}};color:{{k.deltaFg}}">{{k.delta}}</span>
+        <div class="cell" style="border-right:{{k.br}};border-bottom:{{k.bb}}">
+          <span class="lab" style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:3px;background:{{k.color}}"></span>{{k.label}}</span>
+          <div><span style="font-size:26px;font-weight:600;letter-spacing:-.6px">{{k.value}}</span><span style="font-size:13px;color:#6B7380"> {{k.unit}}</span></div>
+          <svg viewBox="0 0 140 28" width="100%" height="28" aria-hidden="true"><path d="{{k.path}}" fill="none" stroke="#C4CAD3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="{{k.lx}}" cy="{{k.ly}}" r="3.5" fill="{{k.color}}" stroke="#FFFFFF" stroke-width="2"/></svg>
+          <span class="num" style="font-size:12px;font-weight:600;color:{{k.dc}}">{{k.delta}}</span>
         </div>
       </sc-for>
     </section>
 
-    <section aria-label="Sueño" class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between">
-        <h2 style="margin:0;font-size:17px;font-weight:600">Sueño</h2>
-        <span class="num" style="font-size:13px;color:#6B7380">objetivo 7 h</span>
+    <section class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div class="sh"><h2>Sueño</h2><span class="meta num">media 7,7 h · 6 de 7 noches ≥ 7 h</span></div>
+      <svg viewBox="0 0 326 180" width="100%" role="img" aria-label="Horas de sueño por noche esta semana">
+        <sc-for list="{{grid}}" as="g" hint-placeholder-count="3">
+          <line x1="0" x2="300" y1="{{g.y}}" y2="{{g.y}}" stroke="#EEF1F4" stroke-width="1"/>
+          <text x="326" y="{{g.ty}}" text-anchor="end" font-size="11" fill="#9AA2AE" font-family="Outfit">{{g.label}}</text>
+        </sc-for>
+        <line x1="0" x2="300" y1="{{goalY}}" y2="{{goalY}}" stroke="#4B4FC4" stroke-opacity=".45" stroke-width="1"/>
+        <text x="326" y="{{goalTY}}" text-anchor="end" font-size="11" font-weight="600" fill="#4A5260" font-family="Outfit">7 h</text>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="7">
+          <path d="{{b.d}}" fill="{{b.fill}}"/>
+          <text x="{{b.cx}}" y="174" text-anchor="middle" font-size="12" font-weight="{{b.fw}}" fill="{{b.tc}}" font-family="Outfit">{{b.day}}</text>
+        </sc-for>
+        <g transform="translate({{tipX}},{{tipY}})">
+          <rect x="-34" y="-30" width="68" height="24" rx="8" fill="#101318"/>
+          <text x="0" y="-14" text-anchor="middle" font-size="12" font-weight="600" fill="#FFFFFF" font-family="Outfit">6,1 h · J</text>
+        </g>
+      </svg>
+      <span class="meta">Toca una barra para ver la noche. Las claras quedan por debajo del objetivo.</span>
+    </section>
+
+    <section class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div class="sh"><h2>Hábitos</h2><span class="meta num">71 % esta semana</span></div>
+      <div style="display:grid;grid-template-columns:1fr repeat(7,22px) 40px;gap:6px;align-items:center">
+        <span></span>
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="7"><span style="font-size:11px;font-weight:600;color:{{d.c}};text-align:center">{{d.l}}</span></sc-for>
+        <span></span>
+        <sc-for list="{{habits}}" as="h" hint-placeholder-count="5">
+          <span style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{h.name}}</span>
+          <sc-for list="{{h.cells}}" as="c" hint-placeholder-count="7"><span style="width:22px;height:22px;border-radius:6px;background:{{c.bg}};box-shadow:{{c.ring}}"></span></sc-for>
+          <span class="num" style="font-size:13px;font-weight:600;color:#4A5260;text-align:right">{{h.pct}}</span>
+        </sc-for>
       </div>
-      <div style="position:relative;height:140px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:end">
-        <div aria-hidden="true" style="position:absolute;left:0;right:0;bottom:{{goalPx}};border-top:1.5px dashed #9AA2AE"></div>
-        <sc-for list="{{sleep}}" as="s" hint-placeholder-count="7">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
-            <span class="num" style="font-size:11px;font-weight:600;color:#4A5260">{{s.label}}</span>
-            <div style="width:100%;max-width:26px;height:{{s.h}};border-radius:8px 8px 4px 4px;background:{{s.color}}"></div>
+    </section>
+
+    <section class="card" style="padding:16px;display:flex;flex-direction:column;gap:6px">
+      <div class="sh"><h2>Peso</h2><span class="num" style="font-size:13px;font-weight:600;color:#14693F">−1,1 kg en 6 semanas</span></div>
+      <div><span style="font-size:30px;font-weight:600;letter-spacing:-.8px">72,1</span><span style="font-size:13px;color:#6B7380"> kg</span></div>
+      <svg viewBox="0 0 326 130" width="100%" role="img" aria-label="Peso de las últimas seis semanas, bajando de 73,2 a 72,1 kg">
+        <line x1="0" x2="300" y1="20" y2="20" stroke="#EEF1F4"/><text x="326" y="24" text-anchor="end" font-size="11" fill="#9AA2AE" font-family="Outfit">73</text>
+        <line x1="0" x2="300" y1="100" y2="100" stroke="#EEF1F4"/><text x="326" y="104" text-anchor="end" font-size="11" fill="#9AA2AE" font-family="Outfit">72</text>
+        <path d="{{wArea}}" fill="#4A5260" fill-opacity=".08"/>
+        <path d="{{wLine}}" fill="none" stroke="#4A5260" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <sc-for list="{{wPts}}" as="p" hint-placeholder-count="7"><circle cx="{{p.x}}" cy="{{p.y}}" r="{{p.r}}" fill="{{p.f}}" stroke="#FFFFFF" stroke-width="2"/></sc-for>
+        <text x="0" y="126" font-size="11" fill="#9AA2AE" font-family="Outfit">6 sep</text>
+        <text x="300" y="126" text-anchor="end" font-size="11" fill="#9AA2AE" font-family="Outfit">hoy</text>
+      </svg>
+    </section>
+
+    <section class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div class="sh"><h2>Entrenos</h2><span class="meta num">3 de 3 planificados</span></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+        <sc-for list="{{train}}" as="t" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <span style="width:36px;height:36px;border-radius:18px;background:{{t.bg}};color:{{t.fg}};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">{{t.tag}}</span>
+            <span style="font-size:11px;font-weight:600;color:#6B7380">{{t.l}}</span>
           </div>
         </sc-for>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;text-align:center;font-size:12px;font-weight:600;color:#6B7380">
-        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
-      </div>
-    </section>
-
-    <section aria-label="Hábitos" class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between">
-        <h2 style="margin:0;font-size:17px;font-weight:600">Hábitos</h2>
-        <span class="num" style="font-size:13px;color:#6B7380">78 % cumplidos</span>
-      </div>
-      <sc-for list="{{habits}}" as="h" hint-placeholder-count="4">
-        <div style="display:grid;grid-template-columns:110px repeat(7,minmax(0,1fr));gap:6px;align-items:center">
-          <span style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{h.name}}</span>
-          <sc-for list="{{h.cells}}" as="c" hint-placeholder-count="7">
-            <span style="height:22px;border-radius:6px;background:{{c.bg}}"></span>
-          </sc-for>
-        </div>
-      </sc-for>
-    </section>
-
-    <section aria-label="Peso" class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between">
-        <h2 style="margin:0;font-size:17px;font-weight:600">Peso</h2>
-        <span class="num" style="font-size:13px;font-weight:600;color:#14693F">−0,6 kg en 30 días</span>
-      </div>
-      <div class="num"><span style="font-size:26px;font-weight:600">72,4</span><span style="font-size:13px;color:#6B7380"> kg</span></div>
-      <svg viewBox="0 0 320 70" role="img" aria-label="Tendencia del peso, bajando ligeramente" style="width:100%;height:70px">
-        <path d="M0 18 C40 14 60 24 90 26 S150 30 180 36 S240 40 270 46 S300 50 320 52" fill="none" stroke="#4A5260" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="320" cy="52" r="4.5" fill="#101318"/>
-      </svg>
     </section>
   </div>
-
-  <nav aria-label="Navegación" style="position:absolute;left:0;right:0;bottom:0;height:88px;padding:8px 12px 22px;box-sizing:border-box;background:rgba(255,255,255,.94);border-top:1px solid #E4E8EE;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center">
-    <a href="Main.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#6B7380;font-size:11px;font-weight:500"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>Hoy</a>
-    <a href="Plan.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#6B7380;font-size:11px;font-weight:500"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Plan</a>
-    <a href="Registrar.dc.html" aria-label="Añadir" style="justify-self:center;width:56px;height:56px;border-radius:28px;background:#101318;color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(16,19,24,.24);margin-top:-18px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:24px;height:24px;stroke-width:2.4"><path d="M5 12h14M12 5v14"/></svg></a>
-    <a href="#" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#6B7380;font-size:11px;font-weight:500"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Diario</a>
-    <a href="#" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#101318;font-size:11px;font-weight:600"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Datos</a>
-  </nav>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
 class Component extends DCLogic {
   renderVals() {
-    const up = { deltaBg: '#E3F4EB', deltaFg: '#14693F' };
-    const down = { deltaBg: '#FDECEA', deltaFg: '#B4291F' };
-    const kpis = [
-      { label: 'Sueño medio', value: '7,1', unit: 'h', delta: '+0,4 h', ...up },
-      { label: 'Agua al día', value: '1,8', unit: 'L', delta: '+0,2 L', ...up },
-      { label: 'Entrenos', value: '3', unit: 'sesiones', delta: 'igual', deltaBg: '#EEF1F4', deltaFg: '#4A5260' },
-      { label: 'Calorías', value: '1.950', unit: 'kcal/día', delta: '−120', ...down },
+    const spark = (vals, w = 140, h = 28, pad = 4) => {
+      const min = Math.min(...vals), max = Math.max(...vals), r = max - min || 1;
+      const pts = vals.map((v, i) => [pad + (i * (w - 2 * pad)) / (vals.length - 1), h - pad - ((v - min) / r) * (h - 2 * pad)]);
+      return { d: 'M' + pts.map((p) => p.map((n) => n.toFixed(1)).join(' ')).join(' L'), last: pts[pts.length - 1] };
+    };
+    const kdefs = [
+      { label: 'Sueño', value: '7,7', unit: 'h', color: '#4B4FC4', vals: [8.2, 8.7, 7.3, 7.7, 8.1, 6.1, 8.1], delta: '+0,3 h vs. semana pasada', dc: '#14693F' },
+      { label: 'Agua', value: '1,9', unit: 'L/día', color: '#1A5FCC', vals: [2.5, 1.75, 2.75, 2.75, 0.5, 2, 1.25], delta: '−0,2 L', dc: '#B4291F' },
+      { label: 'Calorías', value: '1.810', unit: 'kcal/día', color: '#1B8A55', vals: [1890, 1870, 1750, 1700, 2690, 1700, 1100], delta: 'igual', dc: '#4A5260' },
+      { label: 'Ánimo', value: '3,7', unit: 'de 5', color: '#8B4FD1', vals: [3, 5, 4, 4, 3, 3, 4], delta: '+0,4', dc: '#14693F' },
     ];
-    const hours = [6.5, 7.2, 5.8, 7.5, 8.1, 7.9, 6.9];
-    const max = 9;
-    const px = (h) => Math.round((h / max) * 110) + 'px';
-    const sleep = hours.map((h) => ({
-      label: String(h).replace('.', ','),
-      h: px(h),
-      color: h >= 7 ? '#4B4FC4' : '#BFC1EC',
-    }));
-    const goalPx = (Math.round((7 / max) * 110) + 18) + 'px';
-    const habitDefs = [
-      { name: 'Leer 20 min', color: '#2448D8', pattern: '1111111' },
-      { name: 'Creatina', color: '#1B8A55', pattern: '0011111' },
-      { name: 'Meditar', color: '#8B4FD1', pattern: '1010100' },
-      { name: 'Estirar', color: '#D2551A', pattern: '0110110' },
+    const kpis = kdefs.map((k, i) => { const s = spark(k.vals); return { ...k, path: s.d, lx: s.last[0], ly: s.last[1], br: i % 2 === 0 ? '1px solid #EEF1F4' : '0', bb: i < 2 ? '1px solid #EEF1F4' : '0' }; });
+
+    const hours = [8.2, 8.7, 7.3, 7.7, 8.1, 6.1, 8.1], letters = ['S', 'D', 'L', 'M', 'X', 'J', 'V'];
+    const top = 10, base = 150, maxH = 10, y = (h) => base - (h / maxH) * (base - top);
+    const slot = 300 / 7, bw = 22, sel = 5;
+    const bars = hours.map((h, i) => {
+      const cx = slot * i + slot / 2, x0 = cx - bw / 2, x1 = cx + bw / 2, yt = y(h), r = 4;
+      const d = `M${x0} ${base} L${x0} ${yt + r} Q${x0} ${yt} ${x0 + r} ${yt} L${x1 - r} ${yt} Q${x1} ${yt} ${x1} ${yt + r} L${x1} ${base} Z`;
+      const below = h < 7;
+      return { d, cx, day: letters[i], fill: i === sel ? '#2F33A8' : below ? '#C9CBF0' : '#4B4FC4', fw: i === 6 ? 700 : 600, tc: i === 6 ? '#101318' : '#6B7380' };
+    });
+    const grid = [{ h: 0, label: '0' }, { h: 5, label: '5' }, { h: 10, label: '10' }].map((g) => ({ y: y(g.h), ty: y(g.h) + 4, label: g.label }));
+
+    const dl = ['S', 'D', 'L', 'M', 'X', 'J', 'V'];
+    const days = dl.map((l, i) => ({ l, c: i === 6 ? '#101318' : '#9AA2AE' }));
+    const hdefs = [
+      ['Leer 20 minutos', '#1C4ED8', '1111110'], ['Creatina', '#0F7A45', '1111111'], ['Meditar 10 min', '#3A4D8F', '0101100'],
+      ['Estirar', '#C2410C', '1011100'], ['Sin pantallas', '#3E4652', '0010100'],
     ];
-    const habits = habitDefs.map((h) => ({
-      name: h.name,
-      cells: h.pattern.split('').map((c) => ({ bg: c === '1' ? h.color : '#EBEEF2' })),
-    }));
-    return { kpis, sleep, goalPx, habits };
+    const habits = hdefs.map(([name, color, pat]) => {
+      const done = pat.split('').filter((c) => c === '1').length;
+      return { name, pct: Math.round((done / 7) * 100) + ' %', cells: pat.split('').map((c, i) => ({ bg: c === '1' ? color : '#EEF1F4', ring: i === 6 ? 'inset 0 0 0 1.5px ' + (c === '1' ? 'rgba(255,255,255,.6)' : '#C4CAD3') : 'none' })) };
+    });
+
+    const wv = [73.2, 72.8, 72.8, 72.3, 72.4, 71.8, 72.1];
+    const wy = (v) => 100 - (v - 72) * 80, wx = (i) => 6 + (i * 288) / (wv.length - 1);
+    const wpts = wv.map((v, i) => [wx(i), wy(v)]);
+    const wLine = 'M' + wpts.map((p) => p.join(' ')).join(' L');
+    const wArea = wLine + ` L${wpts[wpts.length - 1][0]} 110 L${wpts[0][0]} 110 Z`;
+    const wPts = wpts.map((p, i) => ({ x: p[0], y: p[1], r: i === wpts.length - 1 ? 5 : 3, f: i === wpts.length - 1 ? '#101318' : '#4A5260' }));
+
+    const tdefs = [['S', 'Cal'], ['D', ''], ['L', 'Pie'], ['M', ''], ['X', ''], ['J', 'Tor'], ['V', '']];
+    const train = tdefs.map(([l, tag]) => ({ l, tag, bg: tag ? '#FCEDE4' : '#F6F7F9', fg: tag ? '#B4471A' : '#C4CAD3' }));
+
+    return { kpis, bars, grid, goalY: y(7), goalTY: y(7) + 4, tipX: bars[sel].cx, tipY: y(hours[sel]) - 4, days, habits, wLine, wArea, wPts, train };
   }
 }
 </script>
