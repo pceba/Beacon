@@ -23,6 +23,12 @@ export const upsertMoodLog = async (
   return data as MoodLog;
 };
 
+export const getMoodLogs = async (userId: string): Promise<MoodLog[]> => {
+  const { data, error } = await supabase.from('mood_logs').select('*').eq('user_id', userId).order('log_date', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as MoodLog[];
+};
+
 export const migrateMoodScores = async (userId: string): Promise<void> => {
   const { data, error } = await supabase.from('mood_logs').select('id,mood_score,energy_score').eq('user_id', userId);
   if (error) throw error;
