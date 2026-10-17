@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { EmailCodeFlow } from '../components/auth/EmailCodeFlow';
 import { Colors } from '../constants/colors';
-import { rawSupabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { getIdentity } from '../services/authService';
 import { confirmEmailSignIn, requestEmailSignIn } from '../services/emailAuth';
@@ -30,14 +29,8 @@ const modalOptions = {
 export const RootNavigator = () => {
   const [signInOpen, setSignInOpen] = useState(false);
 
-  useEffect(() => {
-    rawSupabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (!data.user?.email) setSignInOpen(true);
-      })
-      .catch((error) => console.error(error));
-  }, []);
+  // No se abre solo al arrancar: una cuenta anónima no tiene email y vería esta hoja
+  // cada vez. «Entrar con mi email» queda para cuando el envío de códigos esté activo.
 
   return (
     <>
