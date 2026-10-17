@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import { MainTabParamList, PlanStackParamList } from '../types/navigation';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { soft } from '../lib/haptics';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { TodayScreen } from '../screens/TodayScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { PlanHomeScreen } from '../screens/plan/PlanHomeScreen';
@@ -45,10 +47,20 @@ const slots = [
   { name: 'Stats' as const, label: 'Datos', icon: BarChart2 },
 ];
 
+const PRESS = { damping: 18, stiffness: 300 };
+
 const BeaconTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd: () => void }) => {
   const insets = useSafeAreaInsets();
+  const reduce = useReduceMotion();
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const fabMotion = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
   const left = slots.slice(0, 2);
   const right = slots.slice(2);
+  const barHeight = 58 + insets.bottom;
 
   const tab = (item: (typeof slots)[number]) => {
     const route = state.routes.find((entry) => entry.name === item.name);
@@ -74,22 +86,42 @@ const BeaconTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd:
   };
 
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom, height: 58 + insets.bottom }]}>
-      {left.map(tab)}
-      <View style={styles.fabSlot}>
+    <View pointerEvents="box-none" style={{ height: barHeight + 26 }}>
+      <View style={[styles.bar, { height: barHeight, paddingBottom: insets.bottom }]}>
+        {left.map(tab)}
+        <View style={styles.fabSlot} />
+        {right.map(tab)}
+      </View>
+      <View pointerEvents="box-none" style={styles.fabAnchor}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Añadir"
+          hitSlop={8}
           onPress={() => {
             soft();
             onAdd();
           }}
-          style={styles.fab}
+          onPressIn={() => {
+            if (reduce) {
+              opacity.value = withTiming(0.72, { duration: 120 });
+              return;
+            }
+            scale.value = withSpring(0.94, PRESS);
+          }}
+          onPressOut={() => {
+            if (reduce) {
+              opacity.value = withTiming(1, { duration: 120 });
+              return;
+            }
+            scale.value = withSpring(1, PRESS);
+          }}
+          style={styles.fabHit}
         >
-          <Plus color={Colors.surface} size={26} />
+          <Animated.View style={[styles.fab, fabMotion]}>
+            <Plus color={Colors.surface} size={26} />
+          </Animated.View>
         </Pressable>
       </View>
-      {right.map(tab)}
     </View>
   );
 };
@@ -115,6 +147,10 @@ export const MainTabs = () => {
 
 const styles = StyleSheet.create({
   bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: 'rgba(255,255,255,0.94)',
@@ -124,7 +160,9 @@ const styles = StyleSheet.create({
   tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2, paddingBottom: 6 },
   label: { fontFamily: Typography.fontMedium, fontSize: 11, color: Colors.text3 },
   labelOn: { fontFamily: Typography.fontBold, color: Colors.ink },
-  fabSlot: { width: 76, alignItems: 'center' },
+  fabSlot: { width: 76 },
+  fabAnchor: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
+  fabHit: { width: 56, height: 56 },
   fab: {
     width: 56,
     height: 56,
@@ -132,7 +170,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -18,
     shadowColor: '#101318',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.24,

@@ -5,7 +5,6 @@ import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Colors } from './constants/colors';
 import { ToastProvider } from './components/ui/Toast';
 import { navigationRef } from './navigation/navigationRef';
@@ -78,9 +77,8 @@ export default function App() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={styles.stage}>
         <SafeAreaProvider style={styles.column}>
-          <BottomSheetModalProvider>
-            <ToastProvider>
-              <NavigationContainer
+          <ToastProvider>
+            <NavigationContainer
               ref={navigationRef}
               theme={navTheme}
               onStateChange={() => {
@@ -88,11 +86,10 @@ export default function App() {
                 if (route) notifyRoute(route.name);
               }}
             >
-                <StatusBar style="dark" />
-                <RootNavigator />
-              </NavigationContainer>
-            </ToastProvider>
-          </BottomSheetModalProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </NavigationContainer>
+          </ToastProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

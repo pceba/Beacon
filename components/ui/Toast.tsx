@@ -78,7 +78,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const motion = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   return (
-    <View style={styles.host}>
+    <View pointerEvents="box-none" style={styles.host}>
       {children}
       {item ? (
         <GestureDetector gesture={pan}>

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { BottomSheetBackdrop, BottomSheetBackdropProps, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { Radius, Spacing } from '../../constants/spacing';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
@@ -21,155 +21,124 @@ const Handle = () => (
   </View>
 );
 
-class SheetErrorBoundary extends React.Component<{ onFail: () => void; children: React.ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch() {
-    this.props.onFail();
-  }
-
-  render() {
-    if (this.state.failed) return null;
-    return this.props.children;
-  }
-}
-
-const FallbackSheet = ({ visible, onClose, children }: Props) => {
+export const Sheet = ({ visible, onClose, children }: Props) => {
   const reduce = useReduceMotion();
-  const translateY = useSharedValue(480);
+  const insets = useSafeAreaInsets();
+  const [rendered, setRendered] = useState(visible);
+  const translateY = useSharedValue(800);
+  const scrim = useSharedValue(0);
+  const sheetOpacity = useSharedValue(1);
+  const height = useSharedValue(480);
+  const presented = useRef(false);
+  const closing = useRef(false);
+  const generation = useRef(0);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  useEffect(() => {
-    if (!visible) return;
-    translateY.value = reduce ? withTiming(0, { duration: 120 }) : withSpring(0, SPRING);
-  }, [reduce, translateY, visible]);
+  const finish = (token: number, notify: boolean) => {
+    if (generation.current !== token) return;
+    setRendered(false);
+    if (notify) onCloseRef.current();
+  };
 
-  const close = () => {
-    const done = () => onClose();
+  const beginClose = (notify: boolean) => {
+    if (closing.current) return;
+    closing.current = true;
+    const token = generation.current;
+    const done = () => finish(token, notify);
+    const travel = height.value > 0 ? height.value : 480;
     if (reduce) {
-      translateY.value = withTiming(480, { duration: 120 }, (finished) => {
-        if (finished) runOnJS(done)();
+      scrim.value = withTiming(0, { duration: 120 });
+      sheetOpacity.value = withTiming(0, { duration: 120 }, (ended) => {
+        if (ended) runOnJS(done)();
       });
       return;
     }
-    translateY.value = withSpring(480, SPRING, (finished) => {
-      if (finished) runOnJS(done)();
+    scrim.value = withTiming(0, { duration: 200 });
+    translateY.value = withSpring(travel, SPRING, (ended) => {
+      if (ended) runOnJS(done)();
     });
   };
 
+  useEffect(() => {
+    if (visible) {
+      generation.current += 1;
+      closing.current = false;
+      presented.current = false;
+      translateY.value = 800;
+      scrim.value = 0;
+      sheetOpacity.value = reduce ? 0 : 1;
+      setRendered(true);
+      return;
+    }
+    if (rendered) beginClose(false);
+  }, [visible]);
+
+  const onLayout = (heightPx: number) => {
+    if (heightPx <= 0) return;
+    height.value = heightPx;
+    if (presented.current || closing.current || !visible) return;
+    presented.current = true;
+    if (reduce) {
+      translateY.value = 0;
+      sheetOpacity.value = withTiming(1, { duration: 120 });
+      scrim.value = withTiming(1, { duration: 120 });
+      return;
+    }
+    translateY.value = heightPx;
+    scrim.value = withTiming(1, { duration: 200 });
+    translateY.value = withSpring(0, SPRING);
+  };
+
+  const requestClose = () => beginClose(true);
+
   const pan = Gesture.Pan()
+    .activeOffsetY(12)
     .onUpdate((event) => {
       if (event.translationY > 0) translateY.value = event.translationY;
     })
     .onEnd((event) => {
-      if (event.translationY > 90) {
-        if (reduce) translateY.value = withTiming(480, { duration: 120 });
-        else translateY.value = withSpring(480, SPRING);
-        runOnJS(onClose)();
+      if (event.translationY > 90 || event.velocityY > 800) {
+        runOnJS(requestClose)();
         return;
       }
       translateY.value = reduce ? withTiming(0, { duration: 120 }) : withSpring(0, SPRING);
     });
 
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: scrim.value }));
+  const sheetStyle = useAnimatedStyle(() => ({
+    opacity: sheetOpacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={close} statusBarTranslucent>
-      <View style={styles.fallback}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" style={styles.scrim} onPress={close} />
-        <GestureDetector gesture={pan}>
-          <Animated.View style={[styles.fallbackSheet, sheetStyle]}>
-            <Handle />
-            <View style={styles.body}>{children}</View>
-          </Animated.View>
-        </GestureDetector>
-      </View>
+    <Modal visible={rendered} transparent statusBarTranslucent animationType="none" onRequestClose={requestClose}>
+      <GestureHandlerRootView style={styles.root}>
+        <View style={styles.stage} pointerEvents="box-none">
+          <Animated.View pointerEvents="none" style={[styles.scrim, scrimStyle]} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" style={StyleSheet.absoluteFill} onPress={requestClose} />
+          <View style={styles.dock} pointerEvents="box-none">
+            <GestureDetector gesture={pan}>
+              <Animated.View
+                onLayout={(event) => onLayout(event.nativeEvent.layout.height)}
+                style={[styles.sheet, sheetStyle, { paddingBottom: Math.max(insets.bottom, 12) }]}
+              >
+                <Handle />
+                <View style={styles.body}>{children}</View>
+              </Animated.View>
+            </GestureDetector>
+          </View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 };
 
-const GorhomSheet = ({ visible, onClose, children, onFail }: Props & { onFail: () => void }) => {
-  const reduce = useReduceMotion();
-  const ref = useRef<BottomSheetModal>(null);
-
-  useEffect(() => {
-    let alive = true;
-    let frame = 0;
-    let tries = 0;
-    const attempt = () => {
-      if (!alive) return;
-      tries += 1;
-      try {
-        const sheet = ref.current;
-        if (!sheet) {
-          if (tries < 8) frame = requestAnimationFrame(attempt);
-          else if (visible) onFail();
-          return;
-        }
-        if (!visible) {
-          sheet.dismiss();
-          return;
-        }
-        const presented = sheet.present() as void | Promise<void>;
-        if (presented && typeof presented.catch === 'function') {
-          presented.catch(() => {
-            if (alive) onFail();
-          });
-        }
-      } catch {
-        if (alive) onFail();
-      }
-    };
-    frame = requestAnimationFrame(attempt);
-    return () => {
-      alive = false;
-      cancelAnimationFrame(frame);
-    };
-  }, [onFail, visible]);
-
-  const backdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.38} pressBehavior="close" />
-    ),
-    [],
-  );
-
-  return (
-    <BottomSheetModal
-      ref={ref}
-      enableDynamicSizing
-      enablePanDownToClose
-      animateOnMount={!reduce}
-      animationConfigs={reduce ? { duration: 120 } : SPRING}
-      onDismiss={onClose}
-      backdropComponent={backdrop}
-      handleComponent={Handle}
-      backgroundStyle={styles.sheet}
-    >
-      <BottomSheetView style={styles.body}>{children}</BottomSheetView>
-    </BottomSheetModal>
-  );
-};
-
-export const Sheet = ({ visible, onClose, children }: Props) => {
-  const [fallback, setFallback] = useState(false);
-  const fail = useCallback(() => setFallback(true), []);
-
-  if (fallback) return <FallbackSheet visible={visible} onClose={onClose}>{children}</FallbackSheet>;
-
-  return (
-    <SheetErrorBoundary onFail={fail}>
-      <GorhomSheet visible={visible} onClose={onClose} onFail={fail}>
-        {children}
-      </GorhomSheet>
-    </SheetErrorBoundary>
-  );
-};
-
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  stage: { flex: 1 },
+  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.scrim },
+  dock: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.sheet,
@@ -177,13 +146,5 @@ const styles = StyleSheet.create({
   },
   handleWrap: { alignItems: 'center', paddingTop: 10, paddingBottom: 6 },
   handle: { width: 36, height: 5, borderRadius: 3, backgroundColor: Colors.track },
-  body: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
-  fallback: { flex: 1, justifyContent: 'flex-end' },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.scrim },
-  fallbackSheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius.sheet,
-    borderTopRightRadius: Radius.sheet,
-    paddingBottom: 12,
-  },
+  body: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg },
 });
