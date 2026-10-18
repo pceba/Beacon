@@ -15,6 +15,8 @@ type Props = {
   points: ChartPoint[];
   startLabel: string;
   endLabel: string;
+  markIndex?: number | null;
+  markLabel?: string;
 };
 
 const HEIGHT = 148;
@@ -30,7 +32,7 @@ const bounds = (values: number[]) => {
   return { min: lo, max: hi };
 };
 
-export const LineChart = ({ points, startLabel, endLabel }: Props) => {
+export const LineChart = ({ points, startLabel, endLabel, markIndex = null, markLabel }: Props) => {
   const { width, onLayout } = useChartWidth();
   const [selected, setSelected] = useState<number | null>(null);
   const values = points.map((point) => point.value);
@@ -54,7 +56,7 @@ export const LineChart = ({ points, startLabel, endLabel }: Props) => {
 
   return (
     <View onLayout={onLayout} style={styles.wrap}>
-      {width > 0 && plotted.length > 1 ? (
+      {width > 0 && plotted.length > 0 ? (
         <>
           <Svg width={width} height={HEIGHT} viewBox={`0 0 ${width} ${HEIGHT}`}>
             {ticks.map((tick) => (
@@ -68,9 +70,28 @@ export const LineChart = ({ points, startLabel, endLabel }: Props) => {
             <Path d={area} fill={Colors.text2} fillOpacity={0.08} />
             <Path d={line} fill="none" stroke={Colors.text2} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             {plotted.map((point, index) => {
+              if (index === markIndex) return null;
               const last = index === plotted.length - 1;
               return <Circle key={index} cx={point.x} cy={point.y} r={last ? 5 : 3} fill={last ? Colors.ink : Colors.text2} stroke="#FFFFFF" strokeWidth={2} />;
             })}
+            {markIndex != null && plotted[markIndex] ? (
+              <>
+                <Circle cx={plotted[markIndex].x} cy={plotted[markIndex].y} r={6} fill={Colors.workout} stroke="#FFFFFF" strokeWidth={2} />
+                {markLabel ? (
+                  <SvgText
+                    x={plotted[markIndex].x}
+                    y={plotted[markIndex].y < 28 ? plotted[markIndex].y + 18 : plotted[markIndex].y - 12}
+                    textAnchor="middle"
+                    fontSize={11}
+                    fontWeight="600"
+                    fill={Colors.text2}
+                    fontFamily="Outfit_600SemiBold"
+                  >
+                    {markLabel}
+                  </SvgText>
+                ) : null}
+              </>
+            ) : null}
             <SvgText x={plotted[0].x} y={136} fontSize={11} fill={Colors.text4} fontFamily="Outfit_400Regular">
               {startLabel}
             </SvgText>

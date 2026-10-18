@@ -15,6 +15,7 @@ type Props = {
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   error?: string;
+  onBlur?: () => void;
 };
 
 export const TextField = ({
@@ -28,6 +29,7 @@ export const TextField = ({
   secureTextEntry,
   autoCapitalize,
   error,
+  onBlur,
 }: Props) => {
   const [focused, setFocused] = useState(false);
   const borderColor = useMemo(() => (error ? Colors.danger : focused ? Colors.accent : Colors.border), [error, focused]);
@@ -48,7 +50,10 @@ export const TextField = ({
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCapitalize === 'none' ? false : undefined}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onBlur={() => {
+          setFocused(false);
+          onBlur?.();
+        }}
         selectionColor={Colors.accent}
         accessibilityLabel={label}
       />

@@ -10,6 +10,7 @@ import { ChartPoint, LineChart } from '../components/charts/LineChart';
 import { Sparkline } from '../components/charts/Sparkline';
 import { TrainDay, TrainingStrip } from '../components/charts/TrainingStrip';
 import { Card } from '../components/ui/Card';
+import { DeltaPill } from '../components/ui/DeltaPill';
 import { InlineError } from '../components/ui/InlineError';
 import { Segmented } from '../components/ui/Segmented';
 import { Colors } from '../constants/colors';
@@ -23,7 +24,8 @@ import { getNutritionLogs } from '../services/nutritionService';
 import { getPreferences } from '../services/preferencesService';
 import { getSleepLogs } from '../services/sleepService';
 import { getWaterLogs } from '../services/waterService';
-import { getWorkouts } from '../services/workoutService';
+import { getWorkouts, getStrengthEntries } from '../services/workoutService';
+import { exerciseSummaries, ExerciseSummary } from '../utils/exerciseProgress';
 import { RootStackParamList } from '../types/navigation';
 import { formatFlexible, formatNumber } from '../utils/format';
 import { shortDay, weekdayName } from '../utils/labels';
@@ -65,6 +67,7 @@ type Snapshot = {
   trainDays: TrainDay[];
   trainBars: ChartBar[];
   trainCount: number;
+  strength: ExerciseSummary[];
 };
 
 const DAY = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
@@ -135,7 +138,7 @@ export const DatosScreen = () => {
       const prevEnd = previous[previous.length - 1].key;
       const inSpan = (key: string, from: string, to: string) => key >= from && key <= to;
 
-      const [prefs, sleeps, waters, meals, workouts, habits, logs, metrics, moods] = await Promise.all([
+      const [prefs, sleeps, waters, meals, workouts, habits, logs, metrics, moods, strengthEntries] = await Promise.all([
         getPreferences(),
         getSleepLogs(userId),
         getWaterLogs(userId),
@@ -145,6 +148,7 @@ export const DatosScreen = () => {
         getHabitLogs(userId),
         getBodyMetrics(userId),
         getMoodLogs(userId),
+        getStrengthEntries(userId),
       ]);
 
       const sleepMap = new Map<string, number>();
@@ -386,6 +390,7 @@ export const DatosScreen = () => {
         trainDays,
         trainBars,
         trainCount,
+        strength: exerciseSummaries(strengthEntries),
       });
     } catch (error) {
       console.error(error);
@@ -504,6 +509,45 @@ export const DatosScreen = () => {
           <Text style={styles.empty}>Aún no hay entrenos.</Text>
         ) : null}
       </Card>
+
+      <Card style={styles.sectionCard}>
+        <View style={styles.sectionHead}>
+          <Text style={styles.section}>Fuerza</Text>
+        </View>
+        {!data ? null : data.strength.length === 0 ? (
+          <Text style={styles.empty}>Registra un ejercicio con peso en dos entrenos para ver tu progreso.</Text>
+        ) : (
+          data.strength.map((exercise) => {
+            const delta = exercise.change4w;
+            const flat = delta == null || Math.abs(delta) < 0.05;
+            return (
+              <Pressable
+                key={exercise.key}
+                accessibilityRole="button"
+                accessibilityLabel={`${exercise.name}, mejor 1RM ${exercise.bestE1rm ? formatFlexible(exercise.bestE1rm.value, 1) : 'sin dato'} kilogramos`}
+                onPress={() => navigation.navigate('ExerciseProgressScreen', { exerciseKey: exercise.key })}
+                style={styles.strengthRow}
+              >
+                <View style={styles.strengthCopy}>
+                  <Text numberOfLines={1} style={styles.strengthName}>
+                    {exercise.name}
+                  </Text>
+                  <Text style={styles.strengthBest}>
+                    {exercise.bestE1rm ? `${formatFlexible(exercise.bestE1rm.value, 1)} kg` : '—'}
+                  </Text>
+                </View>
+                <Sparkline values={exercise.series.map((session) => session.e1rm)} color={Colors.workout} style={styles.strengthSpark} />
+                {delta == null ? null : (
+                  <DeltaPill
+                    delta={flat ? 0 : delta}
+                    label={flat ? 'igual' : `${delta < 0 ? '−' : ''}${formatFlexible(Math.abs(delta), 1)} kg`}
+                  />
+                )}
+              </Pressable>
+            );
+          })
+        )}
+      </Card>
     </ScrollView>
   );
 };
@@ -547,4 +591,9 @@ const styles = StyleSheet.create({
   goalLine: { position: 'absolute', left: 14, right: 14, top: 48, borderTopWidth: 1, borderColor: Colors.sleep, opacity: 0.45 },
   emptyTitle: { ...Type.bodyStrong, color: Colors.ink, backgroundColor: Colors.fill, paddingHorizontal: 8 },
   emptyLink: { ...Type.bodyStrong, color: Colors.accent, backgroundColor: Colors.fill, paddingHorizontal: 8 },
+  strengthRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.line },
+  strengthCopy: { flex: 1, minWidth: 0, gap: 2 },
+  strengthName: { ...Type.body, color: Colors.ink },
+  strengthBest: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 15, color: Colors.ink },
+  strengthSpark: { width: 88 },
 });

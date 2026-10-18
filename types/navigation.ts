@@ -27,4 +27,5 @@ export type RootStackParamList = {
   AddNoteModal: undefined;
   AddTaskModal: { date?: string } | undefined;
   SettingsScreen: undefined;
+  ExerciseProgressScreen: { exerciseKey: string };
 } & LogStackParamList;

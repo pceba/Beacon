@@ -17,6 +17,7 @@ import { LogWorkoutScreen } from '../screens/log/LogWorkoutScreen';
 import { WorkoutDetailScreen } from '../screens/log/WorkoutDetailScreen';
 import { LogSleepScreen } from '../screens/log/LogSleepScreen';
 import { LogBodyScreen } from '../screens/log/LogBodyScreen';
+import { ExerciseProgressScreen } from '../screens/log/ExerciseProgressScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,6 +51,7 @@ export const RootNavigator = () => {
       <Stack.Screen name="WorkoutDetailScreen" component={WorkoutDetailScreen} options={{ ...modalOptions, title: 'Sesión' }} />
       <Stack.Screen name="LogSleepScreen" component={LogSleepScreen} options={{ ...modalOptions, title: 'Sueño' }} />
       <Stack.Screen name="LogBodyScreen" component={LogBodyScreen} options={{ ...modalOptions, title: 'Cuerpo' }} />
+      <Stack.Screen name="ExerciseProgressScreen" component={ExerciseProgressScreen} options={{ contentStyle: { backgroundColor: Colors.bg } }} />
       </Stack.Navigator>
       <EmailCodeFlow
         visible={signInOpen}
