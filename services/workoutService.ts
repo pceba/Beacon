@@ -28,20 +28,37 @@ export const deleteWorkout = async (userId: string, id: string): Promise<void> =
   if (error) throw error;
 };
 
+// Supabase devuelve como mucho 1.000 filas por consulta: se pide por páginas.
+// Sin red, la base local devuelve todo de una vez (ignora range), así que se corta
+// en cuanto una página repite filas o no viene llena.
+const PAGE = 1000;
+const selectAll = async <T extends { id: string }>(table: string): Promise<T[]> => {
+  const rows: T[] = [];
+  const seen = new Set<string>();
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from(table).select('*').order('id', { ascending: true }).range(from, from + PAGE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as T[];
+    const fresh = page.filter((row) => !seen.has(row.id));
+    fresh.forEach((row) => seen.add(row.id));
+    rows.push(...fresh);
+    if (page.length !== PAGE || fresh.length < page.length) break;
+  }
+  return rows;
+};
+
 export const getStrengthEntries = async (userId: string): Promise<LoggedExercise[]> => {
   const workouts = await getWorkouts(userId);
   const byId = new Map(workouts.map((workout) => [workout.id, workout]));
-  const { data: exercises, error } = await supabase.from('workout_exercises').select('*');
-  if (error) throw error;
-  const { data: sets, error: setsError } = await supabase.from('workout_sets').select('*');
-  if (setsError) throw setsError;
+  const exercises = await selectAll<WorkoutExercise>('workout_exercises');
+  const sets = await selectAll<WorkoutSet>('workout_sets');
   const setsByExercise = new Map<string, WorkoutSet[]>();
-  ((sets ?? []) as WorkoutSet[]).forEach((set) => {
+  sets.forEach((set) => {
     const list = setsByExercise.get(set.exercise_id) ?? [];
     list.push(set);
     setsByExercise.set(set.exercise_id, list);
   });
-  return ((exercises ?? []) as WorkoutExercise[])
+  return exercises
     .filter((exercise) => byId.has(exercise.workout_id))
     .map((exercise) => ({
       workoutId: exercise.workout_id,
