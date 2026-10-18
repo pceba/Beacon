@@ -12,21 +12,24 @@ export type ReminderSettings = {
   water: ReminderSlot;
   habits: ReminderSlot;
   tasks: ReminderSlot;
+  weekly: ReminderSlot;
 };
 
 const COPY = {
   water: { id: 'lifepp-water', title: 'Bebe agua' },
   habits: { id: 'lifepp-habits', title: 'Te quedan hábitos por marcar' },
   tasks: { id: 'lifepp-tasks', title: 'Mira tus tareas de hoy' },
+  weekly: { id: 'lifepp-weekly', title: 'Tu semana en Beacon', body: 'Ya tienes el resumen de la semana.' },
 } as const;
 
 export const defaultReminders: ReminderSettings = {
   water: { enabled: false, time: '17:00' },
   habits: { enabled: false, time: '21:30' },
   tasks: { enabled: false, time: '09:00' },
+  weekly: { enabled: false, time: '19:00' },
 };
 
-const keys = ['water', 'habits', 'tasks'] as const;
+const keys = ['water', 'habits', 'tasks', 'weekly'] as const;
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -97,13 +100,12 @@ const scheduleAll = async (settings: ReminderSettings) => {
     if (!time) continue;
     await Notifications.scheduleNotificationAsync({
       identifier: spec.id,
-      content: { title: spec.title, data: { screen: 'Today' } },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: time.hour,
-        minute: time.minute,
-        channelId: CHANNEL,
-      },
+      content: { title: spec.title, body: 'body' in spec ? spec.body : undefined, data: { screen: 'Today' } },
+      // El resumen semanal suena los domingos (weekday 1 en expo-notifications); el resto, cada día.
+      trigger:
+        key === 'weekly'
+          ? { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, hour: time.hour, minute: time.minute, channelId: CHANNEL }
+          : { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: time.hour, minute: time.minute, channelId: CHANNEL },
     });
   }
 };

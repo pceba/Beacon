@@ -22,10 +22,11 @@
 - **Plan**: semana deslizable, agenda del día y tareas.
 - **Diario**: reflexiones y notas.
 - **Datos**: medias de la semana, el mes o los 3 meses, gráfica de sueño, mapa de hábitos y peso.
+- **Resumen semanal**: el domingo y el lunes, Hoy enseña cómo fue la semana frente a la anterior (sueño, entrenos, hábitos, agua y tu mejor racha). Opcionalmente, un aviso el domingo por la tarde.
 - **Botón +**: agua en un toque y cualquier otro registro en dos.
-- **Claude**: desde claude.ai puedes decir «apunta 500 ml y una ensalada» o «¿qué me queda hoy?» y Beacon se actualiza.
+- **Claude**: desde claude.ai puedes decir «apunta 500 ml y una ensalada», «anoche dormí de 0:30 a 7:45», «peso 74,2» o «¿qué me queda hoy?» y Beacon se actualiza.
 - **Sin conexión**: si no hay red, guarda en el móvil y sube los datos cuando vuelve la conexión.
-- **Recordatorios** locales de agua, hábitos y tareas.
+- **Recordatorios** locales de agua, hábitos, tareas y resumen semanal.
 
 ## Tecnología
 
@@ -91,7 +92,12 @@ El APK se instala **encima** del anterior, sin desinstalar, para conservar la se
 2. En claude.ai: **Ajustes → Conectores → Añadir conector personalizado**, pegar el enlace y elegir «Sin inicio de sesión».
 3. En un chat, activar el conector y pedir, por ejemplo: «Mira mi día en Beacon».
 
-Herramientas disponibles: `get_today`, `get_week`, `list_tasks`, `add_tasks`, `update_task`, `log_water`, `log_habit`, `log_meal`, `log_workout`, `log_mood`.
+Herramientas disponibles (19):
+
+- **Leer:** `get_today`, `get_week`, `list_tasks`, `list_recent` (comidas, entrenos, sueño, peso, eventos, diario o notas de los últimos días, con sus ids).
+- **Registrar:** `log_water`, `log_habit`, `log_meal`, `log_workout`, `log_mood`, `log_sleep`, `log_weight`.
+- **Agenda y escritura:** `add_tasks`, `update_task`, `add_event`, `update_event`, `add_journal`, `add_note`.
+- **Borrar:** `delete_entry`, solo cuando se pide expresamente.
 
 Más detalle en [docs/DEPLOY.md](docs/DEPLOY.md).
 

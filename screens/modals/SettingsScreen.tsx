@@ -162,8 +162,8 @@ export const SettingsScreen = () => {
         <Text style={styles.group}>Recordatorios</Text>
         <View style={styles.groupCard}>
           {reminders
-            ? (['water', 'habits', 'tasks'] as const).map((key) => {
-                const label = key === 'water' ? 'Agua' : key === 'habits' ? 'Hábitos' : 'Tareas';
+            ? (['water', 'habits', 'tasks', 'weekly'] as const).map((key) => {
+                const label = key === 'water' ? 'Agua' : key === 'habits' ? 'Hábitos' : key === 'tasks' ? 'Tareas' : 'Resumen del domingo';
                 return (
                   <View key={key} style={styles.goal}>
                     <Text style={styles.goalLabel}>{label}</Text>
@@ -181,7 +181,7 @@ export const SettingsScreen = () => {
                 );
               })
             : null}
-          <Text style={styles.note}>Solo te avisamos si aún no has cumplido ese objetivo.</Text>
+          <Text style={styles.note}>Solo te avisamos si aún no has cumplido ese objetivo. El resumen llega los domingos.</Text>
         </View>
 
         <Text style={styles.group}>Claude</Text>

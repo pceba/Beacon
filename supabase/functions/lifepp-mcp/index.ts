@@ -9,7 +9,7 @@
 // El token se valida en Postgres (funciones mcp_*), que solo tocan las filas de su dueño.
 // Usa la clave pública del proyecto (SUPABASE_ANON_KEY, la inyecta Supabase).
 
-const SERVER_INFO = { name: 'beacon', title: 'Beacon', version: '1.1.0' };
+const SERVER_INFO = { name: 'beacon', title: 'Beacon', version: '1.2.0' };
 const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
 const TOKEN = /(lpp_[0-9a-f]{64})/;
 const MAX_BODY_BYTES = 64_000;
@@ -17,11 +17,13 @@ const MAX_BODY_BYTES = 64_000;
 const INSTRUCTIONS = [
   'Beacon es la app de salud, hábitos y tareas de esta persona.',
   'Usa get_today para ver el día y get_week para los últimos 7 días.',
-  'Para registrar lo que dice que ha hecho: log_water, log_habit, log_meal, log_workout y log_mood.',
+  'Para registrar lo que dice que ha hecho: log_water, log_habit, log_meal, log_workout, log_mood, log_sleep y log_weight.',
   'log_habit solo marca un hábito que ya existe; si no está, no lo crees.',
   'Usa add_tasks para apuntar tareas nuevas; no dupliques las que ya están abiertas.',
-  'Las fechas van en formato yyyy-mm-dd y en la zona horaria del usuario.',
-  'No inventes datos de salud y no borres nada.',
+  'Para el calendario: add_event y update_event. Para escribir: add_journal (reflexión del día) y add_note (nota libre).',
+  'Para corregir algo, busca su id con list_recent. delete_entry borra un registro concreto: úsalo solo si la persona lo pide de forma explícita y dile qué has borrado.',
+  'Las fechas van en formato yyyy-mm-dd y las horas en HH:mm, en la zona horaria del usuario.',
+  'No inventes datos de salud.',
 ].join(' ');
 
 type Json = Record<string, unknown>;
@@ -195,6 +197,139 @@ const TOOLS = [
     },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
+  {
+    name: 'log_sleep',
+    title: 'Anotar sueño',
+    description:
+      'Guarda una noche de sueño. bed y wake en HH:mm (o yyyy-mm-dd HH:mm). wake_day es el día en que se levantó (por defecto hoy); si bed es solo hora y queda después de wake, se entiende la noche anterior. Si ya había una noche que termina ese día, se sustituye.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        bed: { type: 'string', description: 'Hora de acostarse, HH:mm' },
+        wake: { type: 'string', description: 'Hora de levantarse, HH:mm' },
+        quality: { type: 'integer', minimum: 1, maximum: 5, description: 'Calidad de 1 a 5, opcional' },
+        notes: { type: 'string' },
+        wake_day: { type: 'string', description: 'Día en que se levantó, yyyy-mm-dd; si falta, hoy' },
+      },
+      required: ['bed', 'wake'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'log_weight',
+    title: 'Anotar peso',
+    description: 'Guarda el peso del día en kg (y la grasa corporal en %, opcional). Si ya había uno ese día, se actualiza.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kg: { type: 'number', minimum: 25, maximum: 350 },
+        body_fat_pct: { type: 'number', minimum: 2, maximum: 70 },
+        date: { type: 'string', description: 'Día yyyy-mm-dd; si falta, hoy' },
+      },
+      required: ['kg'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'add_event',
+    title: 'Añadir evento',
+    description: 'Crea un evento en el calendario de la app (clase, cita, plan). La hora es opcional.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        date: { type: 'string', description: 'yyyy-mm-dd' },
+        time: { type: 'string', description: 'HH:mm, opcional' },
+        location: { type: 'string' },
+        description: { type: 'string' },
+      },
+      required: ['title', 'date'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'update_event',
+    title: 'Cambiar evento',
+    description: 'Cambia un evento por su id (búscalo con list_recent kind=event). Solo cambian los campos que envíes; time vacío quita la hora.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        title: { type: 'string' },
+        date: { type: 'string', description: 'yyyy-mm-dd' },
+        time: { type: 'string', description: 'HH:mm, o vacío para quitarla' },
+        location: { type: 'string' },
+        description: { type: 'string' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: 'add_journal',
+    title: 'Escribir en el diario',
+    description: 'Añade una reflexión al diario, con título, ánimo (1-5) y etiquetas opcionales. Escribe lo que la persona ha contado, sin inventar.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+        title: { type: 'string' },
+        mood: { type: 'integer', minimum: 1, maximum: 5 },
+        tags: { type: 'array', items: { type: 'string' }, maxItems: 8 },
+      },
+      required: ['content'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'add_note',
+    title: 'Añadir nota',
+    description: 'Guarda una nota libre (ideas, listas, apuntes).',
+    inputSchema: {
+      type: 'object',
+      properties: { content: { type: 'string' }, title: { type: 'string' } },
+      required: ['content'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: 'list_recent',
+    title: 'Ver registros recientes',
+    description:
+      'Registros de los últimos días con su id, para corregir o borrar uno concreto. kind: meal, workout, sleep, weight, event, journal o note. Para event incluye también los próximos días.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['meal', 'workout', 'sleep', 'weight', 'event', 'journal', 'note'] },
+        days: { type: 'integer', minimum: 1, maximum: 90, description: 'Por defecto 7' },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: 'delete_entry',
+    title: 'Borrar un registro',
+    description:
+      'Borra UN registro por su id. Úsalo solo cuando la persona lo pida explícitamente y confirma después qué has borrado. kind: meal, workout, sleep, weight, event, journal, note o task.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['meal', 'workout', 'sleep', 'weight', 'event', 'journal', 'note', 'task'] },
+        id: { type: 'string' },
+      },
+      required: ['kind', 'id'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+  },
 ];
 
 class RpcError extends Error {
@@ -261,6 +396,7 @@ const toolText = (value: unknown, isError = false) => ({
 });
 
 const str = (value: unknown) => (typeof value === 'string' ? value : undefined);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const runTool = async (token: string, name: string, args: Json) => {
   switch (name) {
@@ -345,6 +481,90 @@ const runTool = async (token: string, name: string, args: Json) => {
     }
     case 'get_week':
       return await callRpc('mcp_get_week', { p_token: token, p_end_date: str(args.end_date) ?? null });
+    case 'log_sleep': {
+      const bed = str(args.bed)?.trim();
+      const wake = str(args.wake)?.trim();
+      if (!bed || !wake) throw new RpcError('indica bed y wake en HH:mm', 400);
+      if (args.quality != null && (typeof args.quality !== 'number' || !Number.isInteger(args.quality) || args.quality < 1 || args.quality > 5)) {
+        throw new RpcError('calidad debe ser un entero de 1 a 5', 400);
+      }
+      return await callRpc('mcp_log_sleep', {
+        p_token: token,
+        p_bed: bed,
+        p_wake: wake,
+        p_quality: args.quality ?? null,
+        p_notes: str(args.notes) ?? null,
+        p_wake_day: str(args.wake_day) ?? null,
+      });
+    }
+    case 'log_weight': {
+      if (typeof args.kg !== 'number' || !Number.isFinite(args.kg)) throw new RpcError('kg debe ser un número', 400);
+      if (args.body_fat_pct != null && (typeof args.body_fat_pct !== 'number' || !Number.isFinite(args.body_fat_pct))) {
+        throw new RpcError('body_fat_pct debe ser un número', 400);
+      }
+      return await callRpc('mcp_log_weight', {
+        p_token: token,
+        p_kg: args.kg,
+        p_body_fat: args.body_fat_pct ?? null,
+        p_date: str(args.date) ?? null,
+      });
+    }
+    case 'add_event': {
+      const title = str(args.title)?.trim();
+      const date = str(args.date)?.trim();
+      if (!title || !date) throw new RpcError('el evento necesita título y fecha', 400);
+      return await callRpc('mcp_add_event', {
+        p_token: token,
+        p_title: title,
+        p_date: date,
+        p_time: str(args.time) ?? null,
+        p_location: str(args.location) ?? null,
+        p_description: str(args.description) ?? null,
+      });
+    }
+    case 'update_event': {
+      const id = str(args.id);
+      if (!id || !UUID.test(id)) throw new RpcError('id de evento no válido', 400);
+      const changes: Json = {};
+      for (const key of ['title', 'date', 'time', 'location', 'description']) {
+        if (key in args) changes[key] = args[key];
+      }
+      if (Object.keys(changes).length === 0) throw new RpcError('No hay cambios', 400);
+      return await callRpc('mcp_update_event', { p_token: token, p_event_id: id, p_changes: changes });
+    }
+    case 'add_journal': {
+      const content = str(args.content)?.trim();
+      if (!content) throw new RpcError('la entrada no puede estar vacía', 400);
+      if (args.mood != null && (typeof args.mood !== 'number' || !Number.isInteger(args.mood) || args.mood < 1 || args.mood > 5)) {
+        throw new RpcError('ánimo debe ser un entero de 1 a 5', 400);
+      }
+      const tags = Array.isArray(args.tags) ? args.tags.filter((tag): tag is string => typeof tag === 'string').slice(0, 8) : null;
+      return await callRpc('mcp_add_journal', {
+        p_token: token,
+        p_content: content,
+        p_title: str(args.title) ?? null,
+        p_mood: args.mood ?? null,
+        p_tags: tags,
+      });
+    }
+    case 'add_note': {
+      const content = str(args.content)?.trim();
+      if (!content) throw new RpcError('la nota no puede estar vacía', 400);
+      return await callRpc('mcp_add_note', { p_token: token, p_content: content, p_title: str(args.title) ?? null });
+    }
+    case 'list_recent': {
+      const kind = str(args.kind);
+      if (!kind) throw new RpcError('indica kind', 400);
+      const days = typeof args.days === 'number' && Number.isInteger(args.days) ? args.days : 7;
+      return await callRpc('mcp_list_recent', { p_token: token, p_kind: kind, p_days: days });
+    }
+    case 'delete_entry': {
+      const kind = str(args.kind);
+      const id = str(args.id);
+      if (!kind) throw new RpcError('indica kind', 400);
+      if (!id || !UUID.test(id)) throw new RpcError('id no válido', 400);
+      return await callRpc('mcp_delete_entry', { p_token: token, p_kind: kind, p_id: id });
+    }
     default:
       throw new RpcError(`Herramienta desconocida: ${name}`, 404);
   }

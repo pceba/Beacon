@@ -38,6 +38,7 @@ import { formatFlexible, formatNumber, formatWater } from '../utils/format';
 import { taskTiming } from '../utils/taskMeta';
 import { monthDay, weekdayName } from '../utils/labels';
 import { SwipeRow } from '../components/ui/SwipeRow';
+import { WeeklySummaryCard } from '../components/WeeklySummaryCard';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { habitStreak } from '../utils/streak';
 
@@ -497,6 +498,8 @@ export const TodayScreen = () => {
           {formatNumber(doneCount)} de {formatNumber(checks.length)}
         </Text>
       </Animated.View>
+
+      <WeeklySummaryCard onOpen={() => navigation.navigate('Stats')} />
 
       <Animated.View entering={enter(3)} style={styles.board}>
         <Pressable accessibilityRole="button" accessibilityLabel="Agua" onPress={() => void changeWater(250)} onLongPress={() => void changeWater(250)} style={styles.cell}>
