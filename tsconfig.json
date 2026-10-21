@@ -8,5 +8,5 @@
     }
   },
   "include": ["**/*"],
-  "exclude": ["node_modules", "supabase/functions"]
+  "exclude": ["node_modules", "supabase/functions", "dist", "web-build"]
 }
