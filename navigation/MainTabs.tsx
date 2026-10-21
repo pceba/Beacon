@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,15 +7,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart2, BookOpen, CalendarDays, Plus, Sun } from 'lucide-react-native';
 import { MainTabParamList, PlanStackParamList } from '../types/navigation';
 import { Colors } from '../constants/colors';
-import { Typography } from '../constants/typography';
+import { Type } from '../constants/typography';
 import { soft } from '../lib/haptics';
 import { useReduceMotion } from '../hooks/useReduceMotion';
-import { TodayScreen } from '../screens/TodayScreen';
-import { JournalScreen } from '../screens/JournalScreen';
+import { TodayScreen } from '../features/today/TodayScreen';
+import { JournalScreen } from '../features/journal/JournalScreen';
 import { PlanHomeScreen } from '../screens/plan/PlanHomeScreen';
 import { EventDetailScreen } from '../screens/plan/EventDetailScreen';
-import { DatosScreen } from '../screens/DatosScreen';
-import { AddSheet } from '../components/add/AddSheet';
+import { DatosScreen } from '../features/insights/DatosScreen';
+import { AddSheet, openAddSheet } from '../components/add/AddSheet';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const PlanStack = createNativeStackNavigator<PlanStackParamList>();
@@ -26,7 +26,7 @@ const stackOptions = {
   headerShadowVisible: false,
   headerTintColor: Colors.ink,
   headerTitleStyle: {
-    fontFamily: Typography.fontBold,
+    fontFamily: Type.section.fontFamily,
     fontSize: 16,
     color: Colors.ink,
   },
@@ -126,21 +126,19 @@ const BeaconTabBar = ({ state, navigation, onAdd }: BottomTabBarProps & { onAdd:
   );
 };
 
-export const MainTabs = () => {
-  const [addOpen, setAddOpen] = useState(false);
+const renderTabBar = (props: BottomTabBarProps) => <BeaconTabBar {...props} onAdd={openAddSheet} />;
+const tabScreenOptions = { headerShown: false };
 
+export const MainTabs = () => {
   return (
     <>
-      <Tab.Navigator
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <BeaconTabBar {...props} onAdd={() => setAddOpen(true)} />}
-      >
+      <Tab.Navigator screenOptions={tabScreenOptions} tabBar={renderTabBar}>
         <Tab.Screen name="Today" component={TodayScreen} />
         <Tab.Screen name="Plan" component={PlanNavigator} />
         <Tab.Screen name="Journal" component={JournalScreen} />
         <Tab.Screen name="Stats" component={DatosScreen} />
       </Tab.Navigator>
-      <AddSheet visible={addOpen} onClose={() => setAddOpen(false)} />
+      <AddSheet />
     </>
   );
 };
@@ -153,13 +151,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E4E8EE',
+    borderTopColor: Colors.border,
   },
   tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2, paddingBottom: 6 },
-  label: { fontFamily: Typography.fontMedium, fontSize: 11, color: Colors.text3 },
-  labelOn: { fontFamily: Typography.fontBold, color: Colors.ink },
+  label: { fontFamily: Type.caption.fontFamily, fontSize: 11, color: Colors.text3 },
+  labelOn: { fontFamily: Type.bodyStrong.fontFamily, color: Colors.ink },
   fabSlot: { width: 76 },
   fabAnchor: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
   fabHit: { width: 56, height: 56 },
@@ -170,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#101318',
+    shadowColor: Colors.ink,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.24,
     shadowRadius: 16,

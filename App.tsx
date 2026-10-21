@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { Colors } from './constants/colors';
 import { ToastProvider } from './components/ui/Toast';
+import { SheetProvider } from './components/ui/sheet/SheetHost';
 import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
 import { migrateMoodOnce } from './services/moodMigration';
@@ -18,7 +19,7 @@ import { queryClient } from './lib/query';
 import './services/localSync';
 
 const styles = StyleSheet.create({
-  stage: { flex: 1, backgroundColor: '#E4E8EE', alignItems: 'center' },
+  stage: { flex: 1, backgroundColor: Colors.track, alignItems: 'center' },
   column: { flex: 1, width: '100%', maxWidth: 480, backgroundColor: Colors.bg },
 });
 
@@ -90,7 +91,9 @@ export default function App() {
                 }}
               >
                 <StatusBar style="dark" />
-                <RootNavigator />
+                <SheetProvider>
+                  <RootNavigator />
+                </SheetProvider>
               </NavigationContainer>
             </ToastProvider>
           </SafeAreaProvider>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
+import { invalidateTables } from '../../lib/query';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { TextField } from '../../components/ui/TextField';
@@ -18,6 +19,7 @@ export const AddNoteModal = () => {
     try {
       const userId = await getCurrentUserId();
       await createNote(userId, { title: title || null, content });
+      void invalidateTables('notes');
       navigation.goBack();
     } catch (error) {
       console.error(error);

@@ -1,124 +1,153 @@
-import React from 'react';
+import React, { memo, useSyncExternalStore } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BookOpen, Calendar, Dumbbell, Moon, PenLine, Repeat, Scale, Sparkles, SquareCheck, Utensils, X } from 'lucide-react-native';
 import { Colors } from '../../constants/colors';
 import { Radius, Spacing } from '../../constants/spacing';
 import { Type, tabular } from '../../constants/typography';
 import { light } from '../../lib/haptics';
-import { refreshDay } from '../../lib/refresh';
+import { invalidateTables } from '../../lib/query';
 import { toast } from '../../lib/toast';
+import { navigationRef } from '../../navigation/navigationRef';
 import { getCurrentUserId } from '../../services/authService';
 import { addWater } from '../../services/waterService';
-import { MainTabParamList, RootStackParamList } from '../../types/navigation';
 import { formatWater } from '../../utils/format';
 import { Sheet } from '../ui/Sheet';
 
-type Nav = CompositeNavigationProp<BottomTabNavigationProp<MainTabParamList>, NativeStackNavigationProp<RootStackParamList>>;
+// Abierta o cerrada sin pasar por el estado de MainTabs: pulsar + solo pinta esta hoja.
+let isOpen = false;
+const listeners = new Set<() => void>();
+const setOpen = (next: boolean) => {
+  if (isOpen === next) return;
+  isOpen = next;
+  listeners.forEach((listener) => listener());
+};
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
 
-type Props = { visible: boolean; onClose: () => void };
+export const openAddSheet = () => setOpen(true);
+const closeAddSheet = () => setOpen(false);
+
+const go = (navigate: () => void) => {
+  closeAddSheet();
+  if (navigationRef.isReady()) navigate();
+};
 
 const tiles = [
-  { label: 'Comida', icon: Utensils, color: Colors.food, soft: Colors.foodSoft, go: (navigation: Nav) => navigation.navigate('LogMealScreen') },
-  { label: 'Entreno', icon: Dumbbell, color: Colors.workout, soft: Colors.workoutSoft, go: (navigation: Nav) => navigation.navigate('LogWorkoutScreen') },
-  { label: 'Sueño', icon: Moon, color: Colors.sleep, soft: Colors.sleepSoft, go: (navigation: Nav) => navigation.navigate('LogSleepScreen') },
-  { label: 'Tarea', icon: SquareCheck, color: Colors.ink, soft: Colors.bg, go: (navigation: Nav) => navigation.navigate('AddTaskModal') },
-  { label: 'Hábito', icon: Repeat, color: Colors.accent, soft: Colors.accentSoft, go: (navigation: Nav) => navigation.navigate('AddHabitModal') },
-  { label: 'Evento', icon: Calendar, color: Colors.accent, soft: Colors.accentSoft, go: (navigation: Nav) => navigation.navigate('Plan', { screen: 'EventDetailScreen' }) },
-  { label: 'Peso', icon: Scale, color: Colors.text2, soft: Colors.bg, go: (navigation: Nav) => navigation.navigate('LogBodyScreen') },
-  { label: 'Nota', icon: PenLine, color: Colors.mood, soft: Colors.moodSoft, go: (navigation: Nav) => navigation.navigate('AddNoteModal') },
-  { label: 'Reflexión', icon: BookOpen, color: Colors.mood, soft: Colors.moodSoft, go: (navigation: Nav) => navigation.navigate('AddReflectionModal') },
+  { label: 'Comida', icon: Utensils, color: Colors.food, soft: Colors.foodSoft, open: () => navigationRef.navigate('LogMealScreen') },
+  { label: 'Entreno', icon: Dumbbell, color: Colors.workout, soft: Colors.workoutSoft, open: () => navigationRef.navigate('LogWorkoutScreen') },
+  { label: 'Sueño', icon: Moon, color: Colors.sleep, soft: Colors.sleepSoft, open: () => navigationRef.navigate('LogSleepScreen') },
+  { label: 'Tarea', icon: SquareCheck, color: Colors.ink, soft: Colors.bg, open: () => navigationRef.navigate('AddTaskModal') },
+  { label: 'Hábito', icon: Repeat, color: Colors.accent, soft: Colors.accentSoft, open: () => navigationRef.navigate('AddHabitModal') },
+  {
+    label: 'Evento',
+    icon: Calendar,
+    color: Colors.accent,
+    soft: Colors.accentSoft,
+    open: () => navigationRef.navigate('MainTabs', { screen: 'Plan', params: { screen: 'EventDetailScreen' } }),
+  },
+  { label: 'Peso', icon: Scale, color: Colors.text2, soft: Colors.bg, open: () => navigationRef.navigate('LogBodyScreen') },
+  { label: 'Nota', icon: PenLine, color: Colors.mood, soft: Colors.moodSoft, open: () => navigationRef.navigate('AddNoteModal') },
+  { label: 'Reflexión', icon: BookOpen, color: Colors.mood, soft: Colors.moodSoft, open: () => navigationRef.navigate('AddReflectionModal') },
 ] as const;
 
-export const AddSheet = ({ visible, onClose }: Props) => {
-  const navigation = useNavigation<Nav>();
+const rows = [tiles.slice(0, 3), tiles.slice(3, 6), tiles.slice(6, 9)];
+const WATER = [250, 500, 1000] as const;
 
-  const open = (go: (navigation: Nav) => void) => {
-    onClose();
-    go(navigation);
-  };
-
-  const quickWater = async (ml: number, label: string) => {
-    light();
-    onClose();
-    try {
-      const userId = await getCurrentUserId();
-      await addWater(userId, new Date(), ml);
-      refreshDay();
-      toast.show({
-        message: label,
-        action: {
-          label: 'Deshacer',
-          onPress: () => {
-            void addWater(userId, new Date(), -ml)
-              .then(() => refreshDay())
-              .catch((error) => {
-                console.error(error);
-                toast.show({ message: 'No se ha podido deshacer.', kind: 'error' });
-              });
-          },
+const quickWater = async (ml: number) => {
+  light();
+  closeAddSheet();
+  const label = `+${formatWater(ml)} de agua`;
+  try {
+    const userId = await getCurrentUserId();
+    await addWater(userId, new Date(), ml);
+    void invalidateTables('water_logs');
+    toast.show({
+      message: label,
+      action: {
+        label: 'Deshacer',
+        onPress: () => {
+          void addWater(userId, new Date(), -ml)
+            .then(() => invalidateTables('water_logs'))
+            .catch((error) => {
+              console.error(error);
+              toast.show({ message: 'No se ha podido deshacer.', kind: 'error' });
+            });
         },
-      });
-    } catch (error) {
-      console.error(error);
-      toast.show({
-        message: 'Sin conexión. Lo guardamos en el móvil y lo subimos cuando vuelva la red.',
-        kind: 'error',
-      });
-    }
-  };
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    toast.show({
+      message: 'Sin conexión. Lo guardamos en el móvil y lo subimos cuando vuelva la red.',
+      kind: 'error',
+    });
+  }
+};
 
-  return (
-    <Sheet visible={visible} onClose={onClose}>
-      <View style={styles.head}>
-        <Text style={styles.title}>Añadir</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={4} onPress={onClose} style={styles.close}>
-          <X color={Colors.text2} size={18} />
+// Se pinta una sola vez: no recibe props y no tiene animaciones de entrada.
+const AddSheetContent = memo(() => (
+  <>
+    <View style={styles.head}>
+      <Text style={styles.title}>Añadir</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={4} onPress={closeAddSheet} style={styles.close}>
+        <X color={Colors.text2} size={18} />
+      </Pressable>
+    </View>
+    <Text style={styles.caption}>Agua rápida</Text>
+    <View style={styles.water}>
+      {WATER.map((ml) => (
+        <Pressable
+          key={ml}
+          accessibilityRole="button"
+          accessibilityLabel={`+${formatWater(ml)} de agua`}
+          onPress={() => void quickWater(ml)}
+          style={styles.waterBtn}
+        >
+          <Text style={styles.waterText}>+{formatWater(ml)}</Text>
         </Pressable>
-      </View>
-      <Text style={styles.caption}>Agua rápida</Text>
-      <View style={styles.water}>
-        {[250, 500, 1000].map((ml) => (
-          <Pressable
-            key={ml}
-            accessibilityRole="button"
-            accessibilityLabel={`+${formatWater(ml)} de agua`}
-            onPress={() => void quickWater(ml, `+${formatWater(ml)} de agua`)}
-            style={styles.waterBtn}
-          >
-            <Text style={styles.waterText}>+{formatWater(ml)}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.grid}>
-        {[0, 1, 2].map((row) => (
-          <View key={row} style={styles.row}>
-            {tiles.slice(row * 3, row * 3 + 3).map((tile) => {
-              const Icon = tile.icon;
-              return (
-                <Pressable
-                  key={tile.label}
-                  accessibilityRole="button"
-                  accessibilityLabel={tile.label}
-                  onPress={() => open(tile.go)}
-                  style={styles.tile}
-                >
-                  <View style={[styles.icon, { backgroundColor: tile.soft }]}>
-                    <Icon color={tile.color} size={20} />
-                  </View>
-                  <Text style={styles.tileLabel}>{tile.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-      <View style={styles.note}>
-        <Sparkles color={Colors.accent} size={16} />
-        <Text style={styles.noteText}>También puedes pedírselo a Claude: «apunta 500 ml y una ensalada».</Text>
-      </View>
+      ))}
+    </View>
+    <View style={styles.grid}>
+      {rows.map((row, index) => (
+        <View key={index} style={styles.row}>
+          {row.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <Pressable
+                key={tile.label}
+                accessibilityRole="button"
+                accessibilityLabel={tile.label}
+                onPress={() => go(tile.open)}
+                style={styles.tile}
+              >
+                <View style={[styles.icon, { backgroundColor: tile.soft }]}>
+                  <Icon color={tile.color} size={20} />
+                </View>
+                <Text style={styles.tileLabel}>{tile.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+    <View style={styles.note}>
+      <Sparkles color={Colors.accent} size={16} />
+      <Text style={styles.noteText}>También puedes pedírselo a Claude: «apunta 500 ml y una ensalada».</Text>
+    </View>
+  </>
+));
+
+const content = <AddSheetContent />;
+
+export const AddSheet = () => {
+  const visible = useSyncExternalStore(subscribe, () => isOpen);
+  return (
+    <Sheet visible={visible} onClose={closeAddSheet} keepMounted label="Añadir">
+      {content}
     </Sheet>
   );
 };
@@ -126,7 +155,7 @@ export const AddSheet = ({ visible, onClose }: Props) => {
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
   title: { ...Type.headline, color: Colors.ink },
-  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' },
+  close: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' },
   caption: { ...Type.caption, color: Colors.text3, fontFamily: 'Outfit_600SemiBold', marginBottom: 8 },
   water: { flexDirection: 'row', gap: 8, marginBottom: Spacing.lg },
   waterBtn: {

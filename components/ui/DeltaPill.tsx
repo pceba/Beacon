@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
   pill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
   up: { backgroundColor: Colors.successSoft },
   down: { backgroundColor: Colors.dangerSoft },
-  flat: { backgroundColor: '#EEF1F4' },
+  flat: { backgroundColor: Colors.line },
   text: { ...Type.caption, ...tabular },
   upText: { color: Colors.success },
   downText: { color: Colors.danger },

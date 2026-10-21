@@ -1,3 +1,4 @@
+import { invalidateTables } from '../lib/query';
 import { getStored, setStored } from '../lib/storage';
 
 const KEY = 'lifepp_preferences';
@@ -28,4 +29,5 @@ export const getPreferences = async (): Promise<Preferences> => {
 
 export const savePreferences = async (preferences: Preferences): Promise<void> => {
   await setStored(KEY, JSON.stringify(preferences));
+  void invalidateTables('preferences');
 };

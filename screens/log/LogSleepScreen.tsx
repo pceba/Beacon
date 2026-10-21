@@ -1,15 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Segmented } from '../../components/ui/Segmented';
 import { TextField } from '../../components/ui/TextField';
 import { TimePill } from '../../components/ui/TimePill';
 import { Colors } from '../../constants/colors';
 import { Type } from '../../constants/typography';
+import { invalidateTables } from '../../lib/query';
 import { toast } from '../../lib/toast';
 import { getCurrentUserId } from '../../services/authService';
-import { createSleepLog, getSleepLogs, updateSleepLog } from '../../services/sleepService';
+import { createSleepLog, getSleepLogById, updateSleepLog } from '../../services/sleepService';
 import { LogStackParamList } from '../../types/navigation';
 import { formatDuration } from '../../utils/format';
 import { finishLog, useReturnToToday } from '../../utils/finishLog';
@@ -43,25 +45,30 @@ export const LogSleepScreen = () => {
   const [noteOpen, setNoteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const sleepId = route.params?.sleepId;
+  const editing = useQuery({
+    queryKey: ['sleep_logs', 'id', sleepId ?? ''],
+    queryFn: async () => getSleepLogById(await getCurrentUserId(), sleepId ?? ''),
+    enabled: Boolean(sleepId),
+  });
+
+  // Se rellena una sola vez: una recarga no debe pisar lo que ya se ha cambiado.
+  const filled = useRef(false);
   useEffect(() => {
-    const loadEdit = async () => {
-      if (!route.params?.sleepId) return;
-      try {
-        const userId = await getCurrentUserId();
-        const selected = (await getSleepLogs(userId)).find((row) => row.id === route.params?.sleepId);
-        if (!selected) return;
-        setBed(clock(new Date(selected.bed_time)));
-        setWake(clock(new Date(selected.wake_time)));
-        const score = selected.quality_rating;
-        if (score && score >= 1 && score <= 5) setQuality(String(score) as Quality);
-        setNotes(selected.notes ?? '');
-        if (selected.notes) setNoteOpen(true);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    void loadEdit();
-  }, [route.params?.sleepId]);
+    const selected = editing.data;
+    if (!selected || filled.current) return;
+    filled.current = true;
+    setBed(clock(new Date(selected.bed_time)));
+    setWake(clock(new Date(selected.wake_time)));
+    const score = selected.quality_rating;
+    if (score && score >= 1 && score <= 5) setQuality(String(score) as Quality);
+    setNotes(selected.notes ?? '');
+    if (selected.notes) setNoteOpen(true);
+  }, [editing.data]);
+
+  useEffect(() => {
+    if (editing.error) console.error(editing.error);
+  }, [editing.error]);
 
   const hours = useMemo(() => {
     const start = minutesOf(bed);
@@ -83,8 +90,9 @@ export const LogSleepScreen = () => {
         quality_rating: Number(quality),
         notes: notes.trim() || null,
       };
-      if (route.params?.sleepId) await updateSleepLog(userId, route.params.sleepId, payload);
+      if (sleepId) await updateSleepLog(userId, sleepId, payload);
       else await createSleepLog(userId, payload);
+      void invalidateTables('sleep_logs');
       finishLog(navigation, route.params?.fromToday);
     } catch (error) {
       console.error(error);

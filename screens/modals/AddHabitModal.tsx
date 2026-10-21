@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
+import { invalidateTables } from '../../lib/query';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FormScreen } from '../../components/ui/FormScreen';
@@ -30,6 +31,7 @@ export const AddHabitModal = () => {
     try {
       const userId = await getCurrentUserId();
       await createHabit(userId, { name: trimmed, icon, color, frequency: 'daily' });
+      void invalidateTables('habits');
       navigation.goBack();
     } catch (saveError) {
       console.error(saveError);

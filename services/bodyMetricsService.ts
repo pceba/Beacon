@@ -1,8 +1,13 @@
 import { supabase } from '../lib/supabase';
 import { BodyMetric } from '../types/database';
+import { Range } from './range';
 
-export const getBodyMetrics = async (userId: string): Promise<BodyMetric[]> => {
-  const { data, error } = await supabase.from('body_metrics').select('*').eq('user_id', userId).order('date', { ascending: false });
+// range acota date ('yyyy-MM-dd').
+export const getBodyMetrics = async (userId: string, range?: Range): Promise<BodyMetric[]> => {
+  let query = supabase.from('body_metrics').select('*').eq('user_id', userId);
+  if (range?.from) query = query.gte('date', range.from);
+  if (range?.to) query = query.lte('date', range.to);
+  const { data, error } = await query.order('date', { ascending: false });
   if (error) throw error;
   return (data ?? []) as BodyMetric[];
 };

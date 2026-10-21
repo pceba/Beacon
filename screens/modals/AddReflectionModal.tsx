@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
+import { invalidateTables } from '../../lib/query';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { TextField } from '../../components/ui/TextField';
@@ -27,6 +28,7 @@ export const AddReflectionModal = () => {
         mood_score: mood,
         tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
       });
+      void invalidateTables('journal_entries');
       navigation.goBack();
     } catch (error) {
       console.error(error);

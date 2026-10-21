@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import { Chip } from '../../components/ui/Chip';
 import { FormScreen } from '../../components/ui/FormScreen';
 import { Segmented } from '../../components/ui/Segmented';
@@ -8,14 +9,26 @@ import { Switch } from '../../components/ui/Switch';
 import { TimePill } from '../../components/ui/TimePill';
 import { Colors } from '../../constants/colors';
 import { Type, tabular } from '../../constants/typography';
+import { todayQueries } from '../../features/today/todayQueries';
 import { success } from '../../lib/haptics';
+import { invalidateTables } from '../../lib/query';
 import { toast } from '../../lib/toast';
 import { getCurrentUserId } from '../../services/authService';
-import { createMealTemplate, createNutritionLog, deleteNutritionLog, getMealTemplates, getNutritionLogs, updateNutritionLog } from '../../services/nutritionService';
+import {
+  createMealTemplate,
+  createNutritionLog,
+  deleteNutritionLog,
+  getMealTemplates,
+  getNutritionLogById,
+  updateNutritionLog,
+} from '../../services/nutritionService';
 import { MealTemplate } from '../../types/database';
 import { LogStackParamList } from '../../types/navigation';
+import { keyOf } from '../../utils/dates';
 import { formatNumber } from '../../utils/format';
 import { finishLog, useReturnToToday } from '../../utils/finishLog';
+
+const NO_TEMPLATES: MealTemplate[] = [];
 
 type Route = RouteProp<LogStackParamList, 'LogMealScreen'>;
 type MealKind = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -46,38 +59,46 @@ export const LogMealScreen = () => {
   const [mealType, setMealType] = useState<MealKind>(defaultMeal);
   const [time, setTime] = useState(nowTime);
   const [saveTemplate, setSaveTemplate] = useState(true);
-  const [templates, setTemplates] = useState<MealTemplate[]>([]);
-  const [todayCalories, setTodayCalories] = useState(0);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const kcalRef = useRef<TextInput>(null);
+  const logId = route.params?.logId;
+  const [todayKey] = useState(() => keyOf(new Date()));
+
+  const templatesQuery = useQuery({
+    queryKey: ['meal_templates'],
+    queryFn: async () => getMealTemplates(await getCurrentUserId()),
+  });
+  const todayMeals = useQuery(todayQueries.meals(todayKey));
+  const editing = useQuery({
+    queryKey: ['nutrition_logs', 'id', logId ?? ''],
+    queryFn: async () => getNutritionLogById(await getCurrentUserId(), logId ?? ''),
+    enabled: Boolean(logId),
+  });
+  const templates = templatesQuery.data ?? NO_TEMPLATES;
+  const todayCalories = useMemo(() => (todayMeals.data ?? []).reduce((sum, row) => sum + row.calories, 0), [todayMeals.data]);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const userId = await getCurrentUserId();
-        const [rows, saved] = await Promise.all([getNutritionLogs(userId), getMealTemplates(userId)]);
-        setTemplates(saved);
-        const today = new Date().toISOString().slice(0, 10);
-        setTodayCalories(rows.filter((row) => row.logged_at.slice(0, 10) === today).reduce((sum, row) => sum + row.calories, 0));
-        if (!route.params?.logId) return;
-        const selected = rows.find((row) => row.id === route.params?.logId);
-        if (!selected) return;
-        setName(selected.name);
-        setCalories(String(selected.calories));
-        setProtein(String(selected.protein_g));
-        setCarbs(String(selected.carbs_g));
-        setFat(String(selected.fat_g));
-        if (selected.meal_type === 'breakfast' || selected.meal_type === 'lunch' || selected.meal_type === 'dinner' || selected.meal_type === 'snack') {
-          setMealType(selected.meal_type);
-        }
-        setTime(new Date(selected.logged_at).toTimeString().slice(0, 5));
-      } catch (loadError) {
-        console.error(loadError);
-      }
-    };
-    void load();
-  }, [route.params?.logId]);
+    const failure = templatesQuery.error ?? todayMeals.error ?? editing.error;
+    if (failure) console.error(failure);
+  }, [editing.error, templatesQuery.error, todayMeals.error]);
+
+  // Se rellena una sola vez: una recarga no debe pisar lo que ya se ha cambiado.
+  const filled = useRef(false);
+  useEffect(() => {
+    const selected = editing.data;
+    if (!selected || filled.current) return;
+    filled.current = true;
+    setName(selected.name);
+    setCalories(String(selected.calories));
+    setProtein(String(selected.protein_g));
+    setCarbs(String(selected.carbs_g));
+    setFat(String(selected.fat_g));
+    if (selected.meal_type === 'breakfast' || selected.meal_type === 'lunch' || selected.meal_type === 'dinner' || selected.meal_type === 'snack') {
+      setMealType(selected.meal_type);
+    }
+    setTime(new Date(selected.logged_at).toTimeString().slice(0, 5));
+  }, [editing.data]);
 
   const applyTemplate = (template: MealTemplate) => {
     setName(template.name);
@@ -113,8 +134,9 @@ export const LogMealScreen = () => {
         notes: null,
         logged_at: logged.toISOString(),
       };
-      if (route.params?.logId) {
-        await updateNutritionLog(userId, route.params.logId, payload);
+      if (logId) {
+        await updateNutritionLog(userId, logId, payload);
+        void invalidateTables('nutrition_logs');
         success();
         finishLog(navigation, route.params?.fromToday);
         return;
@@ -130,6 +152,7 @@ export const LogMealScreen = () => {
           meal_type: payload.meal_type,
         });
       }
+      void invalidateTables('nutrition_logs', 'meal_templates');
       success();
       finishLog(navigation, route.params?.fromToday);
       toast.show({
@@ -138,10 +161,12 @@ export const LogMealScreen = () => {
         action: {
           label: 'Deshacer',
           onPress: () => {
-            void deleteNutritionLog(userId, created.id).catch((undoError) => {
-              console.error(undoError);
-              toast.show({ message: 'No se ha podido deshacer.', kind: 'error' });
-            });
+            void deleteNutritionLog(userId, created.id)
+              .catch((undoError) => {
+                console.error(undoError);
+                toast.show({ message: 'No se ha podido deshacer.', kind: 'error' });
+              })
+              .finally(() => void invalidateTables('nutrition_logs'));
           },
         },
       });

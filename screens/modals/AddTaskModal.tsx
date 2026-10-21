@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from '../../lib/toast';
+import { invalidateTables } from '../../lib/query';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
@@ -40,6 +41,7 @@ export const AddTaskModal = () => {
         completed: false,
         priority,
       });
+      void invalidateTables('tasks');
       navigation.goBack();
     } catch (saveError) {
       console.error(saveError);
