@@ -55,6 +55,8 @@ export const cellStyles = StyleSheet.create({
     flexShrink: 0,
   },
   pillText: { fontFamily: 'Outfit_600SemiBold', fontSize: 13, color: Colors.water },
+  pillWorkout: { backgroundColor: Colors.workoutSoft },
+  pillWorkoutText: { color: Colors.workout },
   track: { height: 3, borderRadius: 99, backgroundColor: Colors.track, overflow: 'hidden', marginTop: 'auto' },
   fill: { height: 3, borderRadius: 99 },
 });

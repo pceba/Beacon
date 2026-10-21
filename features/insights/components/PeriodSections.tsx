@@ -6,6 +6,7 @@ import { TrainingStrip } from '../../../components/charts/TrainingStrip';
 import { Card } from '../../../components/ui/Card';
 import { Colors } from '../../../constants/colors';
 import { tabular } from '../../../constants/typography';
+import { TrainingHistoryLink } from '../../training';
 import { formatFlexible, formatNumber } from '../../../utils/format';
 import { Period, periodPhrase, Snapshot } from '../insightsMath';
 import { insightsStyles as shared } from './insightsStyles';
@@ -59,9 +60,13 @@ export const TrainingSection = memo(({ data, period }: Props) => (
     ) : data ? (
       <Text style={shared.empty}>Aún no hay entrenos.</Text>
     ) : null}
+    <View style={styles.historyLink}>
+      <TrainingHistoryLink />
+    </View>
   </Card>
 ));
 
 const styles = StyleSheet.create({
+  historyLink: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.line },
   weightValue: { ...tabular, fontFamily: 'Outfit_600SemiBold', fontSize: 30, lineHeight: 36, letterSpacing: -0.8, color: Colors.ink },
 });

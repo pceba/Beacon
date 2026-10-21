@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
-import { Keyboard, LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
+import { Keyboard, LayoutChangeEvent, Platform, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { sheetStore } from './sheetStore';
 import { SheetLayer } from './SheetLayer';
@@ -76,6 +76,10 @@ export const SheetProvider = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
+// En web, overflow hidden sigue siendo desplazable: un autoFocus dentro de una hoja aún aparcada
+// desplaza el host y deja ver las hojas fuera de pantalla. clip no admite desplazamiento.
+const clip = (Platform.OS === 'web' ? { overflow: 'clip' } : { overflow: 'hidden' }) as ViewStyle;
+
 const styles = StyleSheet.create({
-  host: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', pointerEvents: 'box-none' },
+  host: { ...StyleSheet.absoluteFillObject, ...clip, pointerEvents: 'box-none' },
 });

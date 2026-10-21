@@ -19,17 +19,20 @@ type Props = {
   onWater: (delta: number) => void;
   onSleep: () => void;
   onMove: () => void;
+  onTrain: () => void;
   onMeal: () => void;
 };
+
+const PILL_SLOP = { top: 10, bottom: 10, left: 8, right: 8 };
 
 const percent = (value: number, goal: number) => Math.min(100, Math.round((value / Math.max(goal, 1)) * 100));
 
 // Libro del día: una tarjeta 2×2 con agua, sueño, movimiento y comida.
-export const DayBoard = memo(({ waterMl, waterGoal, sleep, sleepGoal, moved, calories, caloriesGoal, enter, onWater, onSleep, onMove, onMeal }: Props) => (
+export const DayBoard = memo(({ waterMl, waterGoal, sleep, sleepGoal, moved, calories, caloriesGoal, enter, onWater, onSleep, onMove, onTrain, onMeal }: Props) => (
   <Animated.View entering={enter(3)} style={styles.board}>
     <WaterCell value={waterMl} goal={waterGoal} onAdd={onWater} />
     <SleepCell hours={sleep} goal={sleepGoal} onPress={onSleep} />
-    <MoveCell done={moved} onPress={onMove} />
+    <MoveCell done={moved} onPress={onMove} onTrain={onTrain} />
     <MealCell calories={calories} goal={caloriesGoal} onPress={onMeal} />
   </Animated.View>
 ));
@@ -79,14 +82,18 @@ const SleepCell = memo(({ hours, goal, onPress }: { hours: number; goal: number;
   </Pressable>
 ));
 
-const MoveCell = memo(({ done, onPress }: { done: boolean; onPress: () => void }) => (
+const MoveCell = memo(({ done, onPress, onTrain }: { done: boolean; onPress: () => void; onTrain: () => void }) => (
   <Pressable
     accessibilityRole="button"
     accessibilityLabel={done ? 'Movimiento hecho' : 'Marcar movimiento'}
     onPress={onPress}
     style={[styles.cell, styles.cellBottom]}
   >
-    <CellLabel name="Movimiento" color={Colors.workout} />
+    <CellLabel name="Movimiento" color={Colors.workout}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Empezar entreno" hitSlop={PILL_SLOP} onPress={onTrain} style={[styles.pill, styles.pillWorkout]}>
+        <Text style={[styles.pillText, styles.pillWorkoutText]}>Entreno</Text>
+      </Pressable>
+    </CellLabel>
     <View style={styles.copy}>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.stateTitle}>
         {done ? 'Hecho' : 'Sin marcar'}

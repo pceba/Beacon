@@ -1,7 +1,37 @@
+import { withSupportedColumns } from '../lib/schemaCaps';
 import { supabase } from '../lib/supabase';
-import { Workout, WorkoutExercise, WorkoutSet, WorkoutTemplate, WorkoutTemplateExercise } from '../types/database';
+import { Workout, WorkoutExercise, WorkoutSet } from '../types/database';
 import { LoggedExercise } from '../utils/exerciseProgress';
+import { uuid } from '../utils/uuid';
 import { Range } from './range';
+
+// Entrenos, ejercicios y series. Los hijos se protegen por su padre (RLS en Supabase);
+// borrar un entreno o un ejercicio borra sus hijos (ON DELETE CASCADE y la misma regla
+// en la base local). Los ids se generan en el móvil para escribir por lotes.
+
+export type ExerciseWithSets = WorkoutExercise & { sets: WorkoutSet[] };
+
+// Nota de los entrenos rápidos («me he movido») de la celda Movimiento de Hoy.
+export const QUICK_MOVE_NOTE = 'rapido';
+export const isQuickMove = (workout: Pick<Workout, 'notes'>) => workout.notes === QUICK_MOVE_NOTE;
+
+const CHUNK = 100;
+
+export const chunk = <T,>(items: T[]): T[][] => {
+  const parts: T[][] = [];
+  for (let i = 0; i < items.length; i += CHUNK) parts.push(items.slice(i, i + CHUNK));
+  return parts;
+};
+
+const selectIn = async <T,>(table: string, column: string, ids: string[]): Promise<T[]> => {
+  const rows: T[] = [];
+  for (const part of chunk([...new Set(ids)])) {
+    const { data, error } = await supabase.from(table).select('*').in(column, part);
+    if (error) throw error;
+    rows.push(...((data ?? []) as T[]));
+  }
+  return rows;
+};
 
 // range acota started_at (ISO).
 export const getWorkouts = async (userId: string, range?: Range): Promise<Workout[]> => {
@@ -13,19 +43,39 @@ export const getWorkouts = async (userId: string, range?: Range): Promise<Workou
   return (data ?? []) as Workout[];
 };
 
-export const createWorkout = async (
-  userId: string,
-  payload: Omit<Workout, 'id' | 'user_id' | 'started_at'> & { started_at?: string },
-): Promise<Workout> => {
-  const { data, error } = await supabase.from('workouts').insert({ user_id: userId, ...payload }).select('*').single();
+export const getWorkoutById = async (userId: string, id: string): Promise<Workout | null> => {
+  const { data, error } = await supabase.from('workouts').select('*').eq('user_id', userId).eq('id', id).maybeSingle();
+  if (error) throw error;
+  return (data as Workout | null) ?? null;
+};
+
+// Para escribir en hijos: el entreno tiene que existir y ser de este usuario.
+export const requireWorkout = async (userId: string, id: string): Promise<Workout> => {
+  const workout = await getWorkoutById(userId, id);
+  if (!workout) throw new Error('Entreno no encontrado');
+  return workout;
+};
+
+type NewWorkout = Omit<Workout, 'id' | 'user_id' | 'started_at'> & { id?: string; started_at?: string };
+
+// template_id solo se envía si existe la columna (migración 20261021120000).
+export const createWorkout = async (userId: string, payload: NewWorkout): Promise<Workout> => {
+  const { template_id, ...rest } = payload;
+  const row = await withSupportedColumns('workouts', {
+    ...rest,
+    id: payload.id ?? uuid(),
+    user_id: userId,
+    ...(template_id ? { template_id } : {}),
+  });
+  const { data, error } = await supabase.from('workouts').insert(row).select('*').single();
   if (error) throw error;
   return data as Workout;
 };
 
-export const updateWorkout = async (userId: string, id: string, payload: Partial<Workout>): Promise<Workout> => {
-  const { data, error } = await supabase.from('workouts').update(payload).eq('user_id', userId).eq('id', id).select('*').single();
+export const updateWorkout = async (userId: string, id: string, patch: Partial<Omit<Workout, 'id' | 'user_id'>>): Promise<void> => {
+  const row = await withSupportedColumns('workouts', patch as Record<string, unknown>);
+  const { error } = await supabase.from('workouts').update(row).eq('user_id', userId).eq('id', id);
   if (error) throw error;
-  return data as Workout;
 };
 
 export const deleteWorkout = async (userId: string, id: string): Promise<void> => {
@@ -33,9 +83,95 @@ export const deleteWorkout = async (userId: string, id: string): Promise<void> =
   if (error) throw error;
 };
 
-// Supabase devuelve como mucho 1.000 filas por consulta: se pide por páginas.
-// Sin red, la base local devuelve todo de una vez (ignora range), así que se corta
-// en cuanto una página repite filas o no viene llena.
+// Ejercicios con sus series: una consulta para los ejercicios y otra (por lotes de ids) para las series.
+const loadExercises = async (workoutIds: string[]): Promise<ExerciseWithSets[]> => {
+  if (workoutIds.length === 0) return [];
+  const exercises = await selectIn<WorkoutExercise>('workout_exercises', 'workout_id', workoutIds);
+  const sets = await selectIn<WorkoutSet>('workout_sets', 'exercise_id', exercises.map((exercise) => exercise.id));
+  const byExercise = new Map<string, WorkoutSet[]>();
+  sets.forEach((set) => byExercise.set(set.exercise_id, [...(byExercise.get(set.exercise_id) ?? []), set]));
+  return exercises
+    .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+    .map((exercise) => ({ ...exercise, sets: (byExercise.get(exercise.id) ?? []).sort((a, b) => a.set_number - b.set_number) }));
+};
+
+export const getWorkoutExercises = async (userId: string, workoutId: string): Promise<ExerciseWithSets[]> => {
+  await requireWorkout(userId, workoutId);
+  return loadExercises([workoutId]);
+};
+
+export const getWorkoutSession = async (userId: string, workoutId: string) => {
+  const workout = await requireWorkout(userId, workoutId);
+  return { workout, exercises: await loadExercises([workoutId]) };
+};
+
+// Entreno en curso: sin terminar y que no sea un movimiento rápido. `since` acota started_at.
+export const getActiveWorkout = async (userId: string, since?: string): Promise<Workout | null> => {
+  let query = supabase.from('workouts').select('*').eq('user_id', userId).eq('completed', false);
+  if (since) query = query.gte('started_at', since);
+  const { data, error } = await query.order('started_at', { ascending: false }).limit(5);
+  if (error) throw error;
+  return ((data ?? []) as Workout[]).find((workout) => !isQuickMove(workout)) ?? null;
+};
+
+const recentCompleted = async (userId: string, limit: number): Promise<Workout[]> => {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('completed', true)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return ((data ?? []) as Workout[]).filter((workout) => !isQuickMove(workout));
+};
+
+export const getRecentCompletedWorkouts = recentCompleted;
+
+// Último entreno terminado con ejercicios, para «Repetir el último».
+export const getLastCompletedWorkout = async (userId: string): Promise<{ workout: Workout; exerciseCount: number } | null> => {
+  const candidates = await recentCompleted(userId, 10);
+  if (candidates.length === 0) return null;
+  const exercises = await selectIn<WorkoutExercise>('workout_exercises', 'workout_id', candidates.map((workout) => workout.id));
+  for (const workout of candidates) {
+    const count = exercises.filter((exercise) => exercise.workout_id === workout.id).length;
+    if (count > 0) return { workout, exerciseCount: count };
+  }
+  return null;
+};
+
+export const HISTORY_PAGE = 30;
+
+export type HistoryItem = Workout & { volumeKg: number };
+
+// Una página del historial (30 entrenos terminados) con su volumen, calculado solo para esa página.
+export const getWorkoutHistoryPage = async (userId: string, page: number): Promise<{ items: HistoryItem[]; hasMore: boolean }> => {
+  const from = page * HISTORY_PAGE;
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('completed', true)
+    .order('started_at', { ascending: false })
+    .range(from, from + HISTORY_PAGE - 1);
+  if (error) throw error;
+  const raw = (data ?? []) as Workout[];
+  const workouts = raw.filter((workout) => !isQuickMove(workout));
+  const exercises = await selectIn<WorkoutExercise>('workout_exercises', 'workout_id', workouts.map((workout) => workout.id));
+  const sets = await selectIn<WorkoutSet>('workout_sets', 'exercise_id', exercises.map((exercise) => exercise.id));
+  const workoutOf = new Map(exercises.map((exercise) => [exercise.id, exercise.workout_id]));
+  const volume = new Map<string, number>();
+  sets.forEach((set) => {
+    const workoutId = workoutOf.get(set.exercise_id);
+    if (!workoutId || !set.completed || set.weight_kg == null || set.reps == null) return;
+    volume.set(workoutId, (volume.get(workoutId) ?? 0) + Number(set.weight_kg) * set.reps);
+  });
+  return { items: workouts.map((workout) => ({ ...workout, volumeKg: volume.get(workout.id) ?? 0 })), hasMore: raw.length === HISTORY_PAGE };
+};
+
+// Supabase devuelve como mucho 1.000 filas por consulta: se pide por páginas. La base local
+// también respeta range, pero el proxy puede mezclar respuestas (una página remota vacía cae
+// a la local), así que se corta en cuanto una página repite filas o no viene llena.
 const PAGE = 1000;
 const selectAll = async <T extends { id: string }>(table: string): Promise<T[]> => {
   const rows: T[] = [];
@@ -52,6 +188,7 @@ const selectAll = async <T extends { id: string }>(table: string): Promise<T[]> 
   return rows;
 };
 
+// Historial de fuerza completo (Datos, progreso por ejercicio, «Anterior» y recientes del selector).
 export const getStrengthEntries = async (userId: string): Promise<LoggedExercise[]> => {
   const workouts = await getWorkouts(userId);
   const byId = new Map(workouts.map((workout) => [workout.id, workout]));
@@ -73,162 +210,9 @@ export const getStrengthEntries = async (userId: string): Promise<LoggedExercise
         .sort((a, b) => a.set_number - b.set_number)
         .map((set) => ({
           reps: set.reps,
-          weightKg: set.weight_kg,
+          weightKg: set.weight_kg == null ? null : Number(set.weight_kg),
           completed: set.completed,
           order: set.set_number,
         })),
     }));
-};
-
-export const getWorkoutExercises = async (userId: string, workoutId: string): Promise<Array<WorkoutExercise & { sets: WorkoutSet[] }>> => {
-  const workout = await getWorkoutById(userId, workoutId);
-  if (!workout) return [];
-  const { data, error } = await supabase.from('workout_exercises').select('*').eq('workout_id', workoutId).order('order_index', { ascending: true });
-  if (error) throw error;
-  const exercises = (data ?? []) as WorkoutExercise[];
-  const detailed: Array<WorkoutExercise & { sets: WorkoutSet[] }> = [];
-  for (const exercise of exercises) {
-    const { data: setRows, error: setError } = await supabase
-      .from('workout_sets')
-      .select('*')
-      .eq('exercise_id', exercise.id)
-      .order('set_number', { ascending: true });
-    if (setError) throw setError;
-    detailed.push({ ...exercise, sets: (setRows ?? []) as WorkoutSet[] });
-  }
-  return detailed;
-};
-
-export const getWorkoutById = async (userId: string, id: string): Promise<Workout | null> => {
-  const { data, error } = await supabase.from('workouts').select('*').eq('user_id', userId).eq('id', id).maybeSingle();
-  if (error) throw error;
-  return (data as Workout | null) ?? null;
-};
-
-export const addExercise = async (
-  userId: string,
-  workoutId: string,
-  payload: Omit<WorkoutExercise, 'id' | 'workout_id'>,
-): Promise<WorkoutExercise> => {
-  await getWorkoutById(userId, workoutId);
-  const { data, error } = await supabase.from('workout_exercises').insert({ workout_id: workoutId, ...payload }).select('*').single();
-  if (error) throw error;
-  return data as WorkoutExercise;
-};
-
-export const updateExercise = async (userId: string, id: string, payload: Partial<WorkoutExercise>): Promise<WorkoutExercise> => {
-  const { data: exercise, error: findError } = await supabase.from('workout_exercises').select('id, workout_id').eq('id', id).single();
-  if (findError) throw findError;
-  await getWorkoutById(userId, exercise.workout_id);
-  const { data, error } = await supabase.from('workout_exercises').update(payload).eq('id', id).select('*').single();
-  if (error) throw error;
-  return data as WorkoutExercise;
-};
-
-export const deleteExercise = async (userId: string, id: string): Promise<void> => {
-  const { data: exercise, error: findError } = await supabase.from('workout_exercises').select('id, workout_id').eq('id', id).single();
-  if (findError) throw findError;
-  await getWorkoutById(userId, exercise.workout_id);
-  const { error } = await supabase.from('workout_exercises').delete().eq('id', id);
-  if (error) throw error;
-};
-
-export const addSet = async (
-  userId: string,
-  exerciseId: string,
-  payload: Omit<WorkoutSet, 'id' | 'exercise_id'>,
-): Promise<WorkoutSet> => {
-  const { data: exercise, error: findError } = await supabase.from('workout_exercises').select('id, workout_id').eq('id', exerciseId).single();
-  if (findError) throw findError;
-  await getWorkoutById(userId, exercise.workout_id);
-  const { data, error } = await supabase.from('workout_sets').insert({ exercise_id: exerciseId, ...payload }).select('*').single();
-  if (error) throw error;
-  return data as WorkoutSet;
-};
-
-export const updateSet = async (userId: string, id: string, payload: Partial<WorkoutSet>): Promise<WorkoutSet> => {
-  const { data: setRow, error: setError } = await supabase.from('workout_sets').select('id, exercise_id').eq('id', id).single();
-  if (setError) throw setError;
-  const { data: exercise, error: exerciseError } = await supabase
-    .from('workout_exercises')
-    .select('id, workout_id')
-    .eq('id', setRow.exercise_id)
-    .single();
-  if (exerciseError) throw exerciseError;
-  await getWorkoutById(userId, exercise.workout_id);
-  const { data, error } = await supabase.from('workout_sets').update(payload).eq('id', id).select('*').single();
-  if (error) throw error;
-  return data as WorkoutSet;
-};
-
-export const deleteSet = async (userId: string, id: string): Promise<void> => {
-  const { data: setRow, error: setError } = await supabase.from('workout_sets').select('id, exercise_id').eq('id', id).single();
-  if (setError) throw setError;
-  const { data: exercise, error: exerciseError } = await supabase
-    .from('workout_exercises')
-    .select('id, workout_id')
-    .eq('id', setRow.exercise_id)
-    .single();
-  if (exerciseError) throw exerciseError;
-  await getWorkoutById(userId, exercise.workout_id);
-  const { error } = await supabase.from('workout_sets').delete().eq('id', id);
-  if (error) throw error;
-};
-
-export const getWorkoutTemplates = async (userId: string): Promise<WorkoutTemplate[]> => {
-  const { data, error } = await supabase.from('workout_templates').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as WorkoutTemplate[];
-};
-
-export const createWorkoutTemplate = async (
-  userId: string,
-  payload: Omit<WorkoutTemplate, 'id' | 'user_id' | 'created_at'>,
-): Promise<WorkoutTemplate> => {
-  const { data, error } = await supabase.from('workout_templates').insert({ user_id: userId, ...payload }).select('*').single();
-  if (error) throw error;
-  return data as WorkoutTemplate;
-};
-
-export const createWorkoutFromTemplate = async (userId: string, templateId: string): Promise<Workout> => {
-  const { data: template, error: templateError } = await supabase
-    .from('workout_templates')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('id', templateId)
-    .single();
-  if (templateError) throw templateError;
-
-  const workout = await createWorkout(userId, {
-    name: template.name,
-    notes: template.description,
-    duration_minutes: null,
-    completed: false,
-  });
-
-  const { data: exercises, error: exercisesError } = await supabase
-    .from('workout_template_exercises')
-    .select('*')
-    .eq('template_id', templateId)
-    .order('order_index', { ascending: true });
-  if (exercisesError) throw exercisesError;
-
-  for (const exercise of (exercises ?? []) as WorkoutTemplateExercise[]) {
-    const createdExercise = await addExercise(userId, workout.id, {
-      exercise_name: exercise.exercise_name,
-      order_index: exercise.order_index,
-      notes: null,
-    });
-    for (let i = 1; i <= exercise.default_sets; i += 1) {
-      await addSet(userId, createdExercise.id, {
-        set_number: i,
-        reps: exercise.default_reps,
-        weight_kg: exercise.default_weight_kg,
-        duration_seconds: null,
-        completed: false,
-      });
-    }
-  }
-
-  return workout;
 };
