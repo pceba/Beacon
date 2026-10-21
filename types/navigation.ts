@@ -10,7 +10,8 @@ export type LogStackParamList = {
 
 export type PlanStackParamList = {
   PlanHomeScreen: undefined;
-  EventDetailScreen: { eventId?: string } | undefined;
+  // Crear: date ('yyyy-MM-dd') y time ('HH:mm') rellenan el formulario.
+  EventDetailScreen: { eventId?: string; date?: string; time?: string } | undefined;
 };
 
 export type MainTabParamList = {

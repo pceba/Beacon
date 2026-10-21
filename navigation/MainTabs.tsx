@@ -12,8 +12,8 @@ import { soft } from '../lib/haptics';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { TodayScreen } from '../features/today/TodayScreen';
 import { JournalScreen } from '../features/journal/JournalScreen';
-import { PlanHomeScreen } from '../screens/plan/PlanHomeScreen';
-import { EventDetailScreen } from '../screens/plan/EventDetailScreen';
+import { PlanScreen } from '../features/plan/PlanScreen';
+import { EventDetailScreen } from '../features/plan/EventDetailScreen';
 import { DatosScreen } from '../features/insights/DatosScreen';
 import { AddSheet, openAddSheet } from '../components/add/AddSheet';
 
@@ -35,8 +35,8 @@ const stackOptions = {
 
 const PlanNavigator = () => (
   <PlanStack.Navigator screenOptions={stackOptions}>
-    <PlanStack.Screen name="PlanHomeScreen" component={PlanHomeScreen} options={{ headerShown: false }} />
-    <PlanStack.Screen name="EventDetailScreen" component={EventDetailScreen} options={{ title: 'Evento' }} />
+    <PlanStack.Screen name="PlanHomeScreen" component={PlanScreen} options={{ headerShown: false }} />
+    <PlanStack.Screen name="EventDetailScreen" component={EventDetailScreen} options={{ headerShown: false }} />
   </PlanStack.Navigator>
 );
 
