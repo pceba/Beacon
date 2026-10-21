@@ -66,6 +66,8 @@ export interface Workout {
   notes: string | null;
   duration_minutes: number | null;
   completed: boolean;
+  // 20261021120000_calendar_workouts.sql; falta (undefined) si no está aplicada.
+  template_id?: string | null;
 }
 
 export interface WorkoutExercise {
@@ -169,6 +171,8 @@ export interface Event {
   description: string | null;
   event_date: string;
   event_time: string | null;
+  // 20261021120000_calendar_workouts.sql; falta (undefined) si no está aplicada.
+  end_time?: string | null;
   location: string | null;
   created_at: string;
 }

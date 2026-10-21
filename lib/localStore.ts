@@ -1,150 +1,157 @@
-import { getStored, setStored } from './storage';
+import { AppState, Platform } from 'react-native';
+import { getManyStored, getStored, removeManyStored, removeStored, setManyStored, setStored } from './storage';
+import { blankQuery, executeQuery, LocalQuery, LocalResult, Row, Tables } from './localQuery';
 
-const KEY = 'lifepp_local_db';
+// Base local (sin conexión o antes de tener cuenta). Se carga una vez en memoria y se
+// guarda por tablas (lifepp_local_db:<tabla>) con un pequeño retardo, así una escritura
+// no vuelve a serializar todo. La primera vez migra la clave única antigua.
 
-type Row = Record<string, unknown>;
-type DB = Record<string, Row[]>;
+export { blankQuery };
+export type { LocalQuery, LocalResult, Row };
 
-export type LocalQuery = {
-  op: 'select' | 'insert' | 'update' | 'delete' | 'upsert' | null;
-  payload: Row | Row[] | null;
-  filters: Array<{ op: 'eq' | 'gte'; col: string; value: unknown }>;
-  order?: { col: string; ascending: boolean };
-  single: boolean;
-  maybeSingle: boolean;
-  onConflict?: string;
-};
+const LEGACY_KEY = 'lifepp_local_db';
+const PREFIX = 'lifepp_local_db:';
+const INDEX_KEY = `${PREFIX}__tables`;
+const FLUSH_MS = 300;
 
-const empty = (): LocalQuery => ({
-  op: null,
-  payload: null,
-  filters: [],
-  single: false,
-  maybeSingle: false,
-});
+let tables: Tables | null = null;
+let loading: Promise<Tables> | null = null;
+const dirty = new Set<string>();
+let timer: ReturnType<typeof setTimeout> | null = null;
+let writing: Promise<void> = Promise.resolve();
 
-export const blankQuery = empty;
-
-let chain: Promise<unknown> = Promise.resolve();
-
-const enqueue = <T>(work: () => Promise<T>): Promise<T> => {
-  const run = chain.then(work, work);
-  chain = run.then(
-    () => undefined,
-    () => undefined,
-  );
-  return run;
-};
-
-const readDb = async (): Promise<DB> => {
-  const raw = await getStored(KEY);
-  if (!raw) return {};
+const parseRows = <T = Row>(raw: string | null): T[] => {
+  if (!raw) return [];
   try {
-    return JSON.parse(raw) as DB;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
   } catch {
-    return {};
+    return [];
   }
 };
 
-const writeDb = async (db: DB) => {
-  await setStored(KEY, JSON.stringify(db));
+const persistAll = async (next: Tables) => {
+  const names = [...next.keys()].filter((name) => (next.get(name)?.length ?? 0) > 0);
+  await setManyStored([...names.map((name): [string, string] => [PREFIX + name, JSON.stringify(next.get(name))]), [INDEX_KEY, JSON.stringify(names)]]);
 };
 
-const newId = () =>
-  globalThis.crypto?.randomUUID?.() ?? `local-${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
-
-const matches = (row: Row, filters: LocalQuery['filters']) =>
-  filters.every((filter) => {
-    const value = row[filter.col];
-    if (filter.op === 'gte') return String(value ?? '') >= String(filter.value ?? '');
-    return value === filter.value;
-  });
-
-const stamp = (table: string, payload: Row): Row => {
-  const now = new Date().toISOString();
-  const row = { ...payload };
-  if (!row.id) row.id = newId();
-  if (table === 'nutrition_logs' && !row.logged_at) row.logged_at = now;
-  if (table === 'workouts' && !row.started_at) row.started_at = now;
-  if (row.created_at === undefined && table !== 'nutrition_logs' && table !== 'workout_sets' && table !== 'workout_exercises') {
-    row.created_at = now;
-  }
-  return row;
-};
-
-const shape = (rows: Row[], query: LocalQuery) => {
-  if (query.maybeSingle) return { data: rows[0] ?? null, error: null };
-  if (query.single) return { data: rows[0] ?? null, error: rows[0] ? null : { message: 'No row' } };
-  return { data: rows, error: null };
-};
-
-// Para subir a Supabase lo que se guardó en local (services/localSync.ts).
-export const readLocalDb = () => enqueue(readDb);
-
-export const removeLocalRows = (table: string, ids: unknown[]) =>
-  enqueue(async () => {
-    if (ids.length === 0) return;
-    const drop = new Set(ids);
-    const db = await readDb();
-    const rest = (db[table] ?? []).filter((row) => !drop.has(row.id));
-    if (rest.length === 0) delete db[table];
-    else db[table] = rest;
-    await writeDb(db);
-  });
-
-export const runLocalQuery = (table: string, query: LocalQuery) =>
-  enqueue(async () => {
-    const db = await readDb();
-    const rows = db[table] ?? [];
-    const op = query.op ?? 'select';
-
-    if (op === 'select') {
-      let next = rows.filter((row) => matches(row, query.filters));
-      if (query.order) {
-        const { col, ascending } = query.order;
-        next = [...next].sort((a, b) => {
-          const result = String(a[col] ?? '').localeCompare(String(b[col] ?? ''));
-          return ascending ? result : -result;
-        });
-      }
-      return shape(next, query);
-    }
-
-    if (op === 'insert') {
-      const created = stamp(table, (query.payload ?? {}) as Row);
-      db[table] = [created, ...rows];
-      await writeDb(db);
-      return shape([created], { ...query, single: query.single || !query.maybeSingle });
-    }
-
-    if (op === 'update') {
-      const updated: Row[] = [];
-      db[table] = rows.map((row) => {
-        if (!matches(row, query.filters)) return row;
-        const next = { ...row, ...(query.payload as Row) };
-        updated.push(next);
-        return next;
+const load = async (): Promise<Tables> => {
+  const next: Tables = new Map();
+  const legacy = await getStored(LEGACY_KEY);
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(legacy) as Record<string, Row[]>;
+      Object.entries(parsed).forEach(([name, rows]) => {
+        if (Array.isArray(rows) && rows.length) next.set(name, rows);
       });
-      await writeDb(db);
-      return shape(updated, query);
+    } catch {
+      // Una base local ilegible no debe bloquear la app: se empieza vacía.
     }
-
-    if (op === 'delete') {
-      db[table] = rows.filter((row) => !matches(row, query.filters));
-      await writeDb(db);
-      return { data: null, error: null };
-    }
-
-    const incoming = stamp(table, (query.payload ?? {}) as Row);
-    const keys = (query.onConflict ?? 'id').split(',').map((key) => key.trim());
-    const index = rows.findIndex((row) => keys.every((key) => row[key] === incoming[key]));
-    if (index >= 0) {
-      const merged = { ...rows[index], ...incoming, id: rows[index].id };
-      db[table] = rows.map((row, i) => (i === index ? merged : row));
-      await writeDb(db);
-      return shape([merged], { ...query, single: true });
-    }
-    db[table] = [incoming, ...rows];
-    await writeDb(db);
-    return shape([incoming], { ...query, single: true });
+    // Primero se escribe el formato nuevo y solo después se borra la clave antigua.
+    await persistAll(next);
+    await removeStored(LEGACY_KEY);
+    return next;
+  }
+  const names = parseRows<unknown>(await getStored(INDEX_KEY)).filter((name): name is string => typeof name === 'string');
+  const stored = await getManyStored(names.map((name) => PREFIX + name));
+  names.forEach((name) => {
+    const rows = parseRows(stored[PREFIX + name] ?? null);
+    if (rows.length) next.set(name, rows);
   });
+  return next;
+};
+
+const ensure = (): Promise<Tables> => {
+  if (tables) return Promise.resolve(tables);
+  loading ??= load()
+    .then((loaded) => {
+      tables = loaded;
+      return loaded;
+    })
+    .finally(() => {
+      loading = null;
+    });
+  return loading;
+};
+
+const writeDirty = async () => {
+  if (!tables || dirty.size === 0) return;
+  const names = [...dirty];
+  dirty.clear();
+  const sets: Array<[string, string]> = [];
+  const removes: string[] = [];
+  names.forEach((name) => {
+    const rows = tables?.get(name) ?? [];
+    if (rows.length) sets.push([PREFIX + name, JSON.stringify(rows)]);
+    else {
+      tables?.delete(name);
+      removes.push(PREFIX + name);
+    }
+  });
+  const index = [...tables.keys()].filter((name) => (tables?.get(name)?.length ?? 0) > 0);
+  sets.push([INDEX_KEY, JSON.stringify(index)]);
+  await setManyStored(sets);
+  await removeManyStored(removes);
+};
+
+export const flushLocalStore = (): Promise<void> => {
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  writing = writing.then(writeDirty, writeDirty).catch((error) => console.error('No se ha podido guardar la base local', error));
+  return writing;
+};
+
+const markDirty = (names: string[]) => {
+  if (names.length === 0) return;
+  names.forEach((name) => dirty.add(name));
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(() => void flushLocalStore(), FLUSH_MS);
+};
+
+AppState.addEventListener('change', (state) => {
+  if (state !== 'active') void flushLocalStore();
+});
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => void flushLocalStore());
+}
+
+export const runLocalQuery = async (table: string, query: LocalQuery): Promise<LocalResult> => {
+  const current = await ensure();
+  const { result, changed } = executeQuery(current, table, query);
+  markDirty(changed);
+  return result;
+};
+
+// Para subir a Supabase lo guardado en local (services/localSync.ts). Copia: quien la
+// recorre no ve cambios a medias.
+export const readLocalDb = async (): Promise<Record<string, Row[]>> => {
+  const current = await ensure();
+  return Object.fromEntries([...current.entries()].map(([name, rows]) => [name, [...rows]]));
+};
+
+export const removeLocalRows = async (table: string, ids: unknown[]) => {
+  if (ids.length === 0) return;
+  const current = await ensure();
+  const drop = new Set(ids);
+  current.set(
+    table,
+    (current.get(table) ?? []).filter((row) => !drop.has(row.id)),
+  );
+  markDirty([table]);
+};
+
+export const localRowCount = async (): Promise<Record<string, number>> => {
+  const current = await ensure();
+  return Object.fromEntries([...current.entries()].map(([name, rows]) => [name, rows.length]));
+};
+
+// Solo para tests: vuelve a leer de AsyncStorage en la próxima consulta.
+export const resetLocalStoreForTests = () => {
+  tables = null;
+  loading = null;
+  dirty.clear();
+  if (timer) clearTimeout(timer);
+  timer = null;
+};

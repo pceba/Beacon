@@ -1,9 +1,14 @@
 import { supabase } from '../lib/supabase';
 import { Workout, WorkoutExercise, WorkoutSet, WorkoutTemplate, WorkoutTemplateExercise } from '../types/database';
 import { LoggedExercise } from '../utils/exerciseProgress';
+import { Range } from './range';
 
-export const getWorkouts = async (userId: string): Promise<Workout[]> => {
-  const { data, error } = await supabase.from('workouts').select('*').eq('user_id', userId).order('started_at', { ascending: false });
+// range acota started_at (ISO).
+export const getWorkouts = async (userId: string, range?: Range): Promise<Workout[]> => {
+  let query = supabase.from('workouts').select('*').eq('user_id', userId);
+  if (range?.from) query = query.gte('started_at', range.from);
+  if (range?.to) query = query.lte('started_at', range.to);
+  const { data, error } = await query.order('started_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as Workout[];
 };

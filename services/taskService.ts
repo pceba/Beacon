@@ -7,6 +7,31 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
   return (data ?? []) as Task[];
 };
 
+// Pendientes, con o sin fecha (Hoy y la lista de Plan).
+export const getOpenTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('completed', false)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Task[];
+};
+
+// Con fecha dentro del periodo ('yyyy-MM-dd', inclusivo), hechas o no (calendario).
+export const getTasksByDeadline = async (userId: string, from: string, to: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('deadline', from)
+    .lte('deadline', to)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Task[];
+};
+
 export const createTask = async (
   userId: string,
   payload: Omit<Task, 'id' | 'user_id' | 'created_at'>,

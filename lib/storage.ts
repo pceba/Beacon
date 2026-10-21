@@ -43,3 +43,20 @@ export const removeStored = async (key: string) => {
   await storageReady();
   await AsyncStorage.removeItem(key);
 };
+
+export const getManyStored = async (keys: string[]): Promise<Record<string, string | null>> => {
+  await storageReady();
+  if (keys.length === 0) return {};
+  const pairs = await AsyncStorage.multiGet(keys);
+  return Object.fromEntries(pairs);
+};
+
+export const setManyStored = async (entries: Array<[string, string]>) => {
+  await storageReady();
+  if (entries.length > 0) await AsyncStorage.multiSet(entries);
+};
+
+export const removeManyStored = async (keys: string[]) => {
+  await storageReady();
+  if (keys.length > 0) await AsyncStorage.multiRemove(keys);
+};

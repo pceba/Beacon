@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { MoodLog } from '../types/database';
 import { moodScale } from '../utils/mood';
+import { Range } from './range';
 
 export const getMoodLog = async (userId: string, date: Date): Promise<MoodLog | null> => {
   const logDate = format(date, 'yyyy-MM-dd');
@@ -23,8 +24,12 @@ export const upsertMoodLog = async (
   return data as MoodLog;
 };
 
-export const getMoodLogs = async (userId: string): Promise<MoodLog[]> => {
-  const { data, error } = await supabase.from('mood_logs').select('*').eq('user_id', userId).order('log_date', { ascending: true });
+// range acota log_date ('yyyy-MM-dd').
+export const getMoodLogs = async (userId: string, range?: Range): Promise<MoodLog[]> => {
+  let query = supabase.from('mood_logs').select('*').eq('user_id', userId);
+  if (range?.from) query = query.gte('log_date', range.from);
+  if (range?.to) query = query.lte('log_date', range.to);
+  const { data, error } = await query.order('log_date', { ascending: true });
   if (error) throw error;
   return (data ?? []) as MoodLog[];
 };

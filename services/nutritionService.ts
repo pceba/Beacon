@@ -1,10 +1,22 @@
 import { MealTemplate, NutritionLog } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { Range } from './range';
 
-export const getNutritionLogs = async (userId: string): Promise<NutritionLog[]> => {
-  const { data, error } = await supabase.from('nutrition_logs').select('*').eq('user_id', userId).order('logged_at', { ascending: false });
+// range acota logged_at (ISO). limit, para sugerencias de lo último apuntado.
+export const getNutritionLogs = async (userId: string, range?: Range, limit?: number): Promise<NutritionLog[]> => {
+  let query = supabase.from('nutrition_logs').select('*').eq('user_id', userId);
+  if (range?.from) query = query.gte('logged_at', range.from);
+  if (range?.to) query = query.lte('logged_at', range.to);
+  const ordered = query.order('logged_at', { ascending: false });
+  const { data, error } = await (limit ? ordered.limit(limit) : ordered);
   if (error) throw error;
   return (data ?? []) as NutritionLog[];
+};
+
+export const getNutritionLogById = async (userId: string, id: string): Promise<NutritionLog | null> => {
+  const { data, error } = await supabase.from('nutrition_logs').select('*').eq('user_id', userId).eq('id', id).maybeSingle();
+  if (error) throw error;
+  return (data as NutritionLog | null) ?? null;
 };
 
 export const createNutritionLog = async (

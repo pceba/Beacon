@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { Habit, HabitLog } from '../types/database';
+import { Range } from './range';
 
 export const getHabits = async (userId: string): Promise<Habit[]> => {
   const { data, error } = await supabase.from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: true });
@@ -28,10 +29,12 @@ export const deleteHabit = async (userId: string, id: string): Promise<void> => 
   if (error) throw error;
 };
 
-export const getHabitLogs = async (userId: string, date?: Date): Promise<HabitLog[]> => {
-  let query = supabase.from('habit_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false });
-  if (date) query = query.eq('log_date', format(date, 'yyyy-MM-dd'));
-  const { data, error } = await query;
+// range acota log_date ('yyyy-MM-dd').
+export const getHabitLogs = async (userId: string, range?: Range): Promise<HabitLog[]> => {
+  let query = supabase.from('habit_logs').select('*').eq('user_id', userId);
+  if (range?.from) query = query.gte('log_date', range.from);
+  if (range?.to) query = query.lte('log_date', range.to);
+  const { data, error } = await query.order('log_date', { ascending: false });
   if (error) throw error;
   return (data ?? []) as HabitLog[];
 };

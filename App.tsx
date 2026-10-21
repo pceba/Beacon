@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { StatusBar } from 'expo-status-bar';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { Colors } from './constants/colors';
@@ -12,6 +13,7 @@ import { RootNavigator } from './navigation/RootNavigator';
 import { migrateMoodOnce } from './services/moodMigration';
 import { bindReminderOpen, syncReminders } from './services/reminders';
 import { notifyRoute } from './lib/toast';
+import { queryClient } from './lib/query';
 // Sube a Supabase lo guardado en local en cuanto hay sesión.
 import './services/localSync';
 
@@ -75,23 +77,25 @@ export default function App() {
 
   return (
     <AppErrorBoundary>
-      <GestureHandlerRootView style={styles.stage}>
-        <SafeAreaProvider style={styles.column}>
-          <ToastProvider>
-            <NavigationContainer
-              ref={navigationRef}
-              theme={navTheme}
-              onStateChange={() => {
-                const route = navigationRef.getCurrentRoute();
-                if (route) notifyRoute(route.name);
-              }}
-            >
-              <StatusBar style="dark" />
-              <RootNavigator />
-            </NavigationContainer>
-          </ToastProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={styles.stage}>
+          <SafeAreaProvider style={styles.column}>
+            <ToastProvider>
+              <NavigationContainer
+                ref={navigationRef}
+                theme={navTheme}
+                onStateChange={() => {
+                  const route = navigationRef.getCurrentRoute();
+                  if (route) notifyRoute(route.name);
+                }}
+              >
+                <StatusBar style="dark" />
+                <RootNavigator />
+              </NavigationContainer>
+            </ToastProvider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
     </AppErrorBoundary>
   );
 }
