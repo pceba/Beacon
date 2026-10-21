@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { SleepLog } from '../types/database';
 import { Range } from './range';
@@ -54,17 +53,4 @@ export const updateSleepLog = async (
 export const deleteSleepLog = async (userId: string, id: string): Promise<void> => {
   const { error } = await supabase.from('sleep_logs').delete().eq('user_id', userId).eq('id', id);
   if (error) throw error;
-};
-
-export const getSleepLogByDate = async (userId: string, date: Date): Promise<SleepLog | null> => {
-  const dateText = format(date, 'yyyy-MM-dd');
-  const { data, error } = await supabase
-    .from('sleep_logs')
-    .select('*')
-    .eq('user_id', userId)
-    .gte('bed_time', `${dateText}T00:00:00`)
-    .lt('bed_time', `${dateText}T23:59:59`)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as SleepLog | null) ?? null;
 };

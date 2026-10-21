@@ -34,5 +34,3 @@ export const toast = {
     listener?.(item);
   },
 };
-
-export const useToast = () => toast;

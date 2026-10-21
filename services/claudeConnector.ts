@@ -14,9 +14,9 @@ export type ConnectorStatus = {
   lastUsedAt: string | null;
 };
 
-export const connectorBaseUrl = () => `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}${FUNCTION_PATH}`;
+const connectorBaseUrl = () => `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}${FUNCTION_PATH}`;
 
-export const connectorUrl = (token: string) => `${connectorBaseUrl()}/${token}`;
+const connectorUrl = (token: string) => `${connectorBaseUrl()}/${token}`;
 
 const deviceTimeZone = () => {
   try {

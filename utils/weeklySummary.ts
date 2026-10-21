@@ -108,7 +108,7 @@ const joinPhrases = (parts: string[]) => {
 
 const capital = (text: string) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
 
-export const buildHeadline = (summary: Omit<WeeklySummary, 'headline'>, sleepGoalHours: number, waterGoalMl: number) => {
+const buildHeadline = (summary: Omit<WeeklySummary, 'headline'>, sleepGoalHours: number, waterGoalMl: number) => {
   if (!summary.hasData) return 'Esta semana no hay registros. La próxima empieza mañana.';
   const good: string[] = [];
   const improve: string[] = [];

@@ -27,9 +27,6 @@ export const formatWater = (ml: number) => {
   if (Math.abs(ml) < 1000) return `${formatNumber(Math.round(ml), 0)} ml`;
   return `${formatFlexible(ml / 1000, 2)} L`;
 };
-
-export const formatLiters = formatWater;
-
 export const formatHours = (hours: number) => `${formatFlexible(hours, 1)} h`;
 
 export const formatDuration = (hours: number) => {

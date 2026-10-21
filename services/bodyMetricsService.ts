@@ -30,8 +30,3 @@ export const updateBodyMetric = async (
   if (error) throw error;
   return data as BodyMetric;
 };
-
-export const deleteBodyMetric = async (userId: string, id: string): Promise<void> => {
-  const { error } = await supabase.from('body_metrics').delete().eq('user_id', userId).eq('id', id);
-  if (error) throw error;
-};

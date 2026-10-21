@@ -109,5 +109,3 @@ export const getIdentity = async (): Promise<Identity> => {
 };
 
 export const getCurrentUserId = async (): Promise<string> => (await getIdentity()).userId;
-
-export const hasAccountSession = async () => Boolean(await sessionUserId());

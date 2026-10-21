@@ -22,7 +22,7 @@ const COPY = {
   weekly: { id: 'lifepp-weekly', title: 'Tu semana en Beacon', body: 'Ya tienes el resumen de la semana.' },
 } as const;
 
-export const defaultReminders: ReminderSettings = {
+const defaultReminders: ReminderSettings = {
   water: { enabled: false, time: '17:00' },
   habits: { enabled: false, time: '21:30' },
   tasks: { enabled: false, time: '09:00' },
@@ -42,7 +42,7 @@ if (Platform.OS !== 'web') {
   });
 }
 
-export const parseReminderTime = (value: string) => {
+const parseReminderTime = (value: string) => {
   const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
   if (!match) return null;
   const hour = Number(match[1]);

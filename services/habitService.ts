@@ -18,12 +18,6 @@ export const createHabit = async (
   return data as Habit;
 };
 
-export const updateHabit = async (userId: string, id: string, payload: Partial<Habit>): Promise<Habit> => {
-  const { data, error } = await supabase.from('habits').update(payload).eq('user_id', userId).eq('id', id).select('*').single();
-  if (error) throw error;
-  return data as Habit;
-};
-
 export const deleteHabit = async (userId: string, id: string): Promise<void> => {
   const { error } = await supabase.from('habits').delete().eq('user_id', userId).eq('id', id);
   if (error) throw error;
@@ -39,7 +33,7 @@ export const getHabitLogs = async (userId: string, range?: Range): Promise<Habit
   return (data ?? []) as HabitLog[];
 };
 
-export const logHabit = async (
+const logHabit = async (
   userId: string,
   payload: Omit<HabitLog, 'id' | 'user_id'>,
 ): Promise<HabitLog> => {

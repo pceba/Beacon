@@ -12,5 +12,3 @@ export const HABIT_ICON_OPTIONS: Array<{ id: string; Icon: LucideIcon }> = [
   { id: 'leaf', Icon: Leaf },
   { id: 'pen', Icon: PenLine },
 ];
-
-export const habitIcon = (id: string | null) => HABIT_ICON_OPTIONS.find((item) => item.id === id)?.Icon ?? Sun;

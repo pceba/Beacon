@@ -57,8 +57,3 @@ export const createMealTemplate = async (
   if (error) throw error;
   return data as MealTemplate;
 };
-
-export const deleteMealTemplate = async (userId: string, id: string): Promise<void> => {
-  const { error } = await supabase.from('meal_templates').delete().eq('user_id', userId).eq('id', id);
-  if (error) throw error;
-};
