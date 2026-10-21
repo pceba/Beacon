@@ -13,8 +13,7 @@ import { AddNoteModal } from '../screens/modals/AddNoteModal';
 import { AddTaskModal } from '../screens/modals/AddTaskModal';
 import { SettingsScreen } from '../screens/modals/SettingsScreen';
 import { LogMealScreen } from '../screens/log/LogMealScreen';
-import { LogWorkoutScreen } from '../screens/log/LogWorkoutScreen';
-import { WorkoutDetailScreen } from '../screens/log/WorkoutDetailScreen';
+import { LogWorkoutScreen, RoutineEditorScreen, WorkoutDetailScreen, WorkoutHistoryScreen } from '../features/training';
 import { LogSleepScreen } from '../screens/log/LogSleepScreen';
 import { LogBodyScreen } from '../screens/log/LogBodyScreen';
 import { ExerciseProgressScreen } from '../screens/log/ExerciseProgressScreen';
@@ -49,6 +48,8 @@ export const RootNavigator = () => {
       <Stack.Screen name="LogMealScreen" component={LogMealScreen} options={{ ...modalOptions, title: 'Comida' }} />
       <Stack.Screen name="LogWorkoutScreen" component={LogWorkoutScreen} options={{ ...modalOptions, title: 'Entreno' }} />
       <Stack.Screen name="WorkoutDetailScreen" component={WorkoutDetailScreen} options={{ ...modalOptions, title: 'Sesión' }} />
+      <Stack.Screen name="RoutineEditorScreen" component={RoutineEditorScreen} options={{ ...modalOptions, title: 'Rutina' }} />
+      <Stack.Screen name="WorkoutHistoryScreen" component={WorkoutHistoryScreen} options={{ ...modalOptions, title: 'Historial' }} />
       <Stack.Screen name="LogSleepScreen" component={LogSleepScreen} options={{ ...modalOptions, title: 'Sueño' }} />
       <Stack.Screen name="LogBodyScreen" component={LogBodyScreen} options={{ ...modalOptions, title: 'Cuerpo' }} />
       <Stack.Screen name="ExerciseProgressScreen" component={ExerciseProgressScreen} options={{ contentStyle: { backgroundColor: Colors.bg } }} />

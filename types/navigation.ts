@@ -3,7 +3,9 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 export type LogStackParamList = {
   LogMealScreen: { logId?: string; fromToday?: boolean } | undefined;
   LogWorkoutScreen: { fromToday?: boolean } | undefined;
-  WorkoutDetailScreen: { workoutId: string; fromToday?: boolean };
+  WorkoutDetailScreen: { workoutId: string; fromToday?: boolean; mode?: 'live' | 'edit' };
+  RoutineEditorScreen: { templateId?: string; fromWorkoutId?: string } | undefined;
+  WorkoutHistoryScreen: undefined;
   LogSleepScreen: { sleepId?: string; fromToday?: boolean } | undefined;
   LogBodyScreen: { metricId?: string } | undefined;
 };

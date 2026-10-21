@@ -13,6 +13,7 @@ const FORMS = new Set([
   'LogMealScreen',
   'LogWorkoutScreen',
   'WorkoutDetailScreen',
+  'RoutineEditorScreen',
   'LogSleepScreen',
   'LogBodyScreen',
   'AddHabitModal',

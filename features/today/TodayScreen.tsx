@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { Spacing, tabClearance } from '../../constants/spacing';
 import { MainTabParamList, RootStackParamList } from '../../types/navigation';
+import { ActiveWorkoutBanner } from '../training';
 import { DayBoard } from './components/DayBoard';
 import { HabitsSection } from './components/HabitsSection';
 import { MoodSection } from './components/MoodSection';
@@ -90,8 +91,10 @@ export const TodayScreen = () => {
         onWater={actions.changeWater}
         onSleep={openSleep}
         onMove={toggleMove}
+        onTrain={openWorkout}
         onMeal={openMeal}
       />
+      <ActiveWorkoutBanner />
       <HabitsSection
         items={data.habitItems}
         doneCount={data.habitsDone}
