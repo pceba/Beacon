@@ -19,12 +19,13 @@
 ## Qué hace
 
 - **Hoy**: una frase con lo que te falta, la barra del día, agua, sueño, movimiento, comida, hábitos con racha, ánimo y tareas.
-- **Plan**: semana deslizable, agenda del día y tareas.
+- **Plan**: calendario con vistas Mes, Semana (con horas), Día y Lista. Toca un hueco para crear un evento a esa hora; los eventos pueden tener hora de fin.
+- **Entreno**: rutinas, sesión con series (Anterior, kg, reps, ✓), borrar series deslizando o manteniendo pulsado, temporizador de descanso, resumen al terminar, historial editable y progreso de fuerza por ejercicio.
 - **Diario**: reflexiones y notas.
 - **Datos**: medias de la semana, el mes o los 3 meses, gráfica de sueño, mapa de hábitos y peso.
 - **Resumen semanal**: el domingo y el lunes, Hoy enseña cómo fue la semana frente a la anterior (sueño, entrenos, hábitos, agua y tu mejor racha). Opcionalmente, un aviso el domingo por la tarde.
 - **Botón +**: agua en un toque y cualquier otro registro en dos.
-- **Claude**: desde claude.ai puedes decir «apunta 500 ml y una ensalada», «anoche dormí de 0:30 a 7:45», «peso 74,2» o «¿qué me queda hoy?» y Beacon se actualiza.
+- **Claude**: desde claude.ai puedes decir «apunta 500 ml y una ensalada», «anoche dormí de 0:30 a 7:45», «peso 74,2», «clase el jueves de 14:00 a 15:30» o «¿qué me queda hoy?» y Beacon se actualiza.
 - **Sin conexión**: si no hay red, guarda en el móvil y sube los datos cuando vuelve la conexión.
 - **Recordatorios** locales de agua, hábitos, tareas y resumen semanal.
 

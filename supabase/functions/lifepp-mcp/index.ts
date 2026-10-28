@@ -9,7 +9,7 @@
 // El token se valida en Postgres (funciones mcp_*), que solo tocan las filas de su dueño.
 // Usa la clave pública del proyecto (SUPABASE_ANON_KEY, la inyecta Supabase).
 
-const SERVER_INFO = { name: 'beacon', title: 'Beacon', version: '1.2.0' };
+const SERVER_INFO = { name: 'beacon', title: 'Beacon', version: '1.3.0' };
 const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
 const TOKEN = /(lpp_[0-9a-f]{64})/;
 const MAX_BODY_BYTES = 64_000;
@@ -235,13 +235,14 @@ const TOOLS = [
   {
     name: 'add_event',
     title: 'Añadir evento',
-    description: 'Crea un evento en el calendario de la app (clase, cita, plan). La hora es opcional.',
+    description: 'Crea un evento en el calendario de la app (clase, cita, plan). La hora es opcional; si sabes cuándo acaba, pon end_time.',
     inputSchema: {
       type: 'object',
       properties: {
         title: { type: 'string' },
         date: { type: 'string', description: 'yyyy-mm-dd' },
         time: { type: 'string', description: 'HH:mm, opcional' },
+        end_time: { type: 'string', description: 'HH:mm, opcional; posterior a time. Sin ella el evento dura una hora en el calendario' },
         location: { type: 'string' },
         description: { type: 'string' },
       },
@@ -253,7 +254,7 @@ const TOOLS = [
   {
     name: 'update_event',
     title: 'Cambiar evento',
-    description: 'Cambia un evento por su id (búscalo con list_recent kind=event). Solo cambian los campos que envíes; time vacío quita la hora.',
+    description: 'Cambia un evento por su id (búscalo con list_recent kind=event). Solo cambian los campos que envíes; time vacío quita la hora (y la de fin), end_time vacío quita solo la de fin.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -261,6 +262,7 @@ const TOOLS = [
         title: { type: 'string' },
         date: { type: 'string', description: 'yyyy-mm-dd' },
         time: { type: 'string', description: 'HH:mm, o vacío para quitarla' },
+        end_time: { type: 'string', description: 'HH:mm, o vacío para quitarla' },
         location: { type: 'string' },
         description: { type: 'string' },
       },
@@ -520,13 +522,15 @@ const runTool = async (token: string, name: string, args: Json) => {
         p_time: str(args.time) ?? null,
         p_location: str(args.location) ?? null,
         p_description: str(args.description) ?? null,
+        // Solo si viene: así sigue funcionando con la versión del SQL anterior a end_time.
+        ...(str(args.end_time) ? { p_end_time: str(args.end_time) } : {}),
       });
     }
     case 'update_event': {
       const id = str(args.id);
       if (!id || !UUID.test(id)) throw new RpcError('id de evento no válido', 400);
       const changes: Json = {};
-      for (const key of ['title', 'date', 'time', 'location', 'description']) {
+      for (const key of ['title', 'date', 'time', 'end_time', 'location', 'description']) {
         if (key in args) changes[key] = args[key];
       }
       if (Object.keys(changes).length === 0) throw new RpcError('No hay cambios', 400);
