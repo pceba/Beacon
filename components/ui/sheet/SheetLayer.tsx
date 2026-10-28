@@ -165,7 +165,8 @@ export const SheetLayer = memo(({ id, lift }: Props) => {
 
   return (
     <View
-      style={[StyleSheet.absoluteFill, { zIndex: sheetStore.depth(id), pointerEvents: hidden ? 'none' : 'box-none' }]}
+      pointerEvents={hidden ? 'none' : 'box-none'}
+      style={[StyleSheet.absoluteFill, { zIndex: sheetStore.depth(id) }]}
       accessibilityElementsHidden={hidden}
       importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
       accessibilityViewIsModal={!hidden}

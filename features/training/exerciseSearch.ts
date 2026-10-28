@@ -73,7 +73,9 @@ export const buildPickerRows = ({ query, recents, catalog, selected = [] }: Inpu
     seen.add(key);
     matches.push({ kind: 'item', key: `m:${key}`, name });
   });
-  const typed = query.trim().replace(/\s+/g, ' ');
+  // Un ejercicio nuevo se guarda con mayúscula inicial, como los del catálogo («Remo gironda»).
+  const spaced = query.trim().replace(/\s+/g, ' ');
+  const typed = spaced.charAt(0).toLocaleUpperCase('es-ES') + spaced.slice(1);
   if (seen.has(needle)) return matches;
   return [{ kind: 'create', key: `create:${needle}`, name: typed }, ...matches];
 };

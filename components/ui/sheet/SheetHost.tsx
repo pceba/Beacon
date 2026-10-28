@@ -61,7 +61,9 @@ const SheetHost = () => {
   }, []);
 
   return (
-    <View style={styles.host} onLayout={onLayout}>
+    // pointerEvents como prop, no como estilo: en web el estilo «box-none» se hereda como
+    // «none» y la hoja no recibe ningún toque.
+    <View pointerEvents="box-none" style={styles.host} onLayout={onLayout}>
       {ids.map((id) => (
         <SheetLayer key={id} id={id} lift={lift} />
       ))}
@@ -81,5 +83,5 @@ export const SheetProvider = ({ children }: { children: React.ReactNode }) => (
 const clip = (Platform.OS === 'web' ? { overflow: 'clip' } : { overflow: 'hidden' }) as ViewStyle;
 
 const styles = StyleSheet.create({
-  host: { ...StyleSheet.absoluteFillObject, ...clip, pointerEvents: 'box-none' },
+  host: { ...StyleSheet.absoluteFillObject, ...clip },
 });

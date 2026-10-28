@@ -17,7 +17,7 @@ describe('búsqueda del selector', () => {
   it('ignora tildes y mayúsculas', () => {
     expect(foldText('  Extensión de TRÍCEPS ')).toBe('extension de triceps');
     const rows = buildPickerRows({ query: 'tricep', recents: [], catalog: EXERCISE_CATALOG });
-    expect(rows[0]).toMatchObject({ kind: 'create', name: 'tricep' });
+    expect(rows[0]).toMatchObject({ kind: 'create', name: 'Tricep' });
     expect(rows.some((row) => row.kind === 'item' && row.name === 'Extensión de tríceps')).toBe(true);
   });
 

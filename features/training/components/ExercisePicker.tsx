@@ -125,7 +125,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     minHeight: 48,
   },
-  input: { ...Type.body, color: Colors.ink, flex: 1, minHeight: 48, paddingVertical: 0 },
+  // Sin el marco de foco del navegador en web: la caja gris ya marca el campo.
+  input: { ...Type.body, color: Colors.ink, flex: 1, minHeight: 48, paddingVertical: 0, outlineWidth: 0 },
   list: { flex: 1, marginTop: Spacing.sm },
   header: { ...Type.label, color: Colors.text3, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
   row: {

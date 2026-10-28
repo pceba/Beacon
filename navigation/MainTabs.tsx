@@ -15,7 +15,7 @@ import { JournalScreen } from '../features/journal/JournalScreen';
 import { PlanScreen } from '../features/plan/PlanScreen';
 import { EventDetailScreen } from '../features/plan/EventDetailScreen';
 import { DatosScreen } from '../features/insights/DatosScreen';
-import { AddSheet, openAddSheet } from '../components/add/AddSheet';
+import { openAddSheet } from '../components/add/AddSheet';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const PlanStack = createNativeStackNavigator<PlanStackParamList>();
@@ -131,15 +131,12 @@ const tabScreenOptions = { headerShown: false };
 
 export const MainTabs = () => {
   return (
-    <>
-      <Tab.Navigator screenOptions={tabScreenOptions} tabBar={renderTabBar}>
-        <Tab.Screen name="Today" component={TodayScreen} />
-        <Tab.Screen name="Plan" component={PlanNavigator} />
-        <Tab.Screen name="Journal" component={JournalScreen} />
-        <Tab.Screen name="Stats" component={DatosScreen} />
-      </Tab.Navigator>
-      <AddSheet />
-    </>
+    <Tab.Navigator screenOptions={tabScreenOptions} tabBar={renderTabBar}>
+      <Tab.Screen name="Today" component={TodayScreen} />
+      <Tab.Screen name="Plan" component={PlanNavigator} />
+      <Tab.Screen name="Journal" component={JournalScreen} />
+      <Tab.Screen name="Stats" component={DatosScreen} />
+    </Tab.Navigator>
   );
 };
 

@@ -9,6 +9,7 @@ import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } fro
 import { Colors } from './constants/colors';
 import { ToastProvider } from './components/ui/Toast';
 import { SheetProvider } from './components/ui/sheet/SheetHost';
+import { AddSheet } from './components/add/AddSheet';
 import { navigationRef } from './navigation/navigationRef';
 import { RootNavigator } from './navigation/RootNavigator';
 import { migrateMoodOnce } from './services/moodMigration';
@@ -93,6 +94,9 @@ export default function App() {
                 <StatusBar style="dark" />
                 <SheetProvider>
                   <RootNavigator />
+                  {/* En la raíz: si viviera dentro de las pestañas, al abrir una pantalla encima
+                      estas dejan de pintarse y la hoja no recibiría la orden de cerrarse. */}
+                  <AddSheet />
                 </SheetProvider>
               </NavigationContainer>
             </ToastProvider>
