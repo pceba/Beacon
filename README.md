@@ -66,12 +66,13 @@ docs/
 
 ```bash
 npm ci
-cp .env.example .env      # EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY
 npx expo start            # Expo Go o navegador
-npx tsc --noEmit          # comprobación de tipos
+npm run typecheck         # comprobación de tipos
+npm test                  # tests
 ```
 
-Sin variables de entorno, la app funciona igual con almacenamiento local.
+El proyecto de Supabase (URL y clave publishable, ambas públicas) está en `constants/supabase.ts`.
+Sin conexión, la app funciona igual con almacenamiento local.
 
 **Datos de demostración:** `supabase/seed/demo.sql` crea unas 6 semanas de datos realistas (agua, sueño, comidas, entrenos con series, hábitos, peso, diario, tareas y eventos) en la cuenta con el conector activo. Se ejecuta en el SQL Editor de Supabase y se borra con `supabase/seed/demo-clean.sql`; los ids de la demo empiezan por `dec0de00-`, así que tus datos reales no se tocan.
 

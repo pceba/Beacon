@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { rawSupabase } from '../lib/supabase';
 import { getIdentity } from './authService';
+import { SUPABASE_URL } from '../constants/supabase';
 
 // Conector MCP para claude.ai: la app genera un token personal y muestra la URL
 // del servidor lifepp-mcp con el token dentro. Claude usa tu plan; no hay API key.
@@ -14,7 +15,7 @@ export type ConnectorStatus = {
   lastUsedAt: string | null;
 };
 
-const connectorBaseUrl = () => `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}${FUNCTION_PATH}`;
+const connectorBaseUrl = () => `${SUPABASE_URL}${FUNCTION_PATH}`;
 
 const connectorUrl = (token: string) => `${connectorBaseUrl()}/${token}`;
 

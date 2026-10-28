@@ -9,7 +9,11 @@ Beacon (Expo, móvil/web) ──sesión anónima──▶ Supabase (Postgres + R
 claude.ai ──MCP──▶ Edge Function lifepp-mcp ──token──┘  (funciones mcp_* en Postgres)
 ```
 
-## 1. Supabase (proyecto luoqjomxnmygaaaffber)
+## 1. Supabase (proyecto agzjmwvqvyfvxkezbeid, «Beacon» en pceba's Org, región eu-west-1)
+
+La URL y la clave publishable están en `constants/supabase.ts` (son públicas; no hace falta `.env`).
+Para montar un proyecto vacío basta `supabase/setup.sql` (esquema + todas las migraciones).
+
 
 1. **Authentication → Sign In / Providers → Allow anonymous sign-ins**: activado.
 2. **SQL Editor**, en orden:
