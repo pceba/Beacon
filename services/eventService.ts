@@ -4,12 +4,6 @@ import { Event } from '../types/database';
 
 type EventPayload = Omit<Event, 'id' | 'user_id' | 'created_at'>;
 
-export const getEvents = async (userId: string): Promise<Event[]> => {
-  const { data, error } = await supabase.from('events').select('*').eq('user_id', userId).order('event_date', { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Event[];
-};
-
 // Eventos entre dos días ('yyyy-MM-dd', inclusivo), por fecha y hora.
 export const getEventsInRange = async (userId: string, from: string, to: string): Promise<Event[]> => {
   const { data, error } = await supabase
